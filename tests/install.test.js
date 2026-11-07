@@ -1,49 +1,18 @@
 // Run with: node --test
 // scripts/install.sh, spawned against temporary Herdr homes only. Never the real one: without
 // HERDR_APP_HOME (or with it empty) the script resolves the real home and installs into it.
-import { test, after } from "node:test";
+import { test } from "node:test";
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { REPO, COMMON, MODS, tmpdir, sh, snapshot, pathWithoutPython } from "./runtime/sandbox.mjs";
 
-const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const INSTALL = path.join(REPO, "scripts", "install.sh");
-const TMP = fs.realpathSync(os.tmpdir());
 
-const temps = [];
-const tmpdir = () => { const d = fs.mkdtempSync(path.join(TMP, "herdboard-test-")); temps.push(d); return d; };
-after(() => { for (const d of temps) fs.rmSync(d, { recursive: true, force: true }); });
-
-// The only way tests run the scripts: HERDR_APP_HOME is always set, non-empty and under the
-// system temp folder, or the test throws before spawning anything. They run from a folder
-// outside the repo: the scripts must work from any directory.
-function sh(home, shArgs, { PATH = process.env.PATH } = {}) {
-  if (typeof home !== "string" || home === "" || !path.resolve(home).startsWith(TMP + path.sep)) {
-    throw new Error(`refusing to run a script with HERDR_APP_HOME=${JSON.stringify(home)}`);
-  }
-  const env = { PATH, HOME: tmpdir(), HERDR_APP_HOME: home };
-  return spawnSync("/bin/sh", shArgs, { env, cwd: tmpdir(), encoding: "utf8" });
-}
-
+// Every spawn goes through sh() from tests/runtime/sandbox.mjs, which refuses a HERDR_APP_HOME
+// that isn't under the system temp folder.
 const run = (home, args = [], opts) => sh(home, [INSTALL, ...args], opts);
-
-// Every folder and every file's sha256 under `dir`, to tell whether anything changed.
-function snapshot(dir) {
-  const out = {};
-  const walk = rel => {
-    for (const e of fs.readdirSync(path.join(dir, rel), { withFileTypes: true })) {
-      const r = path.join(rel, e.name);
-      if (e.isDirectory()) { out[r + "/"] = "dir"; walk(r); }
-      else out[r] = createHash("sha256").update(fs.readFileSync(path.join(dir, r))).digest("hex");
-    }
-  };
-  walk("");
-  return out;
-}
 
 test("an unknown option prints a usage line, exits non-zero and leaves the home unchanged", () => {
   const home = tmpdir();
@@ -54,8 +23,7 @@ test("an unknown option prints a usage line, exits non-zero and leaves the home 
 });
 
 // What a real install copies, relative to the Herdr home: the layout and every file of the
-// three mods (the script's `*` glob skips dotfiles).
-const MODS = ["herdboard", "herdboard-picker", "herdboard-new-menu"];
+// mods common.sh names (the script's `*` glob skips dotfiles).
 const INSTALLED = [
   "layouts/herdboard.json",
   ...MODS.flatMap(m => fs.readdirSync(path.join(REPO, "mods", m))
@@ -143,16 +111,6 @@ test("a plain install copies every file, merges the keys section with a backup a
     { global: {}, ...JSON.parse(fs.readFileSync(path.join(REPO, "keys.json"), "utf8")) });
 });
 
-// A PATH with every tool the script uses except python3.
-function pathWithoutPython() {
-  const bin = tmpdir();
-  for (const tool of ["dirname", "basename", "cp", "mkdir", "cmp", "grep", "tr", "cat"]) {
-    const found = spawnSync("sh", ["-c", `command -v ${tool}`], { encoding: "utf8" }).stdout.trim();
-    if (found) fs.symlinkSync(found, path.join(bin, tool));
-  }
-  return bin;
-}
-
 test("without python3 a dry run says to add the keys section by hand, as a real install does", () => {
   const home = tmpdir();
   const PATH = pathWithoutPython();
@@ -166,15 +124,14 @@ test("without python3 a dry run says to add the keys section by hand, as a real 
   assert.ok(real.stdout.split("\n").includes(byHand));
 });
 
-// scripts/common.sh, sourced the way install.sh (and later uninstall.sh) does.
-const COMMON = path.join(REPO, "scripts", "common.sh");
+// scripts/common.sh, sourced the way install.sh and uninstall.sh do.
 const sourced = (home, body) => sh(home, ["-c", `set -eu; . "$1"; ${body}`, "sh", COMMON]);
 
 test("sourcing common.sh prints nothing and names the layout and the mods", () => {
   const r = sourced(tmpdir(), 'printf "%s|%s" "$HERDBOARD_LAYOUT" "$HERDBOARD_MODS"');
   assert.equal(r.status, 0, r.stderr);
   assert.equal(r.stderr, "");
-  assert.equal(r.stdout, `herdboard|${MODS.join(" ")}`);
+  assert.equal(r.stdout, "herdboard|herdboard herdboard-picker herdboard-new-menu");
 });
 
 test("herdr_home prints HERDR_APP_HOME when that folder exists", () => {
@@ -194,7 +151,7 @@ test("herdr_home fails with the install's error when the home doesn't exist", ()
 test("install.sh takes the home and the names of what it installs from common.sh only", () => {
   const install = fs.readFileSync(INSTALL, "utf8");
   const owned = ["HERDR_APP_HOME:-", "cmd.exe", "/proc/version", ".config/herdr-app",
-    "'layout:herdboard'", "layouts/herdboard.json", ...MODS.slice(1)];
+    "'layout:herdboard'", "layouts/herdboard.json", ...MODS.filter(m => m !== "herdboard")];
   for (const s of owned) {
     assert.ok(!install.includes(s), `install.sh still has ${s}`);
   }
