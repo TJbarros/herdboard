@@ -32,13 +32,6 @@ const IDLE_KEY = "herdboard.idleOpen";    // false: the Idle column is folded
 const TITLES_KEY = "herdboard.titles";    // address -> { title, at }: the last task title seen
 const IDLE_ROW = 44;                  // height of an Idle row (task + where)
 
-// Early local builds kept these under "board.*": carry them over once, then never again.
-function migratePrefs() {
-  for (const k of ["lang", "filter", "idleOpen", "titles"]) {
-    const old = shared(`board.${k}`);
-    if (old !== undefined && old !== null && (shared(`herdboard.${k}`) ?? null) === null) setShared(`herdboard.${k}`, old);
-  }
-}
 
 // A working agent past this many minutes gets a "stuck?" hint on its card.
 const STUCK_MIN = 30;
@@ -156,7 +149,6 @@ export default class Herdboard extends View {
     this.hovered = null; // address of the card under the pointer (shows its actions)
     this.w = 0;          // this copy's size, from on_size_change; 0 until the first layout (treated as wide)
     this.h = 0;
-    if (!props()?.role) migratePrefs();
     // Ages tick every 30 s, only on the cards copy, when there's something to age and the board shows.
     if (!props()?.role) cx.timer.every(30000, (cx) => {
       const live = new Set(agents().map(a => a.address));
