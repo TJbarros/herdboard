@@ -10,6 +10,7 @@ register("./runtime/hooks.mjs", import.meta.url);
 const { herdr } = await import("./runtime/herdr.mjs");
 const { clicks } = await import("./runtime/gpui.mjs");
 const { default: Herdboard } = await import("../mods/herdboard/main.js");
+const { parseAsk } = await import("../mods/herdboard/ask.js");
 
 // A Claude Code v2.1.319 permission dialog as `hc read --lines 0` shows it (issue #1), for a
 // command of one or more lines. The transcript above it blinks: "●" on one read, " " on the next.
@@ -98,9 +99,12 @@ test("No types the No digit", async () => {
 test("a fresh read with another command that ends the same types nothing", async () => {
   const b = board();
   herdr.agents = [blocked(1)];
-  await readFor(b, blocked(1), screen(["touch /tmp/a &&", "make"]));
+  const first = screen(["touch /tmp/a &&", "make &&", "make"]);
+  const fresh = screen(["rm -rf ~ &&", "make &&", "make"]);
+  assert.equal(parseAsk(first).text, parseAsk(fresh).text);  // the card cannot tell them apart
+  await readFor(b, blocked(1), first);
   await draw(b, blocked(1)).yes();
-  await settle(reads().at(-1), screen(["rm -rf ~ &&", "make"]));
+  await settle(reads().at(-1), fresh);
   await settleKeys();
   assert.deepEqual(keys(), []);
 });

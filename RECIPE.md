@@ -52,8 +52,10 @@ column, top to bottom:
   its tab, else the time the board first saw the status; refreshed every 30s.
 - Blocked question: on each new blocked spell (address + `seq`), `hc read <t>
   --lines 0`; the last line ending in "?" and up to two before it, frames dropped,
-  tail kept (≤180 chars). No "?": "Open the terminal to see what the agent is
-  asking." Parsed by `mods/herdboard/ask.js` (pure; `node --test` runs
+  separator lines dropped (lines of horizontal glyphs only:
+  `─ ━ ┄ ┅ ┈ ┉ ╌ ╍ ═ ╴ ╶ ╸ ╺ ╼ ╾ - _ ▔ ▁`, so Claude Code's dashed `╌` rows go and
+  the command shows), tail kept (≤180 chars). No "?": "Open the terminal to see
+  what the agent is asking." Parsed by `mods/herdboard/ask.js` (pure; `node --test` runs
   `tests/ask.test.js`). The same parse gives the request's `id`: the dialog's raw
   lines (nothing collapsed, trimmed or dropped: a no-break space ending a line counts)
   from the solid rule that opens it through the last option, the `❯` cursor (after
