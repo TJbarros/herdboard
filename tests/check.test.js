@@ -36,14 +36,16 @@ function makeRepo({ mods = { alpha: {}, beta: {}, gamma: {} }, testsPass = true 
   return root;
 }
 
-// A PATH directory with only the given tools. herdr-app logs each checked path to `log`.
+// A PATH directory with only the given tools. herdr-app accepts only `check <path>` and logs
+// each checked path to `log`.
 function makeBin(tools = ["herdr-app", "node"]) {
   const bin = mkdtempSync(join(tmpdir(), "herdboard-check-bin-"));
   temps.push(bin);
   const log = join(bin, "herdr-app.log");
   if (tools.includes("herdr-app")) {
     writeFileSync(join(bin, "herdr-app"),
-      `#!/bin/sh\necho "$2" >> '${log}'\n` +
+      `#!/bin/sh\n[ "$1" = check ] || { echo "unexpected: herdr-app $*" >&2; exit 2; }\n` +
+      `echo "$2" >> '${log}'\n` +
       `if [ -e "$2/FAIL" ]; then echo "check failed: $2" >&2; exit 1; fi\n` +
       `echo "check passed: $2"\n`);
     chmodSync(join(bin, "herdr-app"), 0o755);
