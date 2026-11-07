@@ -276,6 +276,16 @@ test("a first read with the question but no Yes / No pair yet is read again and 
   assert.ok(draw(b, blocked(1)).yes, "the retry's buttons");
 });
 
+test("a render during a wait starts no second read of the same spell", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  await readFor(b, blocked(1), NOTHING);              // a miss: waiting 500 ms
+  b.fetchAsks([blocked(1)], cx);                       // the board renders meanwhile
+  b.fetchAsks([blocked(1)], cx);
+  assert.equal(reads().length, 1);
+  assert.equal(waits.length, 1);
+});
+
 test("no retry once the spell ended during the first read", async () => {
   const b = board();
   herdr.agents = [blocked(1)];
