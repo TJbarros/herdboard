@@ -178,10 +178,11 @@ git stash && scripts/update.sh && git stash pop && scripts/install.sh
 ```
 
 Se parar no meio, as suas edições continuam guardadas no stash; `git stash pop` as
-traz de volta. Se preferir fazer commit delas, a atualização não consegue mais
-avançar direto: rode `git pull --rebase && scripts/install.sh` no lugar dela. A
-atualização também para, sem instalar, sempre que o seu branch não pode avançar
-direto (ele tem commits seus, ou não acompanha nenhum branch remoto), e avisa.
+traz de volta. Se preferir fazer commit delas, a atualização não consegue avançar
+direto quando o Herdboard também tiver commits novos: rode
+`git pull --rebase && scripts/install.sh` no lugar dela. A atualização também para,
+sem instalar, sempre que o seu branch não pode avançar direto (há commits seus e
+commits novos do Herdboard, ou ele não acompanha nenhum branch remoto), e avisa.
 
 ## Desinstalar
 

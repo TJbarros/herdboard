@@ -167,10 +167,10 @@ git stash && scripts/update.sh && git stash pop && scripts/install.sh
 ```
 
 If it stops partway, your edits stay stashed; `git stash pop` brings them back. If
-you'd rather commit your edits, the update can't fast-forward anymore: run
-`git pull --rebase && scripts/install.sh` instead. The update also stops, without
-installing, whenever your branch can't fast-forward (it has commits of yours, or it
-isn't tracking a remote branch), and says so.
+you'd rather commit your edits, the update can't fast-forward once Herdboard has new
+commits too: run `git pull --rebase && scripts/install.sh` instead. The update also
+stops, without installing, whenever your branch can't fast-forward (your commits and
+new Herdboard commits both, or it isn't tracking a remote branch), and says so.
 
 ## Uninstall
 
