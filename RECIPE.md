@@ -59,11 +59,11 @@ column, top to bottom:
   (`❯ 1. Yes` … `4. No`, numbered 1, 2, 3… in order; other lines skipped). Buttons
   only for a Claude Code agent (`app` "claude-code"), when one option's text is
   exactly "Yes" and one's exactly "No" (once each, digits 1–9), and the agent's
-  `report.kind` (from `terminals()`) is absent or `permission`.
+  `report.kind` (from `terminals()`) is `permission`.
   Mapped by text, never by position. Tooltip: the option's number and text. Click:
   drop the cached options (buttons faded and inert until status or `seq` changes),
   check the agent is still `blocked` with the same `address#seq`, read the screen
-  again and require the same question and options, then `hc keys <t> <digit>` (no
+  again and require the same card text, question and options, then `hc keys <t> <digit>` (no
   `enter`). Any mismatch: type nothing, forget the read, so the card reads again.
 - Space pill: `space.select`. Filter, language and Idle fold persist in shared
   `herdboard.filter`, `herdboard.lang`, `herdboard.idleOpen`.

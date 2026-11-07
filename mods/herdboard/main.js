@@ -127,12 +127,11 @@ function taskTitle(a) {
 
 // ---- What a blocked agent is asking (parsed in ./ask.js) ------------------------------------
 
-// Yes / No only for Claude Code, and not when its own report names a block other than a
-// permission dialog (report.kind, e.g. "permission"; absent: the screen decides).
+// Yes / No only for Claude Code while its own report says the block is a permission dialog
+// (terminals()' report: {app, state, kind: "permission", msg}): a stronger signal than text.
 function mayAnswer(a) {
   if (a.app !== "claude-code") return false;
-  const kind = terminals().find(t => t.address === a.address)?.report?.kind;
-  return !kind || kind === "permission";
+  return terminals().find(t => t.address === a.address)?.report?.kind === "permission";
 }
 const sameOptions = (x, y) => JSON.stringify(x ?? []) === JSON.stringify(y ?? []);
 // The visible screen (no scrolling), parsed; null when it can't be read.
@@ -243,7 +242,9 @@ export default class Herdboard extends View {
       try {
         if (stillBlocked()) {
           const again = await readAsk(a.address);
-          if (again && again.question === ask.question && sameOptions(again.options, ask.options) && stillBlocked()) {
+          // The same dialog: the lines the card shows (the command), the question and the options.
+          const same = again && again.text === ask.text && again.question === ask.question && sameOptions(again.options, ask.options);
+          if (same && stillBlocked()) {
             const k = await hc(["keys", a.address, String(pick.n)]);
             typed = !k?.code;
           }
