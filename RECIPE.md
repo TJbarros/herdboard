@@ -64,6 +64,10 @@ column, top to bottom:
   or a box's `╭───╮`), which command lines can't (indented, or `│` in a box). Any
   doubt about the shape (no rule, a dashed `╌` line above it, other than 0 or 2
   dashed lines between it and the question): no `id`, and no Yes / No.
+  A read that misses (no "?", or, where Yes / No may show, no `id` or no exact
+  Yes / No pair) is read again after `RETRY_MS` = 500 ms, then 1500 ms: at most 2
+  more reads, `cx.sleep` in the same task, only while the spell lasts (checked
+  before and after each wait). Only the last read of the spell is kept.
 - Yes / No: the same read also collects the numbered options below the question
   (`❯ 1. Yes` … `4. No`, numbered 1, 2, 3… in order; other lines skipped). Buttons
   only for a Claude Code agent (`app` "claude-code"), when one option's text is
