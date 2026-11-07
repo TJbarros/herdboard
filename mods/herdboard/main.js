@@ -1,6 +1,7 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
-import { agents, spaces, panes, props, run, setAgentOrder, theme, notify, layout, shared, setShared, hc, openOverlay, closeOverlay } from "herdr";
+import { agents, terminals, spaces, panes, props, run, setAgentOrder, theme, notify, layout, shared, setShared, hc, openOverlay, closeOverlay } from "herdr";
+import { parseAsk, pickAnswers } from "./ask.js";
 
 // ---- Layout state ---------------------------------------------------------------------------
 
@@ -57,6 +58,7 @@ const TEXT = {
     peekTip: "Ver o terminal por cima, sem trocar de aba", pinTip: "Manter no topo da coluna",
     settleTip: "Tirar a aba do quadro até um agente nela precisar de você",
     noAsk: "Abra o terminal para ver o que o agente pede.",
+    yes: "Sim", no: "Não", answerTip: (n, text) => `Responde no terminal com a opção ${n}: "${text}"`,
     fold: "recolher", unfold: "mostrar", lastTask: "Última:", hereShort: "Este",
   },
   en: {
@@ -77,6 +79,7 @@ const TEXT = {
     peekTip: "See the terminal on top, without switching tabs", pinTip: "Keep at the top of the column",
     settleTip: "Take the tab off the board until an agent in it needs you",
     noAsk: "Open the terminal to see what the agent is asking.",
+    yes: "Yes", no: "No", answerTip: (n, text) => `Answers in the terminal with option ${n}: "${text}"`,
     fold: "fold", unfold: "show", lastTask: "Last:", hereShort: "Here",
   },
 };
@@ -122,29 +125,35 @@ function taskTitle(a) {
   return t;
 }
 
-// ---- What a blocked agent is asking ---------------------------------------------------------
+// ---- What a blocked agent is asking (parsed in ./ask.js) ------------------------------------
 
-// From the visible screen (hc read --lines 0: no scrolling), the question and up to two lines
-// before it. Box-drawing frames, the input prompt and empty lines are dropped. No "?" on
-// screen: no snippet (the card then says to open the terminal) rather than a wrong guess.
-function askSnippet(screen) {
-  const lines = String(screen ?? "").split(/\r?\n/)
-    .map(l => l.replace(/[│┃║╭╮╰╯┌┐└┘]/g, " ").replace(/\s+/g, " ").trim())
-    .filter(l => l && !/^[─━═\-_▔▁\s]+$/.test(l) && !/^[❯>]\s*$/.test(l));
-  let q = -1;
-  for (let i = lines.length - 1; i >= 0; i--) if (/\?\s*$/.test(lines[i]) || /\?\s+\(/.test(lines[i])) { q = i; break; }
-  if (q < 0) return "";
-  // Keep the end: the question itself matters more than the lines leading to it.
-  const text = lines.slice(Math.max(0, q - 2), q + 1).join("\n");
-  return text.length > 180 ? "…" + text.slice(-179) : text;
+// Yes / No only for Claude Code while its own report says the block is a permission dialog
+// (terminals()' report: {app, state, kind: "permission", msg}): a stronger signal than text.
+function mayAnswer(a) {
+  if (a.app !== "claude-code") return false;
+  return terminals().find(t => t.address === a.address)?.report?.kind === "permission";
 }
+// The blocked spell a read or an answer belongs to: Herdr bumps seq when the status changes.
+const spell = (a) => `${a.address}#${a.seq}`;
+// The agent at `address` now, if it is still blocked on `key`'s spell; else null.
+const stillOn = (address, key) => {
+  const now = agents().find(x => x.address === address);
+  return now?.status === "blocked" && spell(now) === key ? now : null;
+};
+// The visible screen (no scrolling), parsed; null when it can't be read.
+async function readAsk(address) {
+  const r = await hc(["read", address, "--lines", "0"]);
+  return r?.code ? null : parseAsk(r?.stdout);
+}
+// The Yes / No pair a card shows: live, or faded after one was sent.
+const shownChoices = (ask) => ask?.choices ?? ask?.sent ?? null;
 
 // ---- The mod --------------------------------------------------------------------------------
 
 export default class Herdboard extends View {
   init(_p, cx) {
     this.observed = {};
-    this.asks = {};      // address -> { key, text } for blocked agents
+    this.asks = {};      // address -> { key, text, question, options, id, choices, sent } for blocked agents
     this.pending = new Set();
     this.hovered = null; // address of the card under the pointer (shows its actions)
     this.w = 0;          // this copy's size, from on_size_change; 0 until the first layout (treated as wide)
@@ -180,38 +189,81 @@ export default class Herdboard extends View {
   }
 
   // Read a blocked agent's screen once per blocked spell (keyed by address + seq), off the UI thread.
+  // `choices` holds the Yes / No options when the screen shows a dialog with both.
+  // Reads can overlap and finish in any order: a read is kept only if its spell is still the
+  // agent's current one, and never over a read of that spell already kept (it may be answered).
+  // `blocked` is only the cards shown (filter, put-away tabs): a kept read is dropped when its
+  // spell ends, not when its card is hidden, so an answered request stays answered.
   fetchAsks(blocked, cx) {
-    const live = new Set(blocked.map(a => a.address));
-    for (const k of Object.keys(this.asks)) if (!live.has(k)) delete this.asks[k];
+    for (const [k, ask] of Object.entries(this.asks)) if (!stillOn(k, ask.key)) delete this.asks[k];
     for (const a of blocked) {
-      const key = `${a.address}#${a.seq}`;
+      const key = spell(a);
       if (this.asks[a.address]?.key === key || this.pending.has(key)) continue;
       this.pending.add(key);
       cx.spawn(async (cx) => {
-        let text = "";
-        try {
-          const r = await hc(["read", a.address, "--lines", "0"]);
-          if (!r?.code) text = askSnippet(r?.stdout);
-        } catch (_e) { text = ""; }
+        let ask = null;
+        try { ask = await readAsk(a.address); } catch (_e) { ask = null; }
+        ask ??= { text: "", question: "", options: [], id: "" };
         this.pending.delete(key);
-        this.asks[a.address] = { key, text };
+        const now = stillOn(a.address, key);
+        if (!now || this.asks[a.address]?.key === key) return;
+        // No id (the dialog's shape is in doubt): nothing to check a click against, so no buttons.
+        const choices = ask.id && mayAnswer(now) ? pickAnswers(ask.options) : null;
+        this.asks[a.address] = { key, ...ask, choices, sent: null };
         cx.notify();
       });
     }
   }
 
-  // A small button inside a card: its click never reaches the card (which focuses the agent).
-  actionButton(id, label, tip, onClick, color = null) {
+  // A small button inside a card: its click never reaches the card (which focuses the agent),
+  // not even when it is disabled (drawn faded, the click does nothing).
+  actionButton(id, label, tip, onClick, color = null, disabled = false) {
     const strong = !!color;
-    return div().id(id).h(24).px(strong ? 12 : 8).flex().items_center().rounded(5).cursor_pointer().flex_none()
+    return div().id(id).h(24).px(strong ? 12 : 8).flex().items_center().rounded(5).flex_none()
       .text_size(11).when(strong, el => el.font_semibold())
       .bg(strong ? color : C.pop).text_color(strong ? C.bg : C.muted)
-      .when(!strong, el => el.border(1).border_color(C.strong).hover(st => st.bg(C.hover).text_color(C.ink)))
-      .when(strong, el => el.hover(st => st.opacity(0.88)))
+      .when(!strong, el => el.border(1).border_color(C.strong))
+      .when(disabled, el => el.opacity(0.45))
+      .when(!disabled, el => el.cursor_pointer()
+        .when(!strong, b => b.hover(st => st.bg(C.hover).text_color(C.ink)))
+        .when(strong, b => b.hover(st => st.opacity(0.88))))
       .tooltip(tip)
       .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
-      .on_click((_e, cx) => { cx.stop_propagation(); onClick(); })
+      .on_click((_e, cx) => { cx.stop_propagation(); if (!disabled) onClick(cx); })
       .child(label);
+  }
+
+  // Answer a permission dialog with the option labelled "Yes" or "No" (which: "yes" | "no").
+  // `a` and `ask` are what the clicked card was drawn from: the click answers that request and
+  // nothing else, so it does nothing once the board holds a newer read for the agent.
+  // hc keys presses keys blindly, so first confirm the agent is still blocked on the same
+  // spell (address#seq) and that a fresh screen read shows the same whole dialog (its id, not
+  // the card's shortened text); else type nothing and read the screen again. The cached options
+  // are dropped at once, so the buttons stay disabled until the status or seq changes (a
+  // second click types nothing).
+  answer(a, ask, which, cx) {
+    if (!ask || this.asks[a.address] !== ask || ask.key !== spell(a)) return;
+    const pick = ask.choices?.[which];
+    if (!pick || !ask.id) return;
+    ask.sent = ask.choices;
+    ask.choices = null;
+    cx.notify();
+    const stillBlocked = () => { const now = stillOn(a.address, ask.key); return !!now && mayAnswer(now); };
+    cx.spawn(async (cx) => {
+      let typed = false;
+      try {
+        if (stillBlocked()) {
+          const again = await readAsk(a.address);
+          if (again?.id === ask.id && stillBlocked()) {
+            const k = await hc(["keys", a.address, String(pick.n)]);
+            typed = !k?.code;
+          }
+        }
+      } catch (_e) { typed = false; }
+      // Nothing typed: forget this read, so the card reads the screen again.
+      if (!typed && this.asks[a.address] === ask) delete this.asks[a.address];
+      cx.notify();
+    });
   }
 
   // Card: two lines (task, then where · age). Blocked cards also show what the agent asks.
@@ -226,6 +278,7 @@ export default class Herdboard extends View {
     const blocked = a.status === "blocked";
     const hovered = this.hovered === a.address;
     const ask = blocked ? this.asks[a.address] : null;
+    const choices = shownChoices(ask);
     return h_flex().id(`agent-${a.address}`).w_full().flex_none().rounded(7).overflow_hidden().relative()
       .when(!blocked, el => el.h(64))
       .bg(C.card).border(1).border_color(a.focused ? C.accent : hovered ? C.strong : C.line).cursor_pointer()
@@ -246,6 +299,10 @@ export default class Herdboard extends View {
           .child(div().w_full().px(10).py(7).rounded(6).bg(wash(state.color, "14")).border(1).border_color(wash(state.color, "40"))
             .text_size(11).text_color(ask?.text ? C.ink : C.muted).when(!!ask?.text, d => d.font_family("Geist Mono"))
             .child(ask?.text || L.noAsk))
+          // Yes / No for a permission dialog; disabled once one was sent (see answer()).
+          .when(!!choices, el => el.child(h_flex().gap(6).items_center()
+            .child(this.actionButton(`yes-${a.address}`, L.yes, L.answerTip(choices.yes.n, choices.yes.text), (cx) => this.answer(a, ask, "yes", cx), null, !ask.choices))
+            .child(this.actionButton(`no-${a.address}`, L.no, L.answerTip(choices.no.n, choices.no.text), (cx) => this.answer(a, ask, "no", cx), null, !ask.choices))))
           .child(h_flex().gap(6).items_center()
             .child(this.actionButton(`answer-${a.address}`, L.answer, L.answer, () => run("agent.focus", { terminal: a.address }), state.color))
             .child(this.actionButton(`peek-b-${a.address}`, L.peek, L.peekTip, () => run("terminal.peek", { terminal: a.address })))
@@ -470,7 +527,9 @@ export default class Herdboard extends View {
     const inner = Math.max(120, (this.colW || 300) - 3 - 24 - 20 - 14);
     const perLine = Math.max(16, Math.floor(inner / 6.6));
     const lines = (text || L.noAsk).split("\n").reduce((n, l) => n + Math.max(1, Math.ceil(l.length / perLine)), 0);
-    return 10 + 20 + 8 + (16 + lines * 16) + 8 + 24 + 10 + 2;
+    // The Yes / No row, when the card shows one: 24px buttons and the 8px gap above them.
+    const answers = shownChoices(this.asks[a.address]) ? 24 + 8 : 0;
+    return 10 + 20 + 8 + (16 + lines * 16) + answers + 8 + 24 + 10 + 2;
   }
 
   // Size the board block to its tallest column (140–360px; past that, columns scroll).

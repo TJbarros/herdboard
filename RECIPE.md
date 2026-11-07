@@ -24,8 +24,9 @@ column, top to bottom:
    status dot, label 13px semibold, count chip (status color at 14%). Cards 64px,
    `background`, 7px corners, 3px status stripe: program icon + task title (13px
    semibold), then space · tab · branch and the age (11px `muted`). Blocked cards
-   are taller: the question in a mono box tinted `blocked`, then *Open and answer*
-   (solid `blocked`) and *Peek*. Idle agents are 44px rows (icon, task over where,
+   are taller: the question in a mono box tinted `blocked`, then, for a permission
+   dialog, *Yes* and *No* (24px outlined buttons, their own row), then *Open and
+   answer* (solid `blocked`) and *Peek*. Idle agents are 44px rows (icon, task over where,
    age). Empty columns: a 40px outlined "None".
 3. **Workspace**, the rest, padding 12/24: a 36px `chrome` rail (tabs as 26px chips
    with status dot, × on the active/hovered one, a + after them; on the right the
@@ -52,7 +53,34 @@ column, top to bottom:
 - Blocked question: on each new blocked spell (address + `seq`), `hc read <t>
   --lines 0`; the last line ending in "?" and up to two before it, frames dropped,
   tail kept (≤180 chars). No "?": "Open the terminal to see what the agent is
-  asking."
+  asking." Parsed by `mods/herdboard/ask.js` (pure; `node --test` runs
+  `tests/ask.test.js`). The same parse gives the request's `id`: the dialog's raw
+  lines (nothing collapsed, trimmed or dropped: a no-break space ending a line counts)
+  from the solid rule that opens it through the last option, the `❯` cursor (after
+  the box's `│` in a boxed dialog) blanked on the option lines after the question only
+  (the request above it stays byte for byte: a heredoc's `> 1. x` line is not a
+  cursor); the screen above the dialog is left out (it
+  blinks Claude Code's `●` tool line). The opening rule starts at column 0 (`───`
+  or a box's `╭───╮`), which command lines can't (indented, or `│` in a box). Any
+  doubt about the shape (no rule, a dashed `╌` line above it, other than 0 or 2
+  dashed lines between it and the question): no `id`, and no Yes / No.
+- Yes / No: the same read also collects the numbered options below the question
+  (`❯ 1. Yes` … `4. No`, numbered 1, 2, 3… in order; other lines skipped). Buttons
+  only for a Claude Code agent (`app` "claude-code"), when one option's text is
+  exactly "Yes" and one's exactly "No" (once each, digits 1–9), and the agent's
+  `report.kind` (from `terminals()`) is `permission`.
+  Mapped by text, never by position. Tooltip: the option's number and text. Click:
+  answers only the read its card was drawn from (that object still cached, same
+  `address#seq`); drop the cached options (buttons faded and inert until status or
+  `seq` changes), check the agent is still `blocked` with the same `address#seq`,
+  read the screen again and require the same request `id`, then `hc keys <t> <digit>`
+  (no `enter`). Any mismatch: type nothing, forget the read, so the card reads again.
+  A screen read is kept only while its `address#seq` is still the agent's current
+  one, and never over a kept read of that spell (reads overlap and finish in any
+  order). A kept read is dropped when its spell ends, not when its card is hidden
+  (This space filter, put-away tab), so an answered request stays answered.
+  `tests/answer.test.js` drives this path in the real `main.js`, with the Herdr
+  runtime stood in by `tests/runtime/`.
 - Space pill: `space.select`. Filter, language and Idle fold persist in shared
   `herdboard.filter`, `herdboard.lang`, `herdboard.idleOpen`.
 - ⋯ menu (popup copy of the mod, role `menu`): New space and New tab in the active
@@ -81,10 +109,11 @@ column, top to bottom:
   `herdboard-picker` (Herdr's `picker`, translated), `herdboard-new-menu` (Herdr's
   `new-menu`, translated, with the folder choice). Uses the shipped
   `workspace-chrome`, `spaces` and `agents` mods in the sidebar and their icons.
-- **herdr API**: `agents`, `spaces`, `panes`, `layout`, `theme`, `shared` /
-  `setShared`, `run`, `hc`, `openOverlay` / `closeOverlay`, `notify`,
-  `setAgentOrder`, `knownAgents`.
-- **Programs run**: `hc read <t> --lines 0` (board, blocked agents) and
+- **herdr API**: `agents`, `terminals` (an agent's `report`), `spaces`, `panes`,
+  `layout`, `theme`, `shared` / `setShared`, `run`, `hc`, `openOverlay` /
+  `closeOverlay`, `notify`, `setAgentOrder`, `knownAgents`.
+- **Programs run**: `hc read <t> --lines 0` (board, blocked agents; again on a Yes /
+  No click), `hc keys <t> <digit>` (Yes / No) and
   `hc machine ls` (picker, as Herdr's own); `knownAgents()` (new-tab menu). **Art**:
   `logo.svg`, `maximize.svg`, `minimize.svg`, `preview.svg`.
 - **Keys** (`keys.json`, section `layout:herdboard`): Ctrl+Shift+T new-tab menu,
@@ -98,7 +127,16 @@ column, top to bottom:
 - Popups and pane headers are copies of the same mod: only the board copy (no
   `role`) fetches questions, ticks the timer or migrates preferences.
 - Every header control stops `mouse_down`: the header is a window-drag block.
-- Card action buttons stop propagation, or the card's `agent.focus` fires too.
+- Card action buttons stop propagation, or the card's `agent.focus` fires too
+  (Yes / No as well, even when faded).
+- `hc keys` presses keys blindly: never send a Yes / No digit without the stale
+  check (same `address#seq` and the same request `id` on a fresh read, never the
+  card's shortened text). `seq` alone is not enough: the screen lags the status,
+  and `turn` doesn't change on a decline. Known limit: if both reads still show
+  the previous dialog, or it changes between the second read and the key, no
+  screen comparison can tell.
+- `blockedHeight` counts the Yes / No row (24px + 8px gap) when it shows; keep it
+  in step with the card.
 - From a script, `space.new` without `machine` targets this computer, not the
   space's machine: always pass it.
 - Herdr can't change a space's registered folder; use the panes' live `cwd`.
@@ -108,6 +146,9 @@ column, top to bottom:
 
 - Every agent shows in its status column and the counts match; idle rows fold.
 - A blocked agent's card shows its question and *Open and answer* focuses it.
+- A Claude Code permission dialog gets *Yes* / *No*; each presses its option's digit
+  (no `enter`) and the card leaves Needs you when the status changes. A screen
+  without an exact Yes / No pair looks as before. `node --test` passes.
 - Clicking a space pill, a tab chip, + and × do what they say; new tabs open in
   the active tab's live folder.
 - PT | EN switches every text of the board, picker and new-tab menu.
