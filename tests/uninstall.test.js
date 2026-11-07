@@ -76,11 +76,11 @@ test("after an install, uninstall removes the layout, the three mods and the key
   assert.equal(r.stderr, "");
   assert.equal(r.stdout, lines(
     `Uninstalling Herdboard from ${home}`,
+    "keys.json: removed 'layout:herdboard' (backup: keys.json.before-herdboard-uninstall)",
     "  removed    layouts/herdboard.json",
     "  removed    mods/herdboard/",
     "  removed    mods/herdboard-picker/",
     "  removed    mods/herdboard-new-menu/",
-    "keys.json: removed 'layout:herdboard' (backup: keys.json.before-herdboard-uninstall)",
     REMINDER,
   ));
   const after = snapshot(home);
@@ -90,6 +90,22 @@ test("after an install, uninstall removes the layout, the three mods and the key
   assert.ok(keys && backup);
   assert.deepEqual(fs.readFileSync(path.join(home, "keys.json.before-herdboard-uninstall")), keysBefore);
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(home, "keys.json"), "utf8")), THEIR_KEYS);
+});
+
+test("a real run prints the keys change before removing files, so a removal that fails still shows it", () => {
+  const home = homeWithTheirs();
+  install(home);
+  const mods = path.join(home, "mods");
+  fs.chmodSync(mods, 0o555);
+  let r;
+  try { r = run(home); } finally { fs.chmodSync(mods, 0o755); }
+  assert.notEqual(r.status, 0);
+  assert.ok(r.stdout.startsWith(lines(
+    `Uninstalling Herdboard from ${home}`,
+    "keys.json: removed 'layout:herdboard' (backup: keys.json.before-herdboard-uninstall)",
+    "  removed    layouts/herdboard.json",
+  )), r.stdout);
+  assert.ok(fs.existsSync(path.join(home, "keys.json.before-herdboard-uninstall")));
 });
 
 test("when the keys section was all keys.json had, keys.json is deleted and the backup kept", () => {
@@ -125,11 +141,11 @@ test("a second run reports every part as missing, changes nothing and exits 0", 
   assert.equal(r.status, 0, r.stderr);
   assert.equal(r.stdout, lines(
     `Uninstalling Herdboard from ${home}`,
+    "keys.json: no 'layout:herdboard' section, left as it is",
     "  missing    layouts/herdboard.json (skipped)",
     "  missing    mods/herdboard/ (skipped)",
     "  missing    mods/herdboard-picker/ (skipped)",
     "  missing    mods/herdboard-new-menu/ (skipped)",
-    "keys.json: no 'layout:herdboard' section, left as it is",
     REMINDER,
   ));
   assert.deepEqual(snapshot(home), before);

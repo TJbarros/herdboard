@@ -18,7 +18,9 @@ dry_run_option "$@"
 DEST=$(herdr_home) || exit 1
 
 # Keys first, before anything is removed: a keys.json that isn't a JSON object stops the
-# script here with the home untouched. Its message is printed after the files.
+# script here with the home untouched, before anything is printed on stdout. A real run
+# prints its message before removing any file, so a failed removal can't hide that keys.json
+# changed and where its backup is; a dry run lists it after the files.
 KEYS="${DEST:?}/keys.json"
 if command -v python3 >/dev/null 2>&1; then
   KEYS_DONE=$(python3 - "$KEYS" "$DRY_RUN" "layout:${HERDBOARD_LAYOUT:?}" <<'PY'
@@ -77,10 +79,11 @@ drop() {
 }
 
 report_start removed "Uninstalling Herdboard from $DEST"
+if [ "$DRY_RUN" = 0 ]; then echo "$KEYS_DONE"; fi
 drop "${DEST:?}/layouts/${HERDBOARD_LAYOUT:?}.json" "layouts/$HERDBOARD_LAYOUT.json"
 for mod in ${HERDBOARD_MODS:?}; do
   drop "${DEST:?}/mods/${mod:?}" "mods/$mod/"
 done
-echo "$KEYS_DONE"
+if [ "$DRY_RUN" = 1 ]; then echo "$KEYS_DONE"; fi
 
 report_end uninstall "Done. If Herdboard was your active layout, switch to another one in Herdr: Settings > Look > Layout."
