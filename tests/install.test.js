@@ -48,3 +48,28 @@ test("an unknown option prints a usage line, exits non-zero and leaves the home 
   assert.match(r.stderr, /^usage: .*install\.sh \[--dry-run\]\n$/);
   assert.deepEqual(snapshot(home), {});
 });
+
+// What a real install copies, relative to the Herdr home: the layout and every file of the
+// three mods (the script's `*` glob skips dotfiles).
+const MODS = ["herdboard", "herdboard-picker", "herdboard-new-menu"];
+const INSTALLED = [
+  "layouts/herdboard.json",
+  ...MODS.flatMap(m => fs.readdirSync(path.join(REPO, "mods", m))
+    .filter(f => !f.startsWith(".")).map(f => `mods/${m}/${f}`)),
+].sort();
+
+// The planned copies a dry run prints, as { "mods/herdboard/main.js": "new", ... }.
+const plan = stdout => Object.fromEntries(
+  [...stdout.matchAll(/^ +(new|overwrite|unchanged) +(\S+)$/gm)].map(([, state, file]) => [file, state]));
+
+const every = state => Object.fromEntries(INSTALLED.map(f => [f, state]));
+
+test("a dry run on an empty home plans every file as new and keys.json as created, touching nothing", () => {
+  const home = tmpdir();
+  const r = run(home, ["--dry-run"]);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, new RegExp(`^Herdr home: ${home}$`, "m"));
+  assert.deepEqual(plan(r.stdout), every("new"));
+  assert.match(r.stdout, /^keys\.json: would be created with layout:herdboard$/m);
+  assert.deepEqual(snapshot(home), {});
+});
