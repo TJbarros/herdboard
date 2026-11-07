@@ -55,9 +55,12 @@ function makeBin(tools = ["herdr-app", "node"]) {
 }
 
 // Runs the repo's check.sh from an unrelated working directory with an explicit environment.
+// That directory holds a failing test of its own, which check.sh must not pick up.
 function check(root, bin) {
   const cwd = mkdtempSync(join(tmpdir(), "herdboard-check-cwd-"));
   temps.push(cwd);
+  writeFileSync(join(cwd, "elsewhere.test.js"),
+    `import { test } from "node:test";\ntest("elsewhere", () => { throw new Error("not ours"); });\n`);
   const r = spawnSync("/bin/sh", [join(root, "scripts", "check.sh")],
     { cwd, env: { PATH: bin, HOME: cwd }, encoding: "utf8" });
   return { code: r.status, out: r.stdout + r.stderr };
