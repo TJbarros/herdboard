@@ -100,7 +100,7 @@ const LIVE = (mark, command = ["touch probe.txt"]) => [
 test("the request id is the whole dialog: the same on two reads although the screen above it blinks", () => {
   assert.notEqual(LIVE("●"), LIVE(" "));
   assert.equal(parseAsk(LIVE("●")).id, parseAsk(LIVE(" ")).id);
-  assert.match(parseAsk(LIVE("●")).id, /^Bash command\n[\s\S]*touch probe\.txt[\s\S]*\n4\. No$/);
+  assert.match(parseAsk(LIVE("●")).id, /^ Bash command\n[\s\S]*touch probe\.txt[\s\S]*\n {3}4\. No$/);
 });
 
 test("two requests that end the same have different ids although the card text matches", () => {
@@ -117,4 +117,17 @@ test("the request id ignores where the option cursor sits", () => {
 
 test("no question on screen: no request id", () => {
   assert.equal(parseAsk("Running tests…\n").id, "");
+});
+
+// A rule-like line inside the command must not cut the id short, and nothing in the command
+// is collapsed: the id is the raw dialog lines.
+test("a command line drawn like a rule does not hide the lines above it from the id", () => {
+  const a = parseAsk(LIVE("●", ["rm -rf ~", "───", "echo ok"]));
+  const b = parseAsk(LIVE("●", ["touch /tmp/a", "───", "echo ok"]));
+  assert.notEqual(a.id, b.id);
+  assert.match(a.id, /rm -rf ~/);
+});
+
+test("commands that differ only in spacing have different ids", () => {
+  assert.notEqual(parseAsk(LIVE("●", ['rm "a  b"'])).id, parseAsk(LIVE("●", ['rm "a b"'])).id);
 });

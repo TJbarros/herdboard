@@ -14,7 +14,8 @@ const OPTION = /^(?:[❯>]\s*)?(\d+)\.\s+(.+)$/;
 // - question and options: the last question and the numbered options after it.
 // - id: the whole request, untruncated, to tell two requests apart (see requestId).
 export function parseAsk(screen) {
-  const all = String(screen ?? "").split(/\r?\n/).map(clean);
+  const raw = String(screen ?? "").split(/\r?\n/);
+  const all = raw.map(clean);
   let q = -1;
   for (let i = all.length - 1; i >= 0; i--) if (isQuestion(all[i])) { q = i; break; }
   if (q < 0) return { text: "", question: "", options: [], id: "" };
@@ -26,7 +27,7 @@ export function parseAsk(screen) {
     text: text.length > 180 ? "…" + text.slice(-179) : text,
     question: all[q],
     options,
-    id: requestId(all, q, end),
+    id: requestId(raw, all, q, end),
   };
 }
 
@@ -43,18 +44,28 @@ function optionsAfter(lines, q) {
   return { options, end };
 }
 
-// The request as a whole, for the check before a key is pressed: every line of the dialog, from
-// the solid rule that opens it (Claude Code draws one; a box's top edge counts too) through the
-// last option, with the option cursor ("❯") removed, since moving it changes nothing a digit
-// answers. The screen above the dialog is left out: Claude Code blinks its tool line there
-// ("●" on one read, a space on the next). No rule above the question: from the top of the screen
-// (two reads may then differ, and the answer is refused: safe, not wrong).
-function requestId(all, q, end) {
-  let start = 0;
-  for (let i = q - 1; i >= 0; i--) if (/^[─━═]{3,}$/.test(all[i])) { start = i + 1; break; }
-  return all.slice(start, end + 1)
-    .filter(l => l && !/^[─━═╌┄┈\-_▔▁\s]+$/.test(l))
-    .map(l => l.replace(/^[❯>]\s*(?=\d+\.\s)/, ""))
+// The request as a whole, for the check before a key is pressed: the dialog's lines exactly as
+// the screen has them (nothing collapsed or dropped: two commands that differ only in spacing
+// are two requests), through the last option, with the option cursor ("❯") blanked, since
+// moving it changes nothing a digit answers.
+// Where the dialog starts: the solid rule that opens it (Claude Code draws one; a box's top edge
+// counts too). Claude Code frames the command between two dashed lines ("╌"), so the rule is
+// looked for above that frame: a command line drawn like a rule can't cut the command short.
+// The screen above the dialog is left out: Claude Code blinks its tool line there ("●" on one
+// read, a space on the next). No rule found: from the top of the screen (two reads may then
+// differ, and the answer is refused: safe, not wrong).
+function requestId(raw, all, q, end) {
+  const dashed = (l) => /^╌{3,}$/.test(l);
+  const solid = (l) => /^[─━═]{3,}$/.test(l);
+  let from = q;
+  const lower = all.findLastIndex((l, i) => i < q && dashed(l));
+  if (lower >= 0) {
+    const upper = all.findLastIndex((l, i) => i < lower && dashed(l));
+    if (upper >= 0) from = upper;
+  }
+  const rule = all.findLastIndex((l, i) => i < from && solid(l));
+  return raw.slice(rule + 1, end + 1)
+    .map(l => l.replace(/^(\s*)[❯>](?=\s+\d+\.\s)/, "$1 ").trimEnd())
     .join("\n");
 }
 

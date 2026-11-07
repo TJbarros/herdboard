@@ -54,9 +54,11 @@ column, top to bottom:
   --lines 0`; the last line ending in "?" and up to two before it, frames dropped,
   tail kept (≤180 chars). No "?": "Open the terminal to see what the agent is
   asking." Parsed by `mods/herdboard/ask.js` (pure; `node --test` runs
-  `tests/ask.test.js`). The same parse gives the request's `id`: every dialog line
-  from the solid rule above the question through the last option, untruncated, the
-  `❯` cursor removed (the screen above blinks Claude Code's `●` tool line).
+  `tests/ask.test.js`). The same parse gives the request's `id`: the dialog's raw
+  lines (nothing collapsed or dropped) from the solid rule that opens it through the
+  last option, the `❯` cursor blanked. The rule is looked for above the dashed `╌`
+  frame around the command, so a command line drawn like a rule can't cut it short;
+  the screen above the dialog is left out (it blinks Claude Code's `●` tool line).
 - Yes / No: the same read also collects the numbered options below the question
   (`❯ 1. Yes` … `4. No`, numbered 1, 2, 3… in order; other lines skipped). Buttons
   only for a Claude Code agent (`app` "claude-code"), when one option's text is
