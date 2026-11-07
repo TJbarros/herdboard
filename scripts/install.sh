@@ -8,6 +8,13 @@
 # "layout:herdboard" section to keys.json if it isn't there (backup first).
 set -eu
 
+DRY_RUN=0
+case "$#:${1:-}" in
+  0:) ;;
+  1:--dry-run) DRY_RUN=1 ;;
+  *) echo "usage: $0 [--dry-run]" >&2; exit 2 ;;
+esac
+
 SRC=$(cd "$(dirname "$0")/.." && pwd)
 
 if [ -n "${HERDR_APP_HOME:-}" ]; then
