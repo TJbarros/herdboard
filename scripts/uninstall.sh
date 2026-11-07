@@ -30,7 +30,8 @@ if command -v python3 >/dev/null 2>&1; then
   KEYS_DONE=$(python3 - "$KEYS" "$DRY_RUN" "layout:${HERDBOARD_LAYOUT:?}" <<'PY'
 import json, shutil, sys, os
 keys, dry_run, section = sys.argv[1], sys.argv[2] == "1", sys.argv[3]
-backup = os.path.basename(keys) + ".before-herdboard-uninstall"
+backup = keys + ".before-herdboard-uninstall"
+shown = f"(backup: {os.path.basename(backup)})"
 if not os.path.exists(keys):
     print("keys.json: not there, skipped")
     sys.exit(0)
@@ -42,23 +43,23 @@ if not isinstance(mine, dict):
     print(f"keys.json is not a JSON object ({mine}): fix or remove {keys}, then run this again; nothing was removed", file=sys.stderr)
     sys.exit(1)
 if section not in mine:
-    print("keys.json: no '" + section + "' section, left as it is")
+    print(f"keys.json: no '{section}' section, left as it is")
     sys.exit(0)
 del mine[section]
 if dry_run:
     if mine:
-        print("keys.json: would remove '" + section + "' (backup: " + backup + ")")
+        print(f"keys.json: would remove '{section}' {shown}")
     else:
-        print("keys.json: would be deleted, '" + section + "' is all it has (backup: " + backup + ")")
+        print(f"keys.json: would be deleted, '{section}' is all it has {shown}")
     sys.exit(0)
-shutil.copy(keys, keys + ".before-herdboard-uninstall")
+shutil.copy(keys, backup)
 if mine:
     json.dump(mine, open(keys, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
     open(keys, "a", encoding="utf-8").write("\n")
-    print("keys.json: removed '" + section + "' (backup: " + backup + ")")
+    print(f"keys.json: removed '{section}' {shown}")
 else:
     os.remove(keys)
-    print("keys.json: deleted, '" + section + "' was all it had (backup: " + backup + ")")
+    print(f"keys.json: deleted, '{section}' was all it had {shown}")
 PY
 )
 elif [ -e "$KEYS" ]; then

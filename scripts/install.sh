@@ -65,22 +65,23 @@ src, dest, dry_run, layout = sys.argv[1], sys.argv[2], sys.argv[3] == "1", sys.a
 ours = json.load(open(src, encoding="utf-8"))
 mine = json.load(open(dest, encoding="utf-8")) if os.path.exists(dest) else {}
 added = [k for k in ours if k not in mine]
+backup = dest + ".before-herdboard"
 if not added:
     print("keys.json: 'layout:" + layout + "' already there, left as it is")
     sys.exit(0)
 if dry_run:
     if os.path.exists(dest):
-        print("keys.json: would add " + ", ".join(added) + " (backup: keys.json.before-herdboard)")
+        print("keys.json: would add " + ", ".join(added) + " (backup: " + os.path.basename(backup) + ")")
     else:
         print("keys.json: would be created with " + ", ".join(added))
     sys.exit(0)
 if os.path.exists(dest):
-    shutil.copy(dest, dest + ".before-herdboard")
+    shutil.copy(dest, backup)
 for k in added:
     mine[k] = ours[k]
 json.dump(mine, open(dest, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 open(dest, "a", encoding="utf-8").write("\n")
-print("keys.json: added " + ", ".join(added) + " (backup: keys.json.before-herdboard)")
+print("keys.json: added " + ", ".join(added) + " (backup: " + os.path.basename(backup) + ")")
 PY
 else
   echo "python3 not found: add the section in keys.json from $ROOT/keys.json by hand"
