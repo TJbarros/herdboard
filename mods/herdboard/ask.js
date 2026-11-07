@@ -3,7 +3,9 @@
 
 const FRAME = /[│┃║╭╮╰╯┌┐└┘]/g;
 const clean = (l) => l.replace(FRAME, " ").replace(/\s+/g, " ").trim();
-const isRule = (l) => /^[─━═\-_▔▁\s]+$/.test(l);
+// Horizontal glyphs only, listed one by one: a range of the Box Drawing block would also take
+// vertical glyphs and corners (╎ ┆ ├ ┼ …) that FRAME keeps.
+const isRule = (l) => /^[─━┄┅┈┉╌╍═╴╶╸╺╼╾\-_▔▁\s]+$/.test(l);
 const isQuestion = (l) => /\?\s*$/.test(l) || /\?\s+\(/.test(l);
 const OPTION = /^(?:[❯>]\s*)?(\d+)\.\s+(.+)$/;
 

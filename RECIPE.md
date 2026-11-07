@@ -52,18 +52,24 @@ column, top to bottom:
   its tab, else the time the board first saw the status; refreshed every 30s.
 - Blocked question: on each new blocked spell (address + `seq`), `hc read <t>
   --lines 0`; the last line ending in "?" and up to two before it, frames dropped,
-  tail kept (≤180 chars). No "?": "Open the terminal to see what the agent is
-  asking." Parsed by `mods/herdboard/ask.js` (pure; `node --test` runs
-  `tests/ask.test.js`). The same parse gives the request's `id`: the dialog's raw
-  lines (nothing collapsed, trimmed or dropped: a no-break space ending a line counts)
-  from the solid rule that opens it through the last option, the `❯` cursor (after
-  the box's `│` in a boxed dialog) blanked on the option lines after the question only
-  (the request above it stays byte for byte: a heredoc's `> 1. x` line is not a
-  cursor); the screen above the dialog is left out (it
-  blinks Claude Code's `●` tool line). The opening rule starts at column 0 (`───`
-  or a box's `╭───╮`), which command lines can't (indented, or `│` in a box). Any
-  doubt about the shape (no rule, a dashed `╌` line above it, other than 0 or 2
-  dashed lines between it and the question): no `id`, and no Yes / No.
+  separator lines dropped (lines of horizontal glyphs only:
+  `─ ━ ┄ ┅ ┈ ┉ ╌ ╍ ═ ╴ ╶ ╸ ╺ ╼ ╾ - _ ▔ ▁`, so Claude Code's dashed `╌` rows go and
+  the command shows), tail kept (≤180 chars). No "?": "Open the terminal to see
+  what the agent is asking." Parsed by `mods/herdboard/ask.js` (pure; `node --test`
+  runs `tests/ask.test.js`). The same parse gives the request's `id`: the dialog's
+  raw lines (nothing collapsed, trimmed or dropped: a no-break space ending a line
+  counts) from the solid rule that opens it through the last option, the `❯` cursor
+  (after the box's `│` in a boxed dialog) blanked on the option lines after the
+  question only (the request above it stays byte for byte: a heredoc's `> 1. x` line
+  is not a cursor); the screen above the dialog is left out (it blinks Claude Code's
+  `●` tool line). The opening rule starts at column 0 (`───` or a box's `╭───╮`),
+  which command lines can't (indented, or `│` in a box). Any doubt about the shape
+  (no rule, a dashed `╌` line above it, other than 0 or 2 dashed lines between it and
+  the question): no `id`, and no Yes / No.
+  A read that misses (no "?", or, where Yes / No may show, no `id` or no exact
+  Yes / No pair) is read again after `RETRY_MS` = 500 ms, then 1500 ms: at most 2
+  more reads, `cx.sleep` in the same task, only while the spell lasts (checked
+  before and after each wait). Only the last read of the spell is kept.
 - Yes / No: the same read also collects the numbered options below the question
   (`❯ 1. Yes` … `4. No`, numbered 1, 2, 3… in order; other lines skipped). Buttons
   only for a Claude Code agent (`app` "claude-code"), when one option's text is

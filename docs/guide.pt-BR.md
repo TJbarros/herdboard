@@ -32,8 +32,9 @@ no cabeçalho.
 tempo ele está esperando.*
 
 1. Leia a pergunta no próprio card: ele mostra as últimas linhas da tela do agente,
-   por exemplo *"npm run db:migrate --env=staging · Aplicar 3 migrações pendentes ·
-   Deseja continuar?"*.
+   sem molduras nem linhas separadoras (assim aparece o comando entre as linhas
+   tracejadas do Claude Code), por exemplo *"npm run db:migrate --env=staging ·
+   Aplicar 3 migrações pendentes · Deseja continuar?"*.
 2. **Abrir e responder** foca o terminal desse agente para você digitar a resposta.
    **Espiar** abre o terminal por cima, sem sair da aba em que você está.
 
@@ -120,8 +121,11 @@ Layout** lista todos.
 ## Bom saber
 
 - O que roda além do desenho: o quadro executa `hc read <terminal> --lines 0` (a
-  linha de comando do próprio Herdr) uma vez a cada bloqueio, para ler a pergunta do
-  agente, de novo quando você clica em Sim / Não, e então `hc keys <terminal>
+  linha de comando do próprio Herdr) a cada bloqueio, para ler a pergunta do agente;
+  se essa leitura não a encontrar (a pergunta ainda não está na tela ou, num pedido
+  de permissão do Claude Code, falta o Sim / Não), lê até mais duas vezes, 0,5 s
+  depois e, de novo, 1,5 s depois disso, só enquanto o agente continuar bloqueado.
+  Lê de novo quando você clica em Sim / Não, e então executa `hc keys <terminal>
   <dígito>`; a busca executa `hc machine ls`, como a busca original do Herdr; o menu de
   nova aba pergunta ao Herdr quais agentes estão instalados. Nenhum mod baixa nada
   da internet nem lê seus arquivos.

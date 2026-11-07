@@ -145,6 +145,29 @@ async function readAsk(address) {
   const r = await hc(["read", address, "--lines", "0"]);
   return r?.code ? null : parseAsk(r?.stdout);
 }
+// A read misses when it shows no question, or, where the card offers Yes / No (mayAnswer), no
+// buttons: no id (the dialog's shape is in doubt, as a read during a redraw gives) or no exact
+// Yes / No pair. A miss is read again after each of these waits: at most 2 more reads per spell.
+const RETRY_MS = [500, 1500];
+// The read of one blocked spell (`key`): the last read with its `choices` (the Yes / No pair
+// the card shows, else null), or null as soon as the spell has ended (checked after each read
+// and after each wait), so no read follows a status or seq change.
+async function readAskWithRetry(address, key, cx) {
+  for (let i = 0; ; i++) {
+    let ask = null;
+    try { ask = await readAsk(address); } catch (_e) { ask = null; }
+    ask ??= parseAsk("");  // a failed read: an empty screen, no question
+    const now = stillOn(address, key);
+    if (!now) return null;
+    const answerable = mayAnswer(now);
+    // No id (the dialog's shape is in doubt): nothing to check a click against, so no buttons.
+    const choices = ask.id && answerable ? pickAnswers(ask.options) : null;
+    const miss = !ask.question || (answerable && !choices);
+    if (!miss || i >= RETRY_MS.length) return { ...ask, choices };
+    await cx.sleep(RETRY_MS[i]);
+    if (!stillOn(address, key)) return null;
+  }
+}
 // The Yes / No pair a card shows: live, or faded after one was sent.
 const shownChoices = (ask) => ask?.choices ?? ask?.sent ?? null;
 
@@ -188,8 +211,11 @@ export default class Herdboard extends View {
     return herdr ?? this.observed[a.address].at;
   }
 
-  // Read a blocked agent's screen once per blocked spell (keyed by address + seq), off the UI thread.
+  // Read each blocked agent's screen, off the UI thread, in one read chain per blocked spell
+  // (keyed by address + seq): readAskWithRetry reads it, reads it again after a miss (RETRY_MS:
+  // at most 2 more reads, only while the spell lasts) and returns only its last read.
   // `choices` holds the Yes / No options when the screen shows a dialog with both.
+  // The key stays pending until readAskWithRetry returns, so one spell never has two read chains.
   // Reads can overlap and finish in any order: a read is kept only if its spell is still the
   // agent's current one, and never over a read of that spell already kept (it may be answered).
   // `blocked` is only the cards shown (filter, put-away tabs): a kept read is dropped when its
@@ -202,14 +228,9 @@ export default class Herdboard extends View {
       this.pending.add(key);
       cx.spawn(async (cx) => {
         let ask = null;
-        try { ask = await readAsk(a.address); } catch (_e) { ask = null; }
-        ask ??= { text: "", question: "", options: [], id: "" };
-        this.pending.delete(key);
-        const now = stillOn(a.address, key);
-        if (!now || this.asks[a.address]?.key === key) return;
-        // No id (the dialog's shape is in doubt): nothing to check a click against, so no buttons.
-        const choices = ask.id && mayAnswer(now) ? pickAnswers(ask.options) : null;
-        this.asks[a.address] = { key, ...ask, choices, sent: null };
+        try { ask = await readAskWithRetry(a.address, key, cx); } finally { this.pending.delete(key); }
+        if (!ask || !stillOn(a.address, key) || this.asks[a.address]?.key === key) return;
+        this.asks[a.address] = { key, ...ask, sent: null };
         cx.notify();
       });
     }
