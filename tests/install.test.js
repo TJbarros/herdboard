@@ -1,7 +1,7 @@
 // Run with: node --test
 // scripts/install.sh, spawned against temporary Herdr homes only. Never the real one: without
 // HERDR_APP_HOME (or with it empty) the script resolves the real home and installs into it.
-import { test } from "node:test";
+import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -14,7 +14,9 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const INSTALL = path.join(REPO, "scripts", "install.sh");
 const TMP = fs.realpathSync(os.tmpdir());
 
-const tmpdir = () => fs.mkdtempSync(path.join(TMP, "herdboard-test-"));
+const temps = [];
+const tmpdir = () => { const d = fs.mkdtempSync(path.join(TMP, "herdboard-test-")); temps.push(d); return d; };
+after(() => { for (const d of temps) fs.rmSync(d, { recursive: true, force: true }); });
 
 // The only way tests run the scripts: HERDR_APP_HOME is always set, non-empty and under the
 // system temp folder, or the test throws before spawning anything. They run from a folder
@@ -191,8 +193,10 @@ test("herdr_home fails with the install's error when the home doesn't exist", ()
 
 test("install.sh takes the home and the names of what it installs from common.sh only", () => {
   const install = fs.readFileSync(INSTALL, "utf8");
-  for (const owned of ["HERDR_APP_HOME:-", "cmd.exe", "/proc/version", ".config/herdr-app", ...MODS.slice(1)]) {
-    assert.ok(!install.includes(owned), `install.sh still has ${owned}`);
+  const owned = ["HERDR_APP_HOME:-", "cmd.exe", "/proc/version", ".config/herdr-app",
+    "'layout:herdboard'", "layouts/herdboard.json", ...MODS.slice(1)];
+  for (const s of owned) {
+    assert.ok(!install.includes(s), `install.sh still has ${s}`);
   }
   assert.match(install, /^\. "\$SRC\/scripts\/common\.sh"$/m);
 });

@@ -59,14 +59,14 @@ done
 # Keys: merge the layout's section, never replacing one the person already has.
 KEYS="$DEST/keys.json"
 if command -v python3 >/dev/null 2>&1; then
-  python3 - "$SRC/keys.json" "$KEYS" "$DRY_RUN" <<'PY'
+  python3 - "$SRC/keys.json" "$KEYS" "$DRY_RUN" "$HERDBOARD_LAYOUT" <<'PY'
 import json, shutil, sys, os
-src, dest, dry_run = sys.argv[1], sys.argv[2], sys.argv[3] == "1"
+src, dest, dry_run, layout = sys.argv[1], sys.argv[2], sys.argv[3] == "1", sys.argv[4]
 ours = json.load(open(src, encoding="utf-8"))
 mine = json.load(open(dest, encoding="utf-8")) if os.path.exists(dest) else {}
 added = [k for k in ours if k not in mine]
 if not added:
-    print("keys.json: 'layout:herdboard' already there, left as it is")
+    print("keys.json: 'layout:" + layout + "' already there, left as it is")
     sys.exit(0)
 if dry_run:
     if os.path.exists(dest):
