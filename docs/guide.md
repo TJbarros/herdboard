@@ -157,10 +157,17 @@ It fast-forwards your clone (`git pull --ff-only`) and runs `scripts/install.sh`
 again. Herdr reloads the layout and mods by itself; no restart needed.
 
 If you edited a file in the clone (`STUCK_MIN`, say), the update stops before
-pulling and lists what you changed. Keep your edits with
-`git stash && scripts/update.sh && git stash pop` inside the clone, or commit them
-first. It also stops, without installing, when your branch can't fast-forward (you
-committed on it, or it isn't tracking one), and says so.
+pulling and lists what you changed. To keep your edits, run this inside the clone:
+
+```sh
+git stash && scripts/update.sh && git stash pop && scripts/install.sh
+```
+
+If it stops partway, your edits stay stashed; `git stash pop` brings them back. If
+you'd rather commit your edits, the update can't fast-forward anymore: run
+`git pull --rebase && scripts/install.sh` instead. The update also stops, without
+installing, whenever your branch can't fast-forward (it has commits of yours, or it
+isn't tracking a remote branch), and says so.
 
 ## Uninstall
 

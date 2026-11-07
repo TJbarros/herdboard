@@ -19,7 +19,8 @@ main() {
     exit 1
   fi
   # Its own repository, not one it happens to sit in (a zip unpacked inside another repo).
-  TOP=$(git -C "$ROOT" rev-parse --show-toplevel 2>/dev/null || :)
+  # git's own reason (e.g. "dubious ownership" under /mnt/c) shows above this message.
+  TOP=$(git -C "$ROOT" rev-parse --show-toplevel || :)
   if [ -z "$TOP" ] || [ "$(cd "$TOP" && pwd -P)" != "$ROOT" ]; then
     echo "$ROOT is not a git clone (downloaded as a zip?): download Herdboard again, then run scripts/install.sh" >&2
     exit 1
@@ -30,9 +31,12 @@ main() {
     {
       echo "Not updated: these files in $ROOT have changes of yours:"
       echo "$CHANGED"
-      echo "To keep them, set them aside, update, then bring them back (in $ROOT):"
-      echo "  git stash && scripts/update.sh && git stash pop"
-      echo "or commit them first."
+      echo "To keep them, set them aside, update, then bring them back and install them (in $ROOT):"
+      echo "  git stash && scripts/update.sh && git stash pop && scripts/install.sh"
+      echo "If that stops partway, your changes stay stashed: git stash pop brings them back."
+      echo "Or commit them; the update then can't fast-forward, so run"
+      echo "  git pull --rebase && scripts/install.sh"
+      echo "yourself instead."
     } >&2
     exit 1
   fi

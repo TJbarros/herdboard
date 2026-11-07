@@ -127,9 +127,11 @@ for (const staged of [false, true]) {
     assert.notEqual(r.status, 0);
     const out = r.stdout + r.stderr;
     assert.match(out, /keys\.json/);
-    assert.match(out, /git stash\b/);
-    assert.match(out, /git stash pop/);
+    // Popped edits are only in the clone until installed again.
+    assert.match(out, /git stash && scripts\/update\.sh && git stash pop && scripts\/install\.sh/);
+    // A local commit can't fast-forward: the hint says how to bring it along.
     assert.match(out, /commit/);
+    assert.match(out, /git pull --rebase/);
     assert.equal(f.head(), before);
     assert.equal(f.git(f.clone, "rev-parse", "origin/main"), fetched, "fetched before refusing");
     assert.equal(fs.readFileSync(path.join(f.clone, "keys.json"), "utf8"), '{"mine": 1}\n');
