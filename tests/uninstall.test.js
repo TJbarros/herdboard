@@ -244,5 +244,5 @@ test("uninstall.sh takes the home and the names of what it removes from common.s
   for (const s of owned) {
     assert.ok(!uninstall.includes(s), `uninstall.sh has ${s}`);
   }
-  assert.match(uninstall, /^\. "\$SRC\/scripts\/common\.sh"$/m);
+  assert.match(uninstall, /^\. "\$ROOT\/scripts\/common\.sh"$/m);
 });

@@ -155,5 +155,5 @@ test("install.sh takes the home and the names of what it installs from common.sh
   for (const s of owned) {
     assert.ok(!install.includes(s), `install.sh still has ${s}`);
   }
-  assert.match(install, /^\. "\$SRC\/scripts\/common\.sh"$/m);
+  assert.match(install, /^\. "\$ROOT\/scripts\/common\.sh"$/m);
 });

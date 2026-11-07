@@ -1,8 +1,8 @@
 # Shared by the Herdboard scripts: where the Herdr home is, and what Herdboard installs there.
 # POSIX sh, sourced, never run:
 #
-#   SRC=$(cd "$(dirname "$0")/.." && pwd)
-#   . "$SRC/scripts/common.sh"
+#   ROOT=$(cd "$(dirname "$0")/.." && pwd)
+#   . "$ROOT/scripts/common.sh"
 #   DEST=$(herdr_home) || exit 1
 #
 # Sourcing it only sets the variables below and defines herdr_home; it runs nothing else.

@@ -19,8 +19,8 @@ case "$#:${1:-}" in
   *) echo "usage: $0 [--dry-run]" >&2; exit 2 ;;
 esac
 
-SRC=$(cd "$(dirname "$0")/.." && pwd)
-. "$SRC/scripts/common.sh"
+ROOT=$(cd "$(dirname "$0")/.." && pwd)
+. "$ROOT/scripts/common.sh"
 DEST=$(herdr_home) || exit 1
 
 # Keys first, before anything is removed: a keys.json that isn't a JSON object stops the
