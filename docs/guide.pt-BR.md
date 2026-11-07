@@ -195,7 +195,8 @@ Ele encontra a pasta do Herdr do mesmo jeito que a instalação e remove
 um backup do `keys.json` em `keys.json.before-herdboard-uninstall` (se essa seção era
 tudo o que ele tinha, o `keys.json` é apagado). Seus outros layouts, mods e atalhos não
 mudam. O que já não existe é pulado, então rodar duas vezes não faz mal. Se o Herdboard
-era o seu layout ativo, troque para outro no Herdr (**Settings › Look › Layout**) ou com `Ctrl+Shift+L`.
+era o seu layout ativo, troque para outro no Herdr (**Settings › Look › Layout**) ou
+com `Ctrl+Shift+L`.
 
 Para ver antes o que seria removido, rode `scripts/uninstall.sh --dry-run`: ele lista
 cada arquivo, pasta e mudança no `keys.json`, e não muda nada.
