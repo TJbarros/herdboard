@@ -121,3 +121,168 @@ test("after an install, uninstall removes the layout, the three mods and the key
   assert.deepEqual(fs.readFileSync(path.join(home, "keys.json.before-herdboard-uninstall")), keysBefore);
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(home, "keys.json"), "utf8")), THEIR_KEYS);
 });
+
+test("when the keys section was all keys.json had, keys.json is deleted and the backup kept", () => {
+  const home = tmpdir();
+  install(home);
+  const keysBefore = fs.readFileSync(path.join(home, "keys.json"));
+  const r = run(home);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout,
+    /^keys\.json: deleted, 'layout:herdboard' was all it had \(backup: keys\.json\.before-herdboard-uninstall\)$/m);
+  assert.deepEqual(snapshot(home), { "layouts/": "dir", "mods/": "dir",
+    "keys.json.before-herdboard-uninstall": createHash("sha256").update(keysBefore).digest("hex") });
+});
+
+test("without the keys section, keys.json is left byte for byte and no backup is made", () => {
+  const home = tmpdir();
+  install(home);
+  const mine = '{"global":{},\n  "layout:other" : {}}';
+  fs.writeFileSync(path.join(home, "keys.json"), mine);
+  const r = run(home);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /^keys\.json: no 'layout:herdboard' section, left as it is$/m);
+  assert.equal(fs.readFileSync(path.join(home, "keys.json"), "utf8"), mine);
+  assert.equal(fs.existsSync(path.join(home, "keys.json.before-herdboard-uninstall")), false);
+});
+
+test("a second run reports every part as missing, changes nothing and exits 0", () => {
+  const home = homeWithTheirs();
+  install(home);
+  assert.equal(run(home).status, 0);
+  const before = snapshot(home);
+  const r = run(home);
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.stdout, lines(
+    `Uninstalling Herdboard from ${home}`,
+    "  missing    layouts/herdboard.json (skipped)",
+    "  missing    mods/herdboard/ (skipped)",
+    "  missing    mods/herdboard-picker/ (skipped)",
+    "  missing    mods/herdboard-new-menu/ (skipped)",
+    "keys.json: no 'layout:herdboard' section, left as it is",
+    REMINDER,
+  ));
+  assert.deepEqual(snapshot(home), before);
+});
+
+test("a part removed by hand is reported missing while the rest is removed", () => {
+  const home = tmpdir();
+  install(home);
+  fs.rmSync(path.join(home, "mods/herdboard-picker"), { recursive: true });
+  const r = run(home);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /^ {2}missing {4}mods\/herdboard-picker\/ \(skipped\)$/m);
+  assert.match(r.stdout, /^ {2}removed {4}mods\/herdboard-new-menu\/$/m);
+  assert.deepEqual(Object.keys(snapshot(home)).filter(f => OURS.test(f)), []);
+});
+
+test("a keys.json that isn't a JSON object stops it before anything is removed, with or without --dry-run", () => {
+  for (const broken of ['{ "global": {', "[]"]) {
+    const home = tmpdir();
+    install(home);
+    fs.writeFileSync(path.join(home, "keys.json"), broken);
+    const before = snapshot(home);
+    for (const args of [[], ["--dry-run"]]) {
+      const r = run(home, args);
+      assert.notEqual(r.status, 0, `${broken} ${args}`);
+      assert.match(r.stderr, new RegExp(`^keys\\.json is not a JSON object .*: fix or remove ${home}/keys\\.json, then run this again; nothing was removed\\n$`));
+      assert.equal(r.stdout, "");
+      assert.deepEqual(snapshot(home), before);
+    }
+  }
+});
+
+test("a dry run lists every removal and the keys change, and leaves the home byte for byte", () => {
+  const home = homeWithTheirs();
+  install(home);
+  const before = snapshot(home);
+  const r = run(home, ["--dry-run"]);
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.stdout, lines(
+    "Dry run: nothing is removed or changed.",
+    `Herdr home: ${home}`,
+    "Files:",
+    "  remove     layouts/herdboard.json",
+    "  remove     mods/herdboard/",
+    "  remove     mods/herdboard-picker/",
+    "  remove     mods/herdboard-new-menu/",
+    "keys.json: would remove 'layout:herdboard' (backup: keys.json.before-herdboard-uninstall)",
+    "Dry run done: run scripts/uninstall.sh without --dry-run to uninstall.",
+  ));
+  assert.deepEqual(snapshot(home), before);
+});
+
+test("a dry run says keys.json would be deleted when the section is all it has", () => {
+  const home = tmpdir();
+  install(home);
+  const before = snapshot(home);
+  const r = run(home, ["--dry-run"]);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout,
+    /^keys\.json: would be deleted, 'layout:herdboard' is all it has \(backup: keys\.json\.before-herdboard-uninstall\)$/m);
+  assert.deepEqual(snapshot(home), before);
+});
+
+test("a dry run after an uninstall reports every part as missing", () => {
+  const home = tmpdir();
+  install(home);
+  assert.equal(run(home).status, 0);
+  const before = snapshot(home);
+  const r = run(home, ["--dry-run"]);
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal((r.stdout.match(/^ {2}missing {4}\S+ \(skipped\)$/gm) || []).length, 4);
+  assert.match(r.stdout, /^keys\.json: not there, skipped$/m);
+  assert.deepEqual(snapshot(home), before);
+});
+
+// A PATH with every tool the scripts use except python3.
+function pathWithoutPython() {
+  const bin = tmpdir();
+  for (const tool of ["dirname", "basename", "cp", "mkdir", "cmp", "grep", "tr", "cat", "rm"]) {
+    const found = spawnSync("sh", ["-c", `command -v ${tool}`], { encoding: "utf8" }).stdout.trim();
+    if (found) fs.symlinkSync(found, path.join(bin, tool));
+  }
+  return bin;
+}
+
+test("without python3 it removes the files and says to remove the keys section by hand", () => {
+  const home = homeWithTheirs();
+  install(home);
+  const keysBefore = fs.readFileSync(path.join(home, "keys.json"));
+  const byHand = `python3 not found: remove the 'layout:herdboard' section from ${home}/keys.json by hand`;
+  const PATH = pathWithoutPython();
+  const dry = run(home, ["--dry-run"], { PATH });
+  assert.equal(dry.status, 0, dry.stderr);
+  assert.ok(dry.stdout.split("\n").includes(byHand), dry.stdout);
+  const r = run(home, [], { PATH });
+  assert.equal(r.status, 0, r.stderr);
+  assert.ok(r.stdout.split("\n").includes(byHand), r.stdout);
+  assert.ok(r.stdout.endsWith(`${REMINDER}\n`));
+  assert.deepEqual(Object.keys(snapshot(home)).filter(f => OURS.test(f)), []);
+  assert.deepEqual(fs.readFileSync(path.join(home, "keys.json")), keysBefore);
+  assert.equal(fs.existsSync(path.join(home, "keys.json.before-herdboard-uninstall")), false);
+});
+
+test("a mod folder that is a symlink is unlinked, not emptied", () => {
+  const home = tmpdir();
+  install(home);
+  const elsewhere = tmpdir();
+  fs.writeFileSync(path.join(elsewhere, "keep.js"), "// keep\n");
+  fs.rmSync(path.join(home, "mods/herdboard"), { recursive: true });
+  fs.symlinkSync(elsewhere, path.join(home, "mods/herdboard"));
+  const r = run(home);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /^ {2}removed {4}mods\/herdboard\/$/m);
+  assert.equal(fs.existsSync(path.join(home, "mods/herdboard")), false);
+  assert.equal(fs.readFileSync(path.join(elsewhere, "keep.js"), "utf8"), "// keep\n");
+});
+
+test("uninstall.sh takes the home and the names of what it removes from common.sh only", () => {
+  const uninstall = fs.readFileSync(UNINSTALL, "utf8");
+  const owned = ["HERDR_APP_HOME:-", "cmd.exe", "/proc/version", ".config/herdr-app",
+    "'layout:herdboard'", "layouts/herdboard.json", "herdboard-picker", "herdboard-new-menu"];
+  for (const s of owned) {
+    assert.ok(!uninstall.includes(s), `uninstall.sh has ${s}`);
+  }
+  assert.match(uninstall, /^\. "\$SRC\/scripts\/common\.sh"$/m);
+});
