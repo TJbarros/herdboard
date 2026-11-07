@@ -10,15 +10,9 @@
 # The Herdr home and the names of what it installs come from scripts/common.sh.
 set -eu
 
-DRY_RUN=0
-case "$#:${1:-}" in
-  0:) ;;
-  1:--dry-run) DRY_RUN=1 ;;
-  *) echo "usage: $0 [--dry-run]" >&2; exit 2 ;;
-esac
-
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 . "$ROOT/scripts/common.sh"
+dry_run_option "$@"
 DEST=$(herdr_home) || exit 1
 
 # put <file> <folder>: copies the file into the folder or, in a dry run, prints whether the
@@ -33,7 +27,7 @@ put() {
   elif cmp -s "$1" "$put_to"; then put_state=unchanged
   else put_state=overwrite
   fi
-  printf '  %-9s  %s\n' "$put_state" "${put_to#"$DEST/"}"
+  report_file "$put_state" "${put_to#"$DEST/"}"
 }
 
 # folder <path>: creates it, except in a dry run.
@@ -41,13 +35,7 @@ folder() {
   if [ "$DRY_RUN" = 0 ]; then mkdir -p "$1"; fi
 }
 
-if [ "$DRY_RUN" = 1 ]; then
-  echo "Dry run: nothing is created or changed."
-  echo "Herdr home: $DEST"
-  echo "Files:"
-else
-  echo "Installing Herdboard into $DEST"
-fi
+report_start created "Installing Herdboard into $DEST"
 folder "$DEST/layouts"
 folder "$DEST/mods"
 put "$ROOT/layouts/$HERDBOARD_LAYOUT.json" "$DEST/layouts"
@@ -87,8 +75,4 @@ else
   echo "python3 not found: add the section in keys.json from $ROOT/keys.json by hand"
 fi
 
-if [ "$DRY_RUN" = 1 ]; then
-  echo "Dry run done: run scripts/install.sh without --dry-run to install."
-else
-  echo "Done. In Herdr: Settings > Look > Layout > $HERDBOARD_LAYOUT (or: herdr-app do layout.switch --name $HERDBOARD_LAYOUT)."
-fi
+report_end install "Done. In Herdr: Settings > Look > Layout > $HERDBOARD_LAYOUT (or: herdr-app do layout.switch --name $HERDBOARD_LAYOUT)."

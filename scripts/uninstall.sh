@@ -12,15 +12,9 @@
 # installed.json). The Herdr home and the names of what it removes come from scripts/common.sh.
 set -eu
 
-DRY_RUN=0
-case "$#:${1:-}" in
-  0:) ;;
-  1:--dry-run) DRY_RUN=1 ;;
-  *) echo "usage: $0 [--dry-run]" >&2; exit 2 ;;
-esac
-
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 . "$ROOT/scripts/common.sh"
+dry_run_option "$@"
 DEST=$(herdr_home) || exit 1
 
 # Keys first, before anything is removed: a keys.json that isn't a JSON object stops the
@@ -73,30 +67,20 @@ fi
 # folder, rm -rf removes the link, not what it points to.
 drop() {
   if [ ! -e "$1" ] && [ ! -L "$1" ]; then
-    printf '  %-9s  %s\n' missing "$2 (skipped)"
+    report_file missing "$2 (skipped)"
   elif [ "$DRY_RUN" = 1 ]; then
-    printf '  %-9s  %s\n' remove "$2"
+    report_file remove "$2"
   else
     rm -rf "${1:?}"
-    printf '  %-9s  %s\n' removed "$2"
+    report_file removed "$2"
   fi
 }
 
-if [ "$DRY_RUN" = 1 ]; then
-  echo "Dry run: nothing is removed or changed."
-  echo "Herdr home: $DEST"
-  echo "Files:"
-else
-  echo "Uninstalling Herdboard from $DEST"
-fi
+report_start removed "Uninstalling Herdboard from $DEST"
 drop "${DEST:?}/layouts/${HERDBOARD_LAYOUT:?}.json" "layouts/$HERDBOARD_LAYOUT.json"
 for mod in ${HERDBOARD_MODS:?}; do
   drop "${DEST:?}/mods/${mod:?}" "mods/$mod/"
 done
 echo "$KEYS_DONE"
 
-if [ "$DRY_RUN" = 1 ]; then
-  echo "Dry run done: run scripts/uninstall.sh without --dry-run to uninstall."
-else
-  echo "Done. If Herdboard was your active layout, switch to another one in Herdr: Settings > Look > Layout."
-fi
+report_end uninstall "Done. If Herdboard was your active layout, switch to another one in Herdr: Settings > Look > Layout."
