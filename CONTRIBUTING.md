@@ -15,6 +15,7 @@ Screenshots help; leave out project names or anything private.
 1. Edit the files in this repository (`layouts/`, `mods/`).
 2. Install your copy: `scripts/install.sh`. Herdr reloads mods and layouts by itself.
 3. Check each mod you changed: `herdr-app check ~/.config/herdr-app/mods/<name>`.
+   Run the tests (Node 22+, no install needed): `node --test`.
 4. Try it in Herdr, in both languages (PT | EN in the header), at a narrow and a wide
    window.
 5. Every text shown in the board goes in both tables of `mods/herdboard/main.js`
@@ -37,6 +38,7 @@ que você esperava. Prints ajudam; deixe de fora nomes de projetos ou dados priv
 1. Edite os arquivos deste repositório (`layouts/`, `mods/`).
 2. Instale a sua cópia: `scripts/install.sh`. O Herdr recarrega mods e layouts sozinho.
 3. Verifique cada mod alterado: `herdr-app check ~/.config/herdr-app/mods/<nome>`.
+   Rode os testes (Node 22+, sem instalar nada): `node --test`.
 4. Teste no Herdr, nos dois idiomas (PT | EN no cabeçalho), com a janela estreita e
    larga.
 5. Todo texto exibido no quadro vai nas duas tabelas de `mods/herdboard/main.js`

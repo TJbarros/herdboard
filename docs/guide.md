@@ -35,6 +35,17 @@ turns red. If it's in another space, that space's pill in the header turns red t
 2. **Open and answer** focuses that agent's terminal, so you can type the answer.
    **Peek** opens it on top, without leaving the tab you're in.
 
+**Yes / No for a permission dialog.** When the question is a Claude Code permission
+dialog ("Do you want to proceed?") with options labelled exactly *Yes* and *No*, the
+card also shows **Yes** and **No**. Each one presses that option's number in the
+agent's terminal (no Enter), as you would; hover it to see the option's text. The
+card then follows the agent's new status: it leaves **Needs you** once the agent
+moves on. Before typing, the board checks that the agent is still blocked on the
+same dialog (it reads the screen again); if anything changed, it types nothing and
+reads the question again. After one answer the buttons stay faded until the agent's
+status changes, so a second click types nothing. Other choices ("Yes, and always
+allow…") and dialogs without a plain Yes / No pair: use **Open and answer**.
+
 If the question isn't on screen (for example, it scrolled away), the card says
 *"Open the terminal to see what the agent is asking."*
 
@@ -101,7 +112,8 @@ them all.
 ## Good to know
 
 - What runs besides drawing: the board runs `hc read <terminal> --lines 0`
-  (Herdr's own CLI) once per blocked spell to read the agent's question; the search
+  (Herdr's own CLI) once per blocked spell to read the agent's question, again
+  when you click Yes / No, and then `hc keys <terminal> <digit>`; the search
   runs `hc machine ls`, as Herdr's own search does; the new-tab menu asks Herdr which
   agents are installed. No mod downloads anything from the internet or reads your files.
 - The Peek window and Herdr's sidebar are Herdr's own and stay in English.

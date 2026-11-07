@@ -37,6 +37,17 @@ tempo ele está esperando.*
 2. **Abrir e responder** foca o terminal desse agente para você digitar a resposta.
    **Espiar** abre o terminal por cima, sem sair da aba em que você está.
 
+**Sim / Não num pedido de permissão.** Quando a pergunta é um pedido de permissão do
+Claude Code ("Do you want to proceed?") com opções escritas exatamente *Yes* e *No*,
+o card também mostra **Sim** e **Não**. Cada um aperta o número dessa opção no
+terminal do agente (sem Enter), como você faria; passe o mouse para ver o texto da
+opção. O card então acompanha o novo status do agente: sai de **Precisa de você**
+quando o agente segue. Antes de digitar, o quadro confere se o agente continua
+bloqueado no mesmo pedido (lê a tela de novo); se algo mudou, não digita nada e lê
+a pergunta outra vez. Depois de uma resposta, os botões ficam apagados até o status
+do agente mudar, então um segundo clique não digita nada. Outras escolhas ("Yes, and
+always allow…") e pedidos sem um par Yes / No simples: use **Abrir e responder**.
+
 Se a pergunta não estiver na tela (por exemplo, rolou para cima), o card diz
 *"Abra o terminal para ver o que o agente pede."*
 
@@ -108,7 +119,8 @@ Layout** lista todos.
 
 - O que roda além do desenho: o quadro executa `hc read <terminal> --lines 0` (a
   linha de comando do próprio Herdr) uma vez a cada bloqueio, para ler a pergunta do
-  agente; a busca executa `hc machine ls`, como a busca original do Herdr; o menu de
+  agente, de novo quando você clica em Sim / Não, e então `hc keys <terminal>
+  <dígito>`; a busca executa `hc machine ls`, como a busca original do Herdr; o menu de
   nova aba pergunta ao Herdr quais agentes estão instalados. Nenhum mod baixa nada
   da internet nem lê seus arquivos.
 - A janela do Espiar e a barra lateral são do próprio Herdr e ficam em inglês.
