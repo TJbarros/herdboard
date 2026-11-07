@@ -174,7 +174,17 @@ isn't tracking a remote branch), and says so.
 
 ## Uninstall
 
-Switch to another layout, then delete `layouts/herdboard.json` and the
-`mods/herdboard`, `mods/herdboard-picker` and `mods/herdboard-new-menu` folders from
-your Herdr home (`~/.config/herdr-app`), and remove the `"layout:herdboard"` section
-from its `keys.json`. Your other layouts and keys are untouched.
+```sh
+herdboard/scripts/uninstall.sh
+```
+
+It finds your Herdr home the way the install does and removes `layouts/herdboard.json`,
+the `mods/herdboard`, `mods/herdboard-picker` and `mods/herdboard-new-menu` folders,
+and the `"layout:herdboard"` section of `keys.json`, backing `keys.json` up first to
+`keys.json.before-herdboard-uninstall` (if that section was all it had, `keys.json` is
+deleted). Your other layouts, mods and keys are untouched. Parts already gone are
+skipped, so running it twice is safe. If Herdboard was your active layout, switch to
+another one in Herdr (**Settings › Look › Layout**) or with `Ctrl+Shift+L`.
+
+To see first what it would remove, run `scripts/uninstall.sh --dry-run`: it lists each
+file, folder and `keys.json` change, and changes nothing.
