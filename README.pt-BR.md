@@ -47,6 +47,10 @@ outra pasta. Ele só copia arquivos e adiciona a seção `layout:herdboard` ao
 e sem ele o script avisa para você adicionar a seção manualmente. É um script de
 shell POSIX (`sh`); no Windows, foi testado pelo WSL e pelo Git Bash.
 
+Para ver antes o que ele faria, rode `scripts/install.sh --dry-run`: ele mostra a pasta
+do Herdr que encontrou, cada arquivo que copiaria (**new**, novo; **overwrite**,
+sobrescreve; **unchanged**, igual) e o que aconteceria com o `keys.json`, sem mudar nada.
+
 Depois, no Herdr: **Settings › Look › Layout › herdboard**, ou
 `herdr-app do layout.switch --name herdboard`.
 

@@ -165,7 +165,10 @@ git pull
 scripts/install.sh
 ```
 
-O Herdr recarrega o layout e os mods sozinho; não precisa reiniciar.
+O Herdr recarrega o layout e os mods sozinho; não precisa reiniciar. Para ver antes
+quais arquivos a atualização sobrescreveria, rode `scripts/install.sh --dry-run`: ele
+lista cada arquivo como **new** (novo), **overwrite** (sobrescreve) ou **unchanged**
+(igual), diz o que aconteceria com o `keys.json` e não muda nada.
 
 ## Desinstalar
 
