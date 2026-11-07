@@ -365,8 +365,8 @@ export default class Herdboard extends View {
     const tiny = this.below(760);
     const filter = shared(FILTER_KEY) === "here" ? "here" : "all";
     return this.sized(h_flex().size_full().bg(C.bar).px(narrow ? 12 : 18).gap(narrow ? 6 : 10).items_center()
-      .child(image("frame/welcome/herdr.png").size(22).rounded(6).flex_none())
-      .when(!narrow, el => el.child(div().text_size(14).font_semibold().text_color(C.ink).flex_none().child("Herdr")))
+      .child(image("mods/herdboard/logo.svg").size(22).flex_none())
+      .when(!narrow, el => el.child(div().text_size(14).font_semibold().text_color(C.ink).flex_none().child("Herdboard")))
       .child(div().w(1).h(20).bg(C.line).mx(4).flex_none())
       .child(h_flex().id("space-strip").flex_1().min_w(0).gap(4).items_center().overflow_x_scrollbar()
         .children(all.map(s => this.spacePill(s, list.filter(a => a.space === s.id && !s.tabs.find(t => t.id === a.tab)?.settled).length, tiny))))

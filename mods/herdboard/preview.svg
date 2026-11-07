@@ -1,9 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">
   <rect width="320" height="180" fill="#111214"/>
-  <!-- One-line header: sidebar toggle, Herdr logo, spaces, filter, search, language, menu -->
+  <!-- One-line header: Herdboard logo, spaces, filter, search, language, menu -->
   <rect width="320" height="20" fill="#17181b"/>
-  <rect x="18" y="5" width="10" height="10" rx="2.5" fill="#efece4"/>
-  <path d="M20 13c0-3 2-5 4.5-5 1.6 0 2.5 1.2 2.5 2.4V14z" fill="#2a2b2e"/>
+  <rect x="18" y="5" width="10" height="10" rx="2.2" fill="#2a2c31"/>
+  <rect x="19.3" y="6.6" width="1.6" height="6.2" rx="0.6" fill="#E5735F"/>
+  <rect x="21.3" y="6.6" width="1.6" height="4.7" rx="0.6" fill="#E2B562"/>
+  <rect x="23.3" y="6.6" width="1.6" height="5.6" rx="0.6" fill="#6FA0F5"/>
+  <rect x="25.3" y="6.6" width="1.6" height="3.4" rx="0.6" fill="#9AA0AA"/>
   <rect x="34" y="6" width="44" height="8" rx="2.5" fill="#262930" stroke="#3a3e46" stroke-width="0.6"/>
   <circle cx="39" cy="10" r="1.5" fill="#7d828b"/><rect x="43" y="9" width="30" height="2" rx="1" fill="#e7e9ec"/>
   <circle cx="86" cy="10" r="1.5" fill="#e0787a"/><rect x="90" y="9" width="28" height="2" rx="1" fill="#8b9099"/>

@@ -1,6 +1,8 @@
-# Herdboard
+<p align="center"><img src="assets/logo.svg" width="96" height="96" alt="Herdboard logo"></p>
 
-**English** · [Português (Brasil)](README.pt-BR.md)
+<h1 align="center">Herdboard</h1>
+
+<p align="center"><b>English</b> · <a href="README.pt-BR.md">Português (Brasil)</a></p>
 
 A kanban board for your coding agents, as a [Herdr](https://herdr.dev) layout.
 Every agent in every space is a card in four columns: Needs you, Working, Done and

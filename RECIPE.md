@@ -12,8 +12,8 @@ Portuguese (Brazil) and English.
 Left to right: Herdr's own sidebar folded to its 44px icon rail, then the board
 column, top to bottom:
 
-1. **Header**, 56px, `chrome` background, one line: Herdr logo (22px,
-   `frame/welcome/herdr.png`) and "Herdr" (14px semibold); a 1px divider; the space
+1. **Header**, 56px, `chrome` background, one line: Herdboard logo (22px,
+   `mods/herdboard/logo.svg`) and "Herdboard" (14px semibold); a 1px divider; the space
    strip (every space as a 28px pill: status dot or hollow ring when it has no
    agents, name 13px, agent count; the active one `selected` with a 2px `accent`
    underline; a blocked one tinted `blocked` at 12%), scrolling sideways; the

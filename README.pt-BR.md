@@ -1,6 +1,8 @@
-# Herdboard
+<p align="center"><img src="assets/logo.svg" width="96" height="96" alt="Logo do Herdboard"></p>
 
-[English](README.md) · **Português (Brasil)**
+<h1 align="center">Herdboard</h1>
+
+<p align="center"><a href="README.md">English</a> · <b>Português (Brasil)</b></p>
 
 Um quadro kanban dos seus agentes de código, como layout do [Herdr](https://herdr.dev).
 Cada agente de cada espaço vira um card em quatro colunas: Precisa de você,
