@@ -1,0 +1,6 @@
+{
+  "layout:herdboard": {
+    "ctrl-shift-t": { "command": "mod.open", "args": { "name": "herdboard-new-menu" } },
+    "ctrl-shift-k": { "command": "mod.open", "args": { "name": "herdboard-picker" } }
+  }
+}

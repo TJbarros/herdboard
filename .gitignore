@@ -1,0 +1,5 @@
+# Written by Herdr into every mod folder on start; not part of the source.
+gpui-kit.d.ts
+jsconfig.json
+*.error
+.DS_Store

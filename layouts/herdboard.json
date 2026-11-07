@@ -1,0 +1,186 @@
+{
+ "id": "root",
+ "type": "row",
+ "titlebar": "none",
+ "preview": "mods/herdboard/preview.svg",
+ "ui_font": "Geist",
+ "font_size": 13,
+ "background": "canvas",
+ "terminal_padding": [
+  12,
+  10
+ ],
+ "divider": {
+  "width": 1,
+  "color": "border"
+ },
+ "children": [
+  {
+   "id": "sidebar",
+   "type": "column",
+   "size": {
+    "px": 44
+   },
+   "min": 44,
+   "max": 480,
+   "background": "chrome",
+   "resizable": false,
+   "children": [
+    {
+     "id": "brand",
+     "type": "block",
+     "size": {
+      "px": 46
+     },
+     "window_drag": true,
+     "content": {
+      "mod": "workspace-chrome"
+     }
+    },
+    {
+     "id": "sidebar-lists",
+     "type": "column",
+     "children": [
+      {
+       "id": "spaces",
+       "type": "block",
+       "size": {
+        "weight": 1
+       },
+       "min": 90,
+       "content": {
+        "mod": "spaces"
+       }
+      },
+      {
+       "id": "agents",
+       "type": "block",
+       "size": {
+        "weight": 1
+       },
+       "min": 90,
+       "content": {
+        "mod": "agents"
+       }
+      }
+     ]
+    },
+    {
+     "id": "sidebar-footer",
+     "type": "block",
+     "size": {
+      "px": 69
+     },
+     "content": {
+      "mod": "workspace-chrome",
+      "props": {
+       "footer": true
+      }
+     }
+    }
+   ],
+   "hidden": false
+  },
+  {
+   "id": "herdboard-main",
+   "type": "column",
+   "gap": 0,
+   "resizable": false,
+   "children": [
+    {
+     "id": "herdboard-header",
+     "type": "block",
+     "size": {
+      "px": 56
+     },
+     "window_drag": true,
+     "content": {
+      "mod": "herdboard",
+      "props": {
+       "role": "header"
+      }
+     }
+    },
+    {
+     "id": "herdboard-cards",
+     "type": "block",
+     "size": {
+      "weight": 1
+     },
+     "min": 140,
+     "max": 360,
+     "border": {
+      "width": 1,
+      "color": "border"
+     },
+     "content": {
+      "mod": "herdboard"
+     }
+    },
+    {
+     "id": "workspace",
+     "type": "column",
+     "size": {
+      "weight": 2
+     },
+     "padding": [
+      12,
+      24
+     ],
+     "gap": 0,
+     "resizable": false,
+     "children": [
+      {
+       "id": "workspace-title",
+       "type": "block",
+       "size": {
+        "px": 36
+       },
+       "background": "chrome",
+       "radius": 7,
+       "content": {
+        "mod": "herdboard",
+        "props": {
+         "role": "terminals"
+        }
+       }
+      },
+      {
+       "id": "live-terminals",
+       "type": "block",
+       "background": "canvas",
+       "content": {
+        "tab": "active",
+        "pane": {
+         "gap": 12,
+         "radius": 7,
+         "background": "background",
+         "lone": false,
+         "border": {
+          "width": 1,
+          "color": "border"
+         },
+         "focus": {
+          "width": 1,
+          "color": "accent"
+         },
+         "header": {
+          "content": {
+           "mod": "herdboard",
+           "props": {
+            "role": "pane"
+           }
+          },
+          "height": 28,
+          "position": "top",
+          "reveal": "always"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

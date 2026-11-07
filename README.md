@@ -1,0 +1,88 @@
+# Herdboard
+
+A kanban board for your coding agents, as a [Herdr](https://herdr.dev) layout.
+Every agent in every space is a card in four columns: Needs you, Working, Done and
+Idle. Blocked cards show what the agent is asking; the live terminals of the active
+tab fill the rest of the window.
+
+![Herdboard](preview.png)
+
+## What it does
+
+- **Kanban of agents.** Four equal columns, cards stacked; the board grows with its
+  longest column (140–360px) and each column scrolls on its own.
+- **Cards that say what's going on.** The agent's icon and task title, then space ·
+  tab · branch and how long it has been in that status. A working agent past 30
+  minutes gets a "stuck?" hint. The last task title is kept, so it survives `/clear`.
+- **Needs you, answered from the board.** A blocked card shows the question from the
+  agent's screen (`hc read --lines 0`: visible screen only, no scrolling, no keys
+  sent), with *Open and answer* and *Peek*.
+- **Hover actions.** Peek (terminal on top, without switching tabs), Pin (top of
+  the column), Put away (settles the tab until an agent in it needs you).
+- **Idle stays small.** Idle agents are compact rows (icon, task, where, age) and the
+  column folds.
+- **One-line header.** Spaces (every one, with or without agents), All / This space
+  filter, search, PT / EN switch and a ⋯ menu (new space, new tab, back to Herdr's
+  default layout). Herdr's own sidebar sits folded on the left.
+- **Workspace rail.** The active space's tabs, a **+** that opens the new-tab menu,
+  close on the active tab, the shown program and Expand (terminals fill the window).
+- **New tabs in the right folder.** The new-tab menu starts tabs, agents and spaces
+  in the active tab's live folder, and lets you pick another project folder from
+  your open terminals.
+- **Follows your theme**, light or dark. **Responsive** down to ~760px (a single
+  list below 800px).
+- **Two languages:** Portuguese (Brazil) and English, switchable in the header.
+
+## Install
+
+Requires Herdr (tested with herdr-app 0.1.13).
+
+```sh
+git clone <this repository> herdboard
+cd herdboard
+scripts/install.sh            # on WSL it finds the Windows Herdr home
+```
+
+Then in Herdr: **Settings › Look › Layout › Herdboard**, or
+`herdr-app do layout.switch --name herdboard`. `Ctrl+Shift+L` cycles back to your
+other layouts. `scripts/install.sh` only copies files and adds the
+`layout:herdboard` section to `keys.json` (with a backup) when it isn't there.
+
+To install by hand, copy `layouts/herdboard.json` to `~/.config/herdr-app/layouts/`,
+the three `mods/herdboard*` folders to `~/.config/herdr-app/mods/`, and merge
+`keys.json` into yours.
+
+## Keys (while Herdboard shows)
+
+| Key | Action |
+| --- | --- |
+| `Ctrl+Shift+T` | New tab menu (pick folder, terminal or agent) |
+| `Ctrl+Shift+K` | Find a space or tab |
+| `Ctrl+Shift+W` | Close the tab |
+| `Ctrl+Shift+B` | Hide / show Herdr's sidebar |
+| `Ctrl+Shift+L` | Switch layout |
+
+## Good to know
+
+- The mod runs `hc read` (Herdr's own CLI) once per blocked spell to read the
+  agent's question. It doesn't use the network, run other programs or read files
+  outside its folder.
+- The Peek window and Herdr's sidebar are Herdr's own and stay in English.
+- Herdr can't change a space's registered folder after it's made; Herdboard always
+  uses the terminals' live folders instead.
+- Preferences live in Herdr's shared state under `herdboard.*`.
+
+## Português (Brasil)
+
+O Herdboard é um quadro kanban dos seus agentes de código para o Herdr: cada
+agente vira um card em Precisa de você, Trabalhando, Concluído e Ocioso. Os cards
+bloqueados mostram a pergunta do agente, com "Abrir e responder" e "Espiar". Novas
+abas abrem na pasta do projeto da aba atual (e você pode escolher outra). Instale
+com `scripts/install.sh` e escolha **Herdboard** em Configurações › Look › Layout.
+O idioma troca no seletor PT | EN do cabeçalho.
+
+## License
+
+Apache License 2.0. Derived from the `board` example in
+[herdr-layout-examples](https://github.com/herdrdev/herdr-layout-examples) and from
+mods shipped with Herdr; see [NOTICE](NOTICE).

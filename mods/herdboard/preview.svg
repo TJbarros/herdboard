@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">
+  <rect width="320" height="180" fill="#111214"/>
+  <!-- One-line header: sidebar toggle, Herdr logo, spaces, filter, search, language, menu -->
+  <rect width="320" height="20" fill="#17181b"/>
+  <rect x="18" y="5" width="10" height="10" rx="2.5" fill="#efece4"/>
+  <path d="M20 13c0-3 2-5 4.5-5 1.6 0 2.5 1.2 2.5 2.4V14z" fill="#2a2b2e"/>
+  <rect x="34" y="6" width="44" height="8" rx="2.5" fill="#262930" stroke="#3a3e46" stroke-width="0.6"/>
+  <circle cx="39" cy="10" r="1.5" fill="#7d828b"/><rect x="43" y="9" width="30" height="2" rx="1" fill="#e7e9ec"/>
+  <circle cx="86" cy="10" r="1.5" fill="#e0787a"/><rect x="90" y="9" width="28" height="2" rx="1" fill="#8b9099"/>
+  <rect x="230" y="5" width="34" height="10" rx="2.5" fill="none" stroke="#33363c"/>
+  <rect x="268" y="5" width="12" height="10" rx="2.5" fill="none" stroke="#33363c"/>
+  <rect x="284" y="5" width="16" height="10" rx="2.5" fill="none" stroke="#33363c"/>
+  <rect x="304" y="5" width="10" height="10" rx="2.5" fill="none" stroke="#33363c"/>
+  <path d="M0 20.5h320" stroke="#2a2d33"/>
+  <!-- Kanban: four equal columns -->
+  <rect x="8" y="25" width="70" height="66" rx="4" fill="#e0787a10" stroke="#e0787a50" stroke-width="0.8"/>
+  <circle cx="14" cy="31" r="1.8" fill="#e0787a"/><rect x="18" y="30" width="30" height="2.5" rx="1" fill="#e7e9ec"/>
+  <circle cx="91" cy="31" r="1.8" fill="#e2b562"/><rect x="95" y="30" width="28" height="2.5" rx="1" fill="#e7e9ec"/>
+  <circle cx="169" cy="31" r="1.8" fill="#6fa0f5"/><rect x="173" y="30" width="22" height="2.5" rx="1" fill="#8b9099"/>
+  <circle cx="247" cy="31" r="1.8" fill="#7d828b"/><rect x="251" y="30" width="20" height="2.5" rx="1" fill="#e7e9ec"/>
+  <!-- blocked card with the agent's question -->
+  <rect x="12" y="37" width="62" height="50" rx="3" fill="#1b1c20" stroke="#2a2d33" stroke-width="0.8"/>
+  <path d="M13 38v48" stroke="#e0787a" stroke-width="2"/>
+  <rect x="17" y="41" width="5" height="5" rx="1" fill="#d97757"/><rect x="25" y="42" width="40" height="2.5" rx="1" fill="#e7e9ec"/>
+  <rect x="17" y="50" width="53" height="18" rx="2" fill="#e0787a18" stroke="#e0787a50" stroke-width="0.6"/>
+  <rect x="20" y="54" width="44" height="1.6" rx="0.8" fill="#c9a4a5"/><rect x="20" y="58" width="36" height="1.6" rx="0.8" fill="#c9a4a5"/><rect x="20" y="62" width="40" height="1.6" rx="0.8" fill="#c9a4a5"/>
+  <rect x="17" y="73" width="26" height="8" rx="2" fill="#e0787a"/><rect x="46" y="73" width="14" height="8" rx="2" fill="none" stroke="#3a3e46" stroke-width="0.6"/>
+  <!-- working cards (two lines, program icon) -->
+  <g fill="#1b1c20" stroke="#2a2d33" stroke-width="0.8">
+    <rect x="88" y="37" width="70" height="20" rx="3"/><rect x="88" y="61" width="70" height="20" rx="3"/>
+  </g>
+  <path d="M89 38v18m0 6v18" stroke="#e2b562" stroke-width="2"/>
+  <rect x="93" y="41" width="5" height="5" rx="1" fill="#d97757"/><rect x="101" y="42" width="44" height="2.5" rx="1" fill="#e7e9ec"/><rect x="93" y="50" width="52" height="1.8" rx="0.9" fill="#6f747d"/>
+  <rect x="93" y="65" width="5" height="5" rx="1" fill="#d97757"/><rect x="101" y="66" width="36" height="2.5" rx="1" fill="#e7e9ec"/><rect x="93" y="74" width="46" height="1.8" rx="0.9" fill="#6f747d"/>
+  <!-- empty column -->
+  <rect x="166" y="37" width="70" height="12" rx="3" fill="none" stroke="#2a2d33" stroke-width="0.8"/>
+  <!-- idle: compact rows with program icon -->
+  <circle cx="249" cy="42" r="1.2" fill="#7d828b"/><rect x="252" y="40" width="4" height="4" rx="1" fill="#d97757"/><rect x="259" y="41" width="40" height="2" rx="1" fill="#b8bdc6"/>
+  <rect x="244" y="48" width="70" height="10" rx="2.5" fill="#262930"/>
+  <circle cx="249" cy="53" r="1.2" fill="#7d828b"/><rect x="252" y="51" width="4" height="4" rx="1" fill="#d97757"/><rect x="259" y="52" width="34" height="2" rx="1" fill="#e7e9ec"/>
+  <circle cx="249" cy="64" r="1.2" fill="#7d828b"/><rect x="252" y="62" width="4" height="4" rx="1" fill="#d97757"/><rect x="259" y="63" width="38" height="2" rx="1" fill="#b8bdc6"/>
+  <path d="M0 96.5h320" stroke="#2a2d33"/>
+  <!-- Workspace rail: tabs, the shown program, expand -->
+  <rect x="8" y="101" width="304" height="11" rx="3" fill="#17181b"/>
+  <rect x="12" y="103" width="18" height="7" rx="2" fill="#262930" stroke="#3a3e46" stroke-width="0.6"/>
+  <rect x="33" y="105.5" width="12" height="1.6" rx="0.8" fill="#8b9099"/>
+  <rect x="262" y="104" width="5" height="5" rx="1" fill="#d97757"/><rect x="270" y="105.5" width="18" height="1.6" rx="0.8" fill="#8b9099"/>
+  <rect x="294" y="103" width="15" height="7" rx="2" fill="none" stroke="#33363c"/>
+  <!-- Terminal -->
+  <rect x="8" y="114" width="304" height="60" rx="3" fill="#1b1c20"/>
+  <g fill="#4f535b">
+    <rect x="14" y="122" width="120" height="2" rx="1"/><rect x="14" y="128" width="90" height="2" rx="1"/>
+    <rect x="14" y="134" width="150" height="2" rx="1"/><rect x="14" y="140" width="60" height="2" rx="1" fill="#7aa2f7"/>
+  </g>
+</svg>

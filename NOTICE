@@ -1,0 +1,24 @@
+Herdboard
+Copyright 2026 tjabarros
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+It includes work derived from the following Apache-2.0 licensed projects:
+
+1. "board" layout from herdr-layout-examples
+   https://github.com/herdrdev/herdr-layout-examples (commit 0ec9676, 2026-11-02)
+   Files derived: layouts/herdboard.json, mods/herdboard/
+   Changes: renamed; theme colors instead of a fixed palette; one-line header with a
+   space strip, filter, search, language switch (pt-BR / English) and menu; Herdr's
+   sidebar folded on the left; cards show the task title, real elapsed time and a
+   "stuck?" hint; blocked cards show the agent's question (read with `hc read`) with
+   answer and peek actions; hover actions (peek, pin, put away); compact, foldable
+   Idle column; workspace rail with tabs, new tab, close tab and expand; responsive
+   layout and height that follows the columns.
+
+2. "picker" and "new-menu" mods shipped with Herdr (herdr-app 0.1.13)
+   https://github.com/herdrdev/herdr
+   Files derived: mods/herdboard-picker/, mods/herdboard-new-menu/
+   Changes: renamed; texts follow Herdboard's language (pt-BR / English); the new-tab
+   menu lets you pick the folder a tab starts in (default: the active tab's live
+   folder) and passes it, with the machine, to tab.new and space.new.

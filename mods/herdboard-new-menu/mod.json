@@ -1,0 +1,13 @@
+{
+  "place": "none",
+  "cloned_from": {
+    "name": "new-menu",
+    "version": "0.1.13"
+  },
+  "title": "Herdboard new tab",
+  "overlay": {
+    "kind": "popup",
+    "width": 300,
+    "height": 600
+  }
+}
