@@ -150,12 +150,17 @@ than one agent, Herdboard counts from when it first saw each one's status instea
 ## Update
 
 ```sh
-cd herdboard
-git pull
-scripts/install.sh
+herdboard/scripts/update.sh
 ```
 
-Herdr reloads the layout and mods by itself; no restart needed.
+It fast-forwards your clone (`git pull --ff-only`) and runs `scripts/install.sh`
+again. Herdr reloads the layout and mods by itself; no restart needed.
+
+If you edited a file in the clone (`STUCK_MIN`, say), the update stops before
+pulling and lists what you changed. Keep your edits with
+`git stash && scripts/update.sh && git stash pop` inside the clone, or commit them
+first. It also stops, without installing, when your branch can't fast-forward (you
+committed on it, or it isn't tracking one), and says so.
 
 ## Uninstall
 
