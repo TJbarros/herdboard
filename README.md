@@ -66,6 +66,10 @@ the three `mods/herdboard*` folders to `~/.config/herdr-app/mods/`, and merge
 3. Pick **Terminal** or an agent (Claude Code, Codex, Gemini…). The new tab opens
    in that folder, in the current space.
 
+<img src="docs/images/usage-new-tab.png" width="302" alt="New tab menu: Open in lists project folders, then Terminal and the installed agents">
+
+*The **+** menu: pick the folder under **Open in**, then a terminal or an agent.*
+
 Need a new project instead? **⋯ › New space** creates a space in the active tab's
 folder; **+ › New space** creates it in the folder picked under **Open in**. Both
 stay on the active space's machine.
@@ -74,6 +78,10 @@ stay on the active space's machine.
 
 When an agent stops to ask something, its card jumps to **Needs you** and the column
 turns red. If it's in another space, that space's pill in the header turns red too.
+
+<img src="docs/images/usage-needs-you.png" width="470" alt="Needs you column with a blocked card showing the agent's question and the Open and answer and Peek buttons">
+
+*A blocked agent: its question, **Open and answer**, **Peek** and how long it has been waiting.*
 
 1. Read the question right on the card: it shows the last lines of the agent's
    screen, for example *"npm run db:migrate --env=staging · Apply 3 pending
@@ -95,22 +103,34 @@ If the question isn't on screen (for example, it scrolled away), the card says
 - **Idle › fold**: folds the Idle column when you only care about active work.
 - Click any card to jump to its space and tab; click a space pill to switch space.
 
+<img src="docs/images/usage-hover.png" width="460" alt="Working column: hovering a card shows Peek, Pin and Put away; another card shows the stuck? hint">
+
+*Hovering a card shows **Peek**, **Pin** and **Put away**; this one has been working
+for 47 minutes, so it also shows **stuck?**.*
+
+<img src="docs/images/usage-filter.png" alt="Header with This space selected: the board shows only the web-app space's agents">
+
+*With **This space** selected, the board shows only the agents of the active space
+(here, `web-app`).*
+
 ### Focus on the terminal
 
 **Expand** (right of the tabs) hides the header and the board, so the terminals
 take the whole window; **Restore** brings them back. Tabs, **+** and **×** stay on
 the rail while expanded.
 
+<img src="docs/images/usage-expand.png" alt="Expanded: only the tab rail with Restore and the terminal are shown">
+
+*Expanded: the tab rail (with **Restore** on the right) and the terminal.*
+
 ### Reading a card
 
-```
-┌─┬───────────────────────────────────────────────┐
-│█│ [icon] Add rate limiting to /v1/orders          │  ← agent + task title
-│█│ web-app · tab 1 · feat/rate-limit   for 12 min  │  ← space · tab · branch · age
-└─┴───────────────────────────────────────────────┘
- └ stripe: status color
-```
+<img src="docs/images/usage-card.png" width="448" alt="A card: agent icon and task title on top; space, tab, branch and age below; a colored stripe on the left">
 
+- **Left stripe**: the status color (here amber, Working).
+- **Top line**: the agent's icon and its task title.
+- **Bottom line**: space · tab · branch, and on the right how long it has been in
+  this status.
 - **Title**: what the agent named its task. After `/clear` the card shows
   **Last: …**, the last title Herdboard saw for that terminal.
 - **Age**: how long it has been in this status (*waiting*, *for*, *finished … ago*).

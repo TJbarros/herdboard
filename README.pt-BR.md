@@ -70,6 +70,10 @@ Para instalar manualmente, copie `layouts/herdboard.json` para
 3. Escolha **Terminal** ou um agente (Claude Code, Codex, Gemini…). A nova aba abre
    nessa pasta, no espaço atual.
 
+<img src="docs/images/usage-new-tab.pt-BR.png" width="302" alt="Menu de nova aba: Abrir em lista as pastas de projeto, depois Terminal e os agentes instalados">
+
+*O menu do **+**: escolha a pasta em **Abrir em** e depois um terminal ou um agente.*
+
 Precisa de um projeto novo? **⋯ › Novo espaço** cria um espaço na pasta da aba
 ativa; **+ › Novo espaço** cria na pasta escolhida em **Abrir em**. Os dois ficam na
 mesma máquina do espaço ativo.
@@ -79,6 +83,11 @@ mesma máquina do espaço ativo.
 Quando um agente para e pergunta algo, o card dele vai para **Precisa de você** e a
 coluna fica vermelha. Se ele estiver em outro espaço, esse espaço também fica vermelho
 no cabeçalho.
+
+<img src="docs/images/usage-needs-you.pt-BR.png" width="470" alt="Coluna Precisa de você com um card bloqueado mostrando a pergunta do agente e os botões Abrir e responder e Espiar">
+
+*Um agente bloqueado: a pergunta dele, **Abrir e responder**, **Espiar** e há quanto
+tempo ele está esperando.*
 
 1. Leia a pergunta no próprio card: ele mostra as últimas linhas da tela do agente,
    por exemplo *"npm run db:migrate --env=staging · Aplicar 3 migrações pendentes ·
@@ -102,22 +111,34 @@ Se a pergunta não estiver na tela (por exemplo, rolou para cima), o card diz
 - Clique em qualquer card para ir ao espaço e à aba dele; clique num espaço do
   cabeçalho para trocar de espaço.
 
+<img src="docs/images/usage-hover.pt-BR.png" width="460" alt="Coluna Trabalhando: com o mouse sobre um card aparecem Espiar, Fixar e Guardar; outro card mostra o aviso travado?">
+
+*Com o mouse sobre um card aparecem **Espiar**, **Fixar** e **Guardar**; este está
+trabalhando há 47 minutos, por isso também mostra **travado?**.*
+
+<img src="docs/images/usage-filter.pt-BR.png" alt="Cabeçalho com Este espaço selecionado: o quadro mostra só os agentes do espaço web-app">
+
+*Com **Este espaço** selecionado, o quadro mostra só os agentes do espaço ativo
+(aqui, `web-app`).*
+
 ### Focar no terminal
 
 **Expandir** (à direita das abas) esconde o cabeçalho e o quadro, e os terminais
 ocupam a janela toda; **Restaurar** traz tudo de volta. As abas, o **+** e o **×**
 continuam na barra enquanto está expandido.
 
+<img src="docs/images/usage-expand.pt-BR.png" alt="Expandido: só a barra de abas com Restaurar e o terminal aparecem">
+
+*Expandido: a barra de abas (com **Restaurar** à direita) e o terminal.*
+
 ### Como ler um card
 
-```
-┌─┬───────────────────────────────────────────────────┐
-│█│ [ícone] Limitar requisições em /v1/orders           │  ← agente + título da tarefa
-│█│ web-app · aba 1 · feat/rate-limit        há 12 min  │  ← espaço · aba · branch · tempo
-└─┴───────────────────────────────────────────────────┘
- └ faixa: cor do status
-```
+<img src="docs/images/usage-card.pt-BR.png" width="448" alt="Um card: ícone do agente e título da tarefa em cima; espaço, aba, branch e tempo embaixo; uma faixa colorida à esquerda">
 
+- **Faixa à esquerda**: a cor do status (aqui âmbar, Trabalhando).
+- **Linha de cima**: o ícone do agente e o título da tarefa.
+- **Linha de baixo**: espaço · aba · branch e, à direita, há quanto tempo ele está
+  nesse status.
 - **Título**: o nome que o agente deu à tarefa. Depois de um `/clear`, o card mostra
   **Última: …**, o último título que o Herdboard viu naquele terminal.
 - **Tempo**: há quanto tempo ele está nesse status (*esperando há*, *há*, *concluiu
