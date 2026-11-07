@@ -4,19 +4,43 @@
 #
 #   scripts/check.sh                   # from any directory
 #
+# Every step runs even after one fails; exits non-zero if any did, naming them.
 # Checks the repository's own files; installs nothing.
 set -u
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
+FAILED=
+
+# step <name> <command...>: announces the step, runs it, records whether it passed.
+step() {
+  name=$1
+  shift
+  echo "==> $name"
+  if "$@"; then
+    echo "PASS: $name"
+  else
+    echo "FAIL: $name"
+    FAILED="$FAILED  - $name
+"
+  fi
+}
+
+run_tests() {
+  (cd "$ROOT" && node --test)
+}
 
 for mod in "$ROOT"/mods/*/; do
   [ -f "$mod/mod.json" ] || continue
   mod=${mod%/}
-  echo "==> herdr-app check mods/${mod##*/}"
-  herdr-app check "$mod"
+  step "herdr-app check mods/${mod##*/}" herdr-app check "$mod"
 done
 
-echo "==> node --test"
-(cd "$ROOT" && node --test)
+step "node --test" run_tests
 
+echo
+if [ -n "$FAILED" ]; then
+  echo "Failed steps:"
+  printf '%s' "$FAILED"
+  exit 1
+fi
 echo "All checks passed."

@@ -65,6 +65,14 @@ function check(root, bin) {
 
 const checked = (log) => existsSync(log) ? readFileSync(log, "utf8").trim().split("\n") : [];
 
+// The step names listed in the final summary after "Failed steps:" (none if it isn't there).
+const failedSteps = (out) => {
+  const at = out.lastIndexOf("Failed steps:");
+  if (at < 0) return [];
+  return out.slice(at).split("\n").slice(1)
+    .filter((l) => l.startsWith("  - ")).map((l) => l.slice(4));
+};
+
 test("checks every mod and runs the tests, exit 0 when all pass", () => {
   const root = makeRepo();
   const { bin, log } = makeBin();
@@ -74,4 +82,16 @@ test("checks every mod and runs the tests, exit 0 when all pass", () => {
     ["alpha", "beta", "gamma"].map((m) => join(root, "mods", m)));
   assert.match(out, /node --test/);
   assert.match(out, /all checks passed/i);
+});
+
+test("a broken mod fails its step, the other mods and the tests still run", () => {
+  const root = makeRepo({ mods: { alpha: {}, beta: { broken: true }, gamma: {} } });
+  const { bin, log } = makeBin();
+  const { code, out } = check(root, bin);
+  assert.notEqual(code, 0, out);
+  assert.deepEqual(checked(log).sort(),
+    ["alpha", "beta", "gamma"].map((m) => join(root, "mods", m)));
+  assert.match(out, /^ℹ pass 1$/m, "node --test ran after the failing mod");
+  assert.deepEqual(failedSteps(out), ["herdr-app check mods/beta"]);
+  assert.doesNotMatch(out, /all checks passed/i);
 });
