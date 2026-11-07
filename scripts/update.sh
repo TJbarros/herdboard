@@ -3,6 +3,9 @@
 #
 #   scripts/update.sh                  # from any directory; no options
 #
+# Any argument (even --dry-run, which install.sh and uninstall.sh take) prints a usage
+# line and exits 2 before git runs: there is no dry run of an update.
+#
 # Stops before pulling if a tracked file has changes of yours, and before installing
 # if git can't fast-forward. Runs scripts/install.sh with no arguments, so it finds
 # the Herdr home (or uses HERDR_APP_HOME) the same way it does when you run it.
@@ -12,6 +15,10 @@
 set -eu
 
 main() {
+  if [ "$#" -ne 0 ]; then
+    echo "usage: $0" >&2
+    exit 2
+  fi
   ROOT=$(cd "$(dirname "$0")/.." && pwd -P)
 
   if ! command -v git >/dev/null 2>&1; then
@@ -49,4 +56,4 @@ main() {
   exec sh "$ROOT/scripts/install.sh"
 }
 
-main
+main "$@"

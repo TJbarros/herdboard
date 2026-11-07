@@ -2,35 +2,22 @@
 // scripts/update.sh against throwaway clones of a local bare repo, all under os.tmpdir().
 // Never GitHub, never this clone, never the real Herdr home: the install step is a stub
 // that writes a marker into HERDR_APP_HOME, which every spawn points at a temp dir.
-import { test, after } from "node:test";
+import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { REPO, tmpdir, tempHome } from "./runtime/sandbox.mjs";
 
-const UPDATE = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "scripts", "update.sh");
-const TMP = fs.realpathSync(os.tmpdir());
-const made = [];
-after(() => {
-  for (const d of made) if (path.resolve(d).startsWith(TMP + path.sep)) fs.rmSync(d, { recursive: true, force: true });
-});
+const UPDATE = path.join(REPO, "scripts", "update.sh");
+const tempDir = () => tmpdir("herdboard-update-");
 
-function tempDir() {
-  const d = fs.mkdtempSync(path.join(TMP, "herdboard-update-"));
-  made.push(d);
-  return d;
-}
-
-// The only way an env reaches a child process. Throws unless HERDR_APP_HOME is a temp path:
-// an empty or unset value makes install.sh pick the real Herdr home.
+// The only way an env reaches a child process: HERDR_APP_HOME goes through the guard in
+// tests/runtime/sandbox.mjs, which throws unless it is a path under the system temp folder.
 function envFor(home) {
-  const resolved = path.resolve(home || "");
-  if (!home || !resolved.startsWith(TMP + path.sep)) throw new Error(`HERDR_APP_HOME must be under ${TMP}: ${home}`);
   return {
     ...process.env,
-    HERDR_APP_HOME: resolved,
+    HERDR_APP_HOME: tempHome(home),
     GIT_CONFIG_GLOBAL: "/dev/null",
     GIT_CONFIG_NOSYSTEM: "1",
     GIT_TERMINAL_PROMPT: "0",
@@ -102,6 +89,22 @@ test("already up to date: installs anyway, with no arguments, and exits 0", () =
   const r = f.update();
   assert.equal(r.status, 0, r.stderr);
   assert.equal(f.installed(), "v1 0|");
+});
+
+test("any argument: prints the usage line, exits 2, and fetches, pulls and installs nothing", () => {
+  const f = fixture();
+  f.pushUpstream();
+  const before = f.head();
+  const fetched = f.git(f.clone, "rev-parse", "origin/main");
+  for (const args of [["--dry-run"], ["x"], ["--dry-run", "x"]]) {
+    const r = run("sh", [path.join(f.clone, "scripts", "update.sh"), ...args], { cwd: f.elsewhere, home: f.home });
+    assert.equal(r.status, 2, args.join(" "));
+    assert.match(r.stderr, /^usage: .*update\.sh\n$/);
+    assert.equal(r.stdout, "");
+  }
+  assert.equal(f.head(), before);
+  assert.equal(f.git(f.clone, "rev-parse", "origin/main"), fetched);
+  assert.equal(f.installed(), null);
 });
 
 test("behind its upstream, run from another directory: pulls, runs the pulled install, exits 0", () => {

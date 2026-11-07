@@ -24,8 +24,9 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 - `scripts/update.sh` updates in one step: `git pull --ff-only` in the clone, then
   `scripts/install.sh`, from any directory. It stops before pulling if a tracked
   file has local edits (listing them, with `git stash` / commit as the way to keep
-  them), and before installing if the pull can't fast-forward. The guide's "Update"
-  section now uses it.
+  them), and before installing if the pull can't fast-forward. It takes no options:
+  any argument, `--dry-run` included, is an error with a usage line. The guide's
+  "Update" section now uses it.
 - `scripts/uninstall.sh` removes Herdboard in one step: the layout file, its three
   mod folders and the `"layout:herdboard"` section of `keys.json` (backup first:
   `keys.json.before-herdboard-uninstall`; `keys.json` is deleted if that section was

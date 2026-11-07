@@ -7,18 +7,13 @@
 #
 # Copies files only; never deletes anything of yours. Keys: adds the
 # "layout:herdboard" section to keys.json if it isn't there (backup first).
-# The Herdr home and the names of what it installs come from scripts/common.sh.
+# The Herdr home, the names of what it installs, the option and the report's shape come
+# from scripts/common.sh.
 set -eu
 
-DRY_RUN=0
-case "$#:${1:-}" in
-  0:) ;;
-  1:--dry-run) DRY_RUN=1 ;;
-  *) echo "usage: $0 [--dry-run]" >&2; exit 2 ;;
-esac
-
-SRC=$(cd "$(dirname "$0")/.." && pwd)
-. "$SRC/scripts/common.sh"
+ROOT=$(cd "$(dirname "$0")/.." && pwd)
+. "$ROOT/scripts/common.sh"
+dry_run_option "$@"
 DEST=$(herdr_home) || exit 1
 
 # put <file> <folder>: copies the file into the folder or, in a dry run, prints whether the
@@ -33,7 +28,7 @@ put() {
   elif cmp -s "$1" "$put_to"; then put_state=unchanged
   else put_state=overwrite
   fi
-  printf '  %-9s  %s\n' "$put_state" "${put_to#"$DEST/"}"
+  report_file "$put_state" "${put_to#"$DEST/"}"
 }
 
 # folder <path>: creates it, except in a dry run.
@@ -41,53 +36,44 @@ folder() {
   if [ "$DRY_RUN" = 0 ]; then mkdir -p "$1"; fi
 }
 
-if [ "$DRY_RUN" = 1 ]; then
-  echo "Dry run: nothing is created or changed."
-  echo "Herdr home: $DEST"
-  echo "Files:"
-else
-  echo "Installing Herdboard into $DEST"
-fi
+report_start created "Installing Herdboard into $DEST"
 folder "$DEST/layouts"
 folder "$DEST/mods"
-put "$SRC/layouts/$HERDBOARD_LAYOUT.json" "$DEST/layouts"
+put "$ROOT/layouts/$HERDBOARD_LAYOUT.json" "$DEST/layouts"
 for mod in $HERDBOARD_MODS; do
   folder "$DEST/mods/$mod"
-  for f in "$SRC/mods/$mod"/*; do put "$f" "$DEST/mods/$mod"; done
+  for f in "$ROOT/mods/$mod"/*; do put "$f" "$DEST/mods/$mod"; done
 done
 
 # Keys: merge the layout's section, never replacing one the person already has.
 KEYS="$DEST/keys.json"
 if command -v python3 >/dev/null 2>&1; then
-  python3 - "$SRC/keys.json" "$KEYS" "$DRY_RUN" "$HERDBOARD_LAYOUT" <<'PY'
+  python3 - "$ROOT/keys.json" "$KEYS" "$DRY_RUN" "$HERDBOARD_LAYOUT" <<'PY'
 import json, shutil, sys, os
 src, dest, dry_run, layout = sys.argv[1], sys.argv[2], sys.argv[3] == "1", sys.argv[4]
 ours = json.load(open(src, encoding="utf-8"))
 mine = json.load(open(dest, encoding="utf-8")) if os.path.exists(dest) else {}
 added = [k for k in ours if k not in mine]
+backup = dest + ".before-herdboard"
 if not added:
     print("keys.json: 'layout:" + layout + "' already there, left as it is")
     sys.exit(0)
 if dry_run:
     if os.path.exists(dest):
-        print("keys.json: would add " + ", ".join(added) + " (backup: keys.json.before-herdboard)")
+        print("keys.json: would add " + ", ".join(added) + " (backup: " + os.path.basename(backup) + ")")
     else:
         print("keys.json: would be created with " + ", ".join(added))
     sys.exit(0)
 if os.path.exists(dest):
-    shutil.copy(dest, dest + ".before-herdboard")
+    shutil.copy(dest, backup)
 for k in added:
     mine[k] = ours[k]
 json.dump(mine, open(dest, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 open(dest, "a", encoding="utf-8").write("\n")
-print("keys.json: added " + ", ".join(added) + " (backup: keys.json.before-herdboard)")
+print("keys.json: added " + ", ".join(added) + " (backup: " + os.path.basename(backup) + ")")
 PY
 else
-  echo "python3 not found: add the section in keys.json from $SRC/keys.json by hand"
+  echo "python3 not found: add the section in keys.json from $ROOT/keys.json by hand"
 fi
 
-if [ "$DRY_RUN" = 1 ]; then
-  echo "Dry run done: run scripts/install.sh without --dry-run to install."
-else
-  echo "Done. In Herdr: Settings > Look > Layout > $HERDBOARD_LAYOUT (or: herdr-app do layout.switch --name $HERDBOARD_LAYOUT)."
-fi
+report_end install "Done. In Herdr: Settings > Look > Layout > $HERDBOARD_LAYOUT (or: herdr-app do layout.switch --name $HERDBOARD_LAYOUT)."

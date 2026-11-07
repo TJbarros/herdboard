@@ -1,54 +1,23 @@
 // Run with: node --test
 // scripts/uninstall.sh, spawned against temporary Herdr homes only. Never the real one: without
 // HERDR_APP_HOME (or with it empty) the script resolves the real home and removes Herdboard from it.
-import { test, after } from "node:test";
+import { test } from "node:test";
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { REPO, MODS, tmpdir, sh, snapshot, pathWithoutPython } from "./runtime/sandbox.mjs";
 
-const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const INSTALL = path.join(REPO, "scripts", "install.sh");
 const UNINSTALL = path.join(REPO, "scripts", "uninstall.sh");
-const TMP = fs.realpathSync(os.tmpdir());
 
-const temps = [];
-const tmpdir = () => { const d = fs.mkdtempSync(path.join(TMP, "herdboard-test-")); temps.push(d); return d; };
-after(() => { for (const d of temps) fs.rmSync(d, { recursive: true, force: true }); });
-
-// The only way tests run the scripts (same guard as tests/install.test.js): HERDR_APP_HOME is
-// always set, non-empty and under the system temp folder, or the test throws before spawning
-// anything. They run from a folder outside the repo: the scripts must work from any directory.
-function sh(home, shArgs, { PATH = process.env.PATH } = {}) {
-  if (typeof home !== "string" || home === "" || !path.resolve(home).startsWith(TMP + path.sep)) {
-    throw new Error(`refusing to run a script with HERDR_APP_HOME=${JSON.stringify(home)}`);
-  }
-  const env = { PATH, HOME: tmpdir(), HERDR_APP_HOME: home };
-  return spawnSync("/bin/sh", shArgs, { env, cwd: tmpdir(), encoding: "utf8" });
-}
-
+// Every spawn goes through sh() from tests/runtime/sandbox.mjs, which refuses a HERDR_APP_HOME
+// that isn't under the system temp folder.
 const run = (home, args = [], opts) => sh(home, [UNINSTALL, ...args], opts);
 const install = home => {
   const r = sh(home, [INSTALL]);
   assert.equal(r.status, 0, r.stderr);
 };
-
-// Every folder and every file's sha256 under `dir`, to tell whether anything changed.
-function snapshot(dir) {
-  const out = {};
-  const walk = rel => {
-    for (const e of fs.readdirSync(path.join(dir, rel), { withFileTypes: true })) {
-      const r = path.join(rel, e.name);
-      if (e.isDirectory()) { out[r + "/"] = "dir"; walk(r); }
-      else out[r] = createHash("sha256").update(fs.readFileSync(path.join(dir, r))).digest("hex");
-    }
-  };
-  walk("");
-  return out;
-}
 
 test("an unknown option prints a usage line, exits non-zero and leaves the home unchanged", () => {
   const home = tmpdir();
@@ -92,7 +61,8 @@ function homeWithTheirs() {
   return home;
 }
 
-const OURS = /^(layouts\/herdboard\.json|mods\/herdboard(-picker|-new-menu)?\/)/;
+// What install.sh puts in a home, as paths relative to it: the layout and the mods' folders.
+const ours = f => f === "layouts/herdboard.json" || MODS.some(m => f.startsWith(`mods/${m}/`));
 const lines = (...l) => [...l, ""].join("\n");
 const REMINDER = "Done. If Herdboard was your active layout, switch to another one in Herdr: Settings > Look > Layout.";
 
@@ -106,20 +76,38 @@ test("after an install, uninstall removes the layout, the three mods and the key
   assert.equal(r.stderr, "");
   assert.equal(r.stdout, lines(
     `Uninstalling Herdboard from ${home}`,
+    "keys.json: removed 'layout:herdboard' (backup: keys.json.before-herdboard-uninstall)",
     "  removed    layouts/herdboard.json",
     "  removed    mods/herdboard/",
     "  removed    mods/herdboard-picker/",
     "  removed    mods/herdboard-new-menu/",
-    "keys.json: removed 'layout:herdboard' (backup: keys.json.before-herdboard-uninstall)",
     REMINDER,
   ));
   const after = snapshot(home);
-  const kept = Object.fromEntries(Object.entries(before).filter(([f]) => !OURS.test(f) && f !== "keys.json"));
+  const kept = Object.fromEntries(Object.entries(before).filter(([f]) => !ours(f) && f !== "keys.json"));
   const { "keys.json": keys, "keys.json.before-herdboard-uninstall": backup, ...rest } = after;
   assert.deepEqual(rest, kept);
   assert.ok(keys && backup);
   assert.deepEqual(fs.readFileSync(path.join(home, "keys.json.before-herdboard-uninstall")), keysBefore);
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(home, "keys.json"), "utf8")), THEIR_KEYS);
+});
+
+// The failing removal is a read-only mods/ folder, which root can still write to.
+test("a real run prints the keys change before removing files, so a removal that fails still shows it",
+  { skip: process.getuid?.() === 0 && "root ignores the read-only folder" }, () => {
+  const home = homeWithTheirs();
+  install(home);
+  const mods = path.join(home, "mods");
+  fs.chmodSync(mods, 0o555);
+  let r;
+  try { r = run(home); } finally { fs.chmodSync(mods, 0o755); }
+  assert.notEqual(r.status, 0);
+  assert.ok(r.stdout.startsWith(lines(
+    `Uninstalling Herdboard from ${home}`,
+    "keys.json: removed 'layout:herdboard' (backup: keys.json.before-herdboard-uninstall)",
+    "  removed    layouts/herdboard.json",
+  )), r.stdout);
+  assert.ok(fs.existsSync(path.join(home, "keys.json.before-herdboard-uninstall")));
 });
 
 test("when the keys section was all keys.json had, keys.json is deleted and the backup kept", () => {
@@ -155,11 +143,11 @@ test("a second run reports every part as missing, changes nothing and exits 0", 
   assert.equal(r.status, 0, r.stderr);
   assert.equal(r.stdout, lines(
     `Uninstalling Herdboard from ${home}`,
+    "keys.json: no 'layout:herdboard' section, left as it is",
     "  missing    layouts/herdboard.json (skipped)",
     "  missing    mods/herdboard/ (skipped)",
     "  missing    mods/herdboard-picker/ (skipped)",
     "  missing    mods/herdboard-new-menu/ (skipped)",
-    "keys.json: no 'layout:herdboard' section, left as it is",
     REMINDER,
   ));
   assert.deepEqual(snapshot(home), before);
@@ -173,7 +161,7 @@ test("a part removed by hand is reported missing while the rest is removed", () 
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /^ {2}missing {4}mods\/herdboard-picker\/ \(skipped\)$/m);
   assert.match(r.stdout, /^ {2}removed {4}mods\/herdboard-new-menu\/$/m);
-  assert.deepEqual(Object.keys(snapshot(home)).filter(f => OURS.test(f)), []);
+  assert.deepEqual(Object.keys(snapshot(home)).filter(ours), []);
 });
 
 test("a keys.json that isn't a JSON object stops it before anything is removed, with or without --dry-run", () => {
@@ -235,16 +223,6 @@ test("a dry run after an uninstall reports every part as missing", () => {
   assert.deepEqual(snapshot(home), before);
 });
 
-// A PATH with every tool the scripts use except python3.
-function pathWithoutPython() {
-  const bin = tmpdir();
-  for (const tool of ["dirname", "basename", "cp", "mkdir", "cmp", "grep", "tr", "cat", "rm"]) {
-    const found = spawnSync("sh", ["-c", `command -v ${tool}`], { encoding: "utf8" }).stdout.trim();
-    if (found) fs.symlinkSync(found, path.join(bin, tool));
-  }
-  return bin;
-}
-
 test("without python3 it removes the files and says to remove the keys section by hand", () => {
   const home = homeWithTheirs();
   install(home);
@@ -258,7 +236,7 @@ test("without python3 it removes the files and says to remove the keys section b
   assert.equal(r.status, 0, r.stderr);
   assert.ok(r.stdout.split("\n").includes(byHand), r.stdout);
   assert.ok(r.stdout.endsWith(`${REMINDER}\n`));
-  assert.deepEqual(Object.keys(snapshot(home)).filter(f => OURS.test(f)), []);
+  assert.deepEqual(Object.keys(snapshot(home)).filter(ours), []);
   assert.deepEqual(fs.readFileSync(path.join(home, "keys.json")), keysBefore);
   assert.equal(fs.existsSync(path.join(home, "keys.json.before-herdboard-uninstall")), false);
 });
@@ -280,9 +258,9 @@ test("a mod folder that is a symlink is unlinked, not emptied", () => {
 test("uninstall.sh takes the home and the names of what it removes from common.sh only", () => {
   const uninstall = fs.readFileSync(UNINSTALL, "utf8");
   const owned = ["HERDR_APP_HOME:-", "cmd.exe", "/proc/version", ".config/herdr-app",
-    "'layout:herdboard'", "layouts/herdboard.json", "herdboard-picker", "herdboard-new-menu"];
+    "'layout:herdboard'", "layouts/herdboard.json", ...MODS.filter(m => m !== "herdboard")];
   for (const s of owned) {
     assert.ok(!uninstall.includes(s), `uninstall.sh has ${s}`);
   }
-  assert.match(uninstall, /^\. "\$SRC\/scripts\/common\.sh"$/m);
+  assert.match(uninstall, /^\. "\$ROOT\/scripts\/common\.sh"$/m);
 });
