@@ -12,6 +12,10 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
   yet), the board reads it up to two more times, after 0.5 s and then 1.5 s more,
   while the agent stays blocked, so the card gets the question (and, for a
   permission dialog, its Yes / No) without a status change.
+- `scripts/check.sh` runs every local check before a commit: `herdr-app check` on
+  each mod in `mods/` (every folder with a `mod.json`), then `node --test` from the
+  repository root, from any directory. Every step runs even after one fails; it
+  exits non-zero and names the failed steps, or the missing `herdr-app` / `node`.
 - `scripts/update.sh` updates in one step: `git pull --ff-only` in the clone, then
   `scripts/install.sh`, from any directory. It stops before pulling if a tracked
   file has local edits (listing them, with `git stash` / commit as the way to keep
