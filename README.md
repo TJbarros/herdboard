@@ -1,5 +1,7 @@
 # Herdboard
 
+**English** · [Português (Brasil)](README.pt-BR.md)
+
 A kanban board for your coding agents, as a [Herdr](https://herdr.dev) layout.
 Every agent in every space is a card in four columns: Needs you, Working, Done and
 Idle. Blocked cards show what the agent is asking; the live terminals of the active
@@ -31,14 +33,14 @@ tab fill the rest of the window.
   your open terminals.
 - **Follows your theme**, light or dark. **Responsive** down to ~760px (a single
   list below 800px).
-- **Two languages:** Portuguese (Brazil) and English, switchable in the header.
+- **Two languages:** English and Portuguese (Brazil), switchable in the header.
 
 ## Install
 
 Requires Herdr (tested with herdr-app 0.1.13).
 
 ```sh
-git clone <this repository> herdboard
+git clone https://github.com/TJbarros/herdboard.git
 cd herdboard
 scripts/install.sh            # on WSL it finds the Windows Herdr home
 ```
@@ -71,15 +73,6 @@ the three `mods/herdboard*` folders to `~/.config/herdr-app/mods/`, and merge
 - Herdr can't change a space's registered folder after it's made; Herdboard always
   uses the terminals' live folders instead.
 - Preferences live in Herdr's shared state under `herdboard.*`.
-
-## Português (Brasil)
-
-O Herdboard é um quadro kanban dos seus agentes de código para o Herdr: cada
-agente vira um card em Precisa de você, Trabalhando, Concluído e Ocioso. Os cards
-bloqueados mostram a pergunta do agente, com "Abrir e responder" e "Espiar". Novas
-abas abrem na pasta do projeto da aba atual (e você pode escolher outra). Instale
-com `scripts/install.sh` e escolha **Herdboard** em Configurações › Look › Layout.
-O idioma troca no seletor PT | EN do cabeçalho.
 
 ## License
 

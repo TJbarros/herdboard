@@ -63,7 +63,8 @@ column, top to bottom:
   installed agents, New space, worktrees; all pass `folder` (and `machine`).
 - Expand hides `herdboard-header` and `herdboard-cards`; Restore shows them.
 - Below 1100px buttons become icons; below 800px the board is one list, most
-  urgent first, each card labelled with its status; below 760px pills drop counts.
+  urgent first, each card labelled with its status; below 760px pills drop counts
+  and the filter reads All | Here.
 - `setAgentOrder` follows the board (Idle skipped while folded).
 
 ## Built from
