@@ -237,11 +237,11 @@ test("a new request met while the card was hidden gets its own buttons", async (
 
 // Issue #8: the first read can come back before the screen shows the question (a resize or a
 // redraw while it runs). A miss is read again, after RETRY_MS, without a status change.
-const NOTHING = " ▐▛███▛█   Claude Code v2.1.319\n\n❯ Run touch /tmp/a\n";
+const NO_QUESTION_YET = " ▐▛███▛█   Claude Code v2.1.319\n\n❯ Run touch /tmp/a\n";
 test("a first read before the question is on screen is read again and gets its buttons", async () => {
   const b = board();
   herdr.agents = [blocked(1)];
-  await readFor(b, blocked(1), NOTHING);
+  await readFor(b, blocked(1), NO_QUESTION_YET);
   assert.equal(draw(b, blocked(1)).yes, null, "no buttons yet");
   assert.deepEqual(waits.map(w => w.ms), [500]);
   await wake();
@@ -279,7 +279,7 @@ test("a first read with the question but no Yes / No pair yet is read again and 
 test("a render during a wait starts no second read of the same spell", async () => {
   const b = board();
   herdr.agents = [blocked(1)];
-  await readFor(b, blocked(1), NOTHING);              // a miss: waiting 500 ms
+  await readFor(b, blocked(1), NO_QUESTION_YET);       // a miss: waiting 500 ms
   b.fetchAsks([blocked(1)], cx);                       // the board renders meanwhile
   b.fetchAsks([blocked(1)], cx);
   assert.equal(reads().length, 1);
@@ -291,7 +291,7 @@ test("no retry once the spell ended during the first read", async () => {
   herdr.agents = [blocked(1)];
   b.fetchAsks([blocked(1)], cx);
   herdr.agents = [{ ...blocked(2), status: "working" }];
-  await settle(reads().at(-1), NOTHING);
+  await settle(reads().at(-1), NO_QUESTION_YET);
   assert.deepEqual(waits, []);
   assert.equal(b.asks.t1, undefined);
 });
@@ -299,7 +299,7 @@ test("no retry once the spell ended during the first read", async () => {
 test("no retry once the agent leaves blocked during the wait", async () => {
   const b = board();
   herdr.agents = [blocked(1)];
-  await readFor(b, blocked(1), NOTHING);
+  await readFor(b, blocked(1), NO_QUESTION_YET);
   herdr.agents = [{ ...blocked(2), status: "working" }];
   await wake();
   assert.equal(reads().length, 1);
@@ -309,7 +309,7 @@ test("no retry once the agent leaves blocked during the wait", async () => {
 test("a wait from an earlier spell neither reads again nor replaces the current spell's card", async () => {
   const b = board();
   herdr.agents = [blocked(1)];
-  await readFor(b, blocked(1), NOTHING);              // seq 1 misses and waits
+  await readFor(b, blocked(1), NO_QUESTION_YET);       // seq 1 misses and waits
   herdr.agents = [blocked(2)];
   await readFor(b, blocked(2), screen("touch /tmp/b"));
   const kept = b.asks.t1;
@@ -333,8 +333,8 @@ test("an agent that is not Claude Code gets no extra read once its question is o
 test("a screen that never shows a question is read 3 times, then the card looks as before", async () => {
   const b = board();
   herdr.agents = [blocked(1)];
-  await readFor(b, blocked(1), NOTHING);
-  for (let i = 0; i < 3; i++) { await wake(); await settle(reads().at(-1), NOTHING); }
+  await readFor(b, blocked(1), NO_QUESTION_YET);
+  for (let i = 0; i < 3; i++) { await wake(); await settle(reads().at(-1), NO_QUESTION_YET); }
   assert.equal(reads().length, 3);
   assert.deepEqual(waits.map(w => w.ms), [500, 1500]);
   assert.equal(b.asks.t1.text, "");

@@ -152,11 +152,11 @@ const RETRY_MS = [500, 1500];
 // The read of one blocked spell (`key`): the last read with its `choices` (the Yes / No pair
 // the card shows, else null), or null as soon as the spell has ended (checked after each read
 // and after each wait), so no read follows a status or seq change.
-async function askFor(address, key, cx) {
+async function readAskWithRetry(address, key, cx) {
   for (let i = 0; ; i++) {
     let ask = null;
     try { ask = await readAsk(address); } catch (_e) { ask = null; }
-    ask ??= { text: "", question: "", options: [], id: "" };
+    ask ??= parseAsk("");  // a failed read: an empty screen, no question
     const now = stillOn(address, key);
     if (!now) return null;
     const answerable = mayAnswer(now);
@@ -211,10 +211,11 @@ export default class Herdboard extends View {
     return herdr ?? this.observed[a.address].at;
   }
 
-  // Read a blocked agent's screen once per blocked spell (keyed by address + seq), off the UI
-  // thread; a miss is read again inside askFor (RETRY_MS) and only its last read is kept.
+  // Read each blocked agent's screen, off the UI thread, in one read chain per blocked spell
+  // (keyed by address + seq): readAskWithRetry reads it, reads it again after a miss (RETRY_MS:
+  // at most 2 more reads, only while the spell lasts) and returns only its last read.
   // `choices` holds the Yes / No options when the screen shows a dialog with both.
-  // The key stays pending until askFor returns, so one spell never has two read chains.
+  // The key stays pending until readAskWithRetry returns, so one spell never has two read chains.
   // Reads can overlap and finish in any order: a read is kept only if its spell is still the
   // agent's current one, and never over a read of that spell already kept (it may be answered).
   // `blocked` is only the cards shown (filter, put-away tabs): a kept read is dropped when its
@@ -227,7 +228,7 @@ export default class Herdboard extends View {
       this.pending.add(key);
       cx.spawn(async (cx) => {
         let ask = null;
-        try { ask = await askFor(a.address, key, cx); } finally { this.pending.delete(key); }
+        try { ask = await readAskWithRetry(a.address, key, cx); } finally { this.pending.delete(key); }
         if (!ask || !stillOn(a.address, key) || this.asks[a.address]?.key === key) return;
         this.asks[a.address] = { key, ...ask, sent: null };
         cx.notify();
