@@ -22,6 +22,47 @@ test("card text keeps the question and up to two lines before it", () => {
   assert.equal(parseAsk(FIXTURE).text, "Bash command\ntouch /tmp/x\nDo you want to proceed?");
 });
 
+// Claude Code v2.1.319 at 202 columns, from `hc read <t> --lines 0` (issue #7): dashed rows
+// (U+254C) frame the command. They are separators, not part of the question.
+const WIDE = [
+  "─".repeat(202),
+  " Bash command",
+  " Tip: auto mode handles these prompts for you — choose \"switch to auto mode\" below",
+  " Create empty probe file",
+  "╌".repeat(202),
+  " touch herdboard-probe.txt",
+  "╌".repeat(202),
+  " Do you want to proceed?",
+  " ❯ 1. Yes",
+  "   2. Yes, and always allow access to <folder> from this project",
+  "   3. Yes, and switch to auto mode · auto mode handles these prompts for you",
+  "   4. No",
+  " Esc to cancel · Tab to amend",
+].join("\n");
+
+test("card text shows the command, not the dashed rows around it", () => {
+  const ask = parseAsk(WIDE);
+  assert.equal(ask.text, "Create empty probe file\ntouch herdboard-probe.txt\nDo you want to proceed?");
+  assert.deepEqual(ask.options, [
+    { n: 1, text: "Yes" },
+    { n: 2, text: "Yes, and always allow access to <folder> from this project" },
+    { n: 3, text: "Yes, and switch to auto mode · auto mode handles these prompts for you" },
+    { n: 4, text: "No" },
+  ]);
+});
+
+test("lines made only of horizontal box-drawing glyphs are dropped from the card text", () => {
+  for (const g of "─━┄┅┈┉╌╍═╴╶╸╺╼╾") {
+    assert.equal(parseAsk(`Run it\n${g.repeat(40)}\nProceed?`).text, "Run it\nProceed?", g);
+  }
+});
+
+test("a line with words next to dashes, or of vertical glyphs and corners, stays in the card text", () => {
+  for (const line of ["── Bash ──", "┆┆┆", "├──"]) {
+    assert.equal(parseAsk(`Run it\n${line}\nProceed?`).text, `Run it\n${line}\nProceed?`, line);
+  }
+});
+
 test("reads the question and the numbered options below it", () => {
   const ask = parseAsk(FIXTURE);
   assert.equal(ask.question, "Do you want to proceed?");
@@ -104,8 +145,8 @@ test("the request id is the whole dialog: the same on two reads although the scr
 });
 
 test("two requests that end the same have different ids although the card text matches", () => {
-  const a = parseAsk(LIVE("●", ["touch /tmp/a &&", "make"]));
-  const b = parseAsk(LIVE("●", ["rm -rf ~ &&", "make"]));
+  const a = parseAsk(LIVE("●", ["touch /tmp/a &&", "make &&", "make"]));
+  const b = parseAsk(LIVE("●", ["rm -rf ~ &&", "make &&", "make"]));
   assert.equal(a.text, b.text);
   assert.notEqual(a.id, b.id);
 });
