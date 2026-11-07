@@ -91,6 +91,22 @@ test("already up to date: installs anyway, with no arguments, and exits 0", () =
   assert.equal(f.installed(), "v1 0|");
 });
 
+test("any argument: prints the usage line, exits 2, and fetches, pulls and installs nothing", () => {
+  const f = fixture();
+  f.pushUpstream();
+  const before = f.head();
+  const fetched = f.git(f.clone, "rev-parse", "origin/main");
+  for (const args of [["--dry-run"], ["x"], ["--dry-run", "x"]]) {
+    const r = run("sh", [path.join(f.clone, "scripts", "update.sh"), ...args], { cwd: f.elsewhere, home: f.home });
+    assert.equal(r.status, 2, args.join(" "));
+    assert.match(r.stderr, /^usage: .*update\.sh\n$/);
+    assert.equal(r.stdout, "");
+  }
+  assert.equal(f.head(), before);
+  assert.equal(f.git(f.clone, "rev-parse", "origin/main"), fetched);
+  assert.equal(f.installed(), null);
+});
+
 test("behind its upstream, run from another directory: pulls, runs the pulled install, exits 0", () => {
   const f = fixture();
   f.pushUpstream();
