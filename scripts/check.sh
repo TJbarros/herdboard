@@ -11,6 +11,15 @@ set -u
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 FAILED=
 
+MISSING=0
+for tool in herdr-app node; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    echo "$tool not found on PATH" >&2
+    MISSING=1
+  fi
+done
+[ "$MISSING" -eq 0 ] || exit 1
+
 # step <name> <command...>: announces the step, runs it, records whether it passed.
 step() {
   name=$1
