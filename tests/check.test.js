@@ -95,3 +95,23 @@ test("a broken mod fails its step, the other mods and the tests still run", () =
   assert.deepEqual(failedSteps(out), ["herdr-app check mods/beta"]);
   assert.doesNotMatch(out, /all checks passed/i);
 });
+
+test("a failing test fails the test step, after every mod was checked", () => {
+  const root = makeRepo({ testsPass: false });
+  const { bin, log } = makeBin();
+  const { code, out } = check(root, bin);
+  assert.notEqual(code, 0, out);
+  assert.equal(checked(log).length, 3);
+  assert.deepEqual(failedSteps(out), ["node --test"]);
+});
+
+for (const missing of ["herdr-app", "node"]) {
+  test(`without ${missing} on PATH it names it and exits non-zero`, () => {
+    const root = makeRepo();
+    const { bin } = makeBin(["herdr-app", "node"].filter((t) => t !== missing));
+    const { code, out } = check(root, bin);
+    assert.notEqual(code, 0, out);
+    assert.match(out, new RegExp(`^${missing} not found on PATH`, "m"));
+    assert.doesNotMatch(out, /all checks passed/i);
+  });
+}
