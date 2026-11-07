@@ -6,7 +6,8 @@
 
 Open an [issue](https://github.com/TJbarros/herdboard/issues/new/choose) with the
 bug or idea form. For bugs, include your herdr-app version (`herdr-app --version`),
-your system (Windows + WSL, Linux or macOS), the steps and what you expected.
+your system (Windows with WSL or Git Bash, Linux or macOS), the steps and what you
+expected.
 Screenshots help; leave out project names or anything private.
 
 ## Change the code
@@ -27,7 +28,8 @@ Screenshots help; leave out project names or anything private.
 
 Abra uma [issue](https://github.com/TJbarros/herdboard/issues/new/choose) pelo
 formulário de problema ou de ideia. Em problemas, informe a versão do herdr-app
-(`herdr-app --version`), o seu sistema (Windows + WSL, Linux ou macOS), os passos e o
+(`herdr-app --version`), o seu sistema (Windows com WSL ou Git Bash, Linux ou macOS),
+os passos e o
 que você esperava. Prints ajudam; deixe de fora nomes de projetos ou dados privados.
 
 ### Mudar o código

@@ -22,15 +22,22 @@
 ```sh
 git clone https://github.com/TJbarros/herdboard.git
 cd herdboard
-scripts/install.sh            # on WSL it finds the Windows Herdr home
+scripts/install.sh
 ```
 
-Then in Herdr: **Settings › Look › Layout › Herdboard**, or
-`herdr-app do layout.switch --name herdboard`. The script only copies files and adds
-the `layout:herdboard` section to `keys.json` (with a backup) when it isn't there.
+`scripts/install.sh` copies Herdboard into Herdr's home folder: run from WSL, into the
+Windows one (`C:\Users\<you>\.config\herdr-app`); run anywhere else, into
+`~/.config/herdr-app`, Herdr's default home. Set `HERDR_APP_HOME` to use another
+folder. It only copies files, and adds the `layout:herdboard` section to `keys.json`
+(with a backup) when it isn't there; that step needs Python 3, and without it the
+script tells you to add the section by hand. It is a POSIX shell script (`sh`); on
+Windows it was tested from WSL and from Git Bash.
 
-Free and open source (Apache-2.0) · runs inside the Herdr app · tested with
-herdr-app 0.1.13.
+Then in Herdr: **Settings › Look › Layout › herdboard**, or
+`herdr-app do layout.switch --name herdboard`.
+
+Free and open source (Apache-2.0) · runs inside the Herdr app · tested on Windows
+with herdr-app 0.1.13.
 
 ## Why
 

@@ -13,7 +13,7 @@ SRC=$(cd "$(dirname "$0")/.." && pwd)
 if [ -n "${HERDR_APP_HOME:-}" ]; then
   DEST=$HERDR_APP_HOME
 elif grep -qi microsoft /proc/version 2>/dev/null; then
-  # WSL: Herdr runs on Windows and reads C:\Users\<user>\.config\herdr-app.
+  # WSL: assumes the Herdr app runs on Windows, whose home is C:\Users\<user>\.config\herdr-app.
   WINUSER=$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r')
   DEST="/mnt/c/Users/$WINUSER/.config/herdr-app"
 else
@@ -57,4 +57,4 @@ else
   echo "python3 not found: add the section in keys.json from $SRC/keys.json by hand"
 fi
 
-echo "Done. In Herdr: Settings > Look > Layout > Herdboard (or: herdr-app do layout.switch --name herdboard)."
+echo "Done. In Herdr: Settings > Look > Layout > herdboard (or: herdr-app do layout.switch --name herdboard)."

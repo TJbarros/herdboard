@@ -6,7 +6,7 @@ labels: bug
 
 **herdr-app version · versão do herdr-app** (`herdr-app --version`):
 
-**System · Sistema** (Windows + WSL, Linux, macOS):
+**System · Sistema** (Windows with WSL or Git Bash, Linux, macOS · Windows com WSL ou Git Bash, Linux, macOS):
 
 **Steps and what happened · Passos e o que aconteceu**
 <!-- What you did, what you expected and what you saw. Screenshots help; leave out private data.

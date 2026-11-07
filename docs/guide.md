@@ -112,8 +112,9 @@ them all.
 ## FAQ
 
 **A card says "No task title".** The agent hasn't named a task yet (for example, a
-session where you only said hello). Agents such as Claude Code set the title once they
-start working on a task; from then on, Herdboard keeps it even through `/clear`.
+session where you only said hello). The title is the one the agent sets on its
+terminal: in our tests, Claude Code set it once it started working on a task. From
+then on, Herdboard keeps it even through `/clear`.
 
 **A new tab opened in the wrong folder.** New tabs start where the active tab's
 terminal *is*, not where the agent works: an agent started in `~/projects` that runs

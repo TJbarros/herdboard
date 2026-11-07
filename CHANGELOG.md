@@ -17,6 +17,7 @@ First public release.
 - Workspace rail: tabs, new tab (+), close tab (×), Expand / Restore.
 - New-tab menu with a folder picker; new tabs and spaces start in the chosen folder.
 - Follows the Herdr theme; responsive down to ~760px; English and Portuguese.
-- `scripts/install.sh` (WSL, Linux, macOS), README and guide in both languages.
+- `scripts/install.sh` (tested on Windows from WSL and Git Bash), README and guide in
+  both languages.
 
 [1.0.0]: https://github.com/TJbarros/herdboard/releases/tag/v1.0.0

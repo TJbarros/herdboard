@@ -60,7 +60,8 @@ column, top to bottom:
   `layout.switch main`).
 - + / Ctrl+Shift+T: `herdboard-new-menu` popup: "Open in" folder choice (active
   tab's live folder first, then other terminals' folders, homes left out), Terminal,
-  installed agents, New space, worktrees; all pass `folder` (and `machine`).
+  installed agents, New space, worktrees; `tab.new` gets `folder`, `space.new` gets
+  `folder` and `machine`.
 - Expand hides `herdboard-header` and `herdboard-cards`; Restore shows them.
 - Below 1100px buttons become icons; below 800px the board is one list, most
   urgent first, each card labelled with its status; below 760px pills drop counts

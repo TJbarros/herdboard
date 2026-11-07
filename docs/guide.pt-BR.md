@@ -119,9 +119,10 @@ Layout** lista todos.
 ## Perguntas frequentes
 
 **O card diz "Sem título da tarefa".** O agente ainda não deu nome a uma tarefa
-(por exemplo, numa sessão em que você só disse "olá"). Agentes como o Claude Code
-definem o título quando começam a trabalhar numa tarefa; a partir daí, o Herdboard
-guarda o título mesmo depois de um `/clear`.
+(por exemplo, numa sessão em que você só disse "olá"). O título é o que o agente
+define no terminal dele: nos nossos testes, o Claude Code o definiu quando começou a
+trabalhar numa tarefa. A partir daí, o Herdboard guarda o título mesmo depois de um
+`/clear`.
 
 **A nova aba abriu na pasta errada.** Novas abas começam onde o terminal da aba
 ativa *está*, não onde o agente trabalha: um agente iniciado em `~/projetos` que roda
