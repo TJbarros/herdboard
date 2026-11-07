@@ -21,6 +21,11 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
   unchanged) and what would happen to `keys.json`. Any other option is now an error
   with a usage line (before, options were ignored and the install ran). The Herdr
   home and the names of what Herdboard installs live in `scripts/common.sh`.
+- `scripts/update.sh` updates in one step: `git pull --ff-only` in the clone, then
+  `scripts/install.sh`, from any directory. It stops before pulling if a tracked
+  file has local edits (listing them, with `git stash` / commit as the way to keep
+  them), and before installing if the pull can't fast-forward. The guide's "Update"
+  section now uses it.
 
 ## [1.1.0] - 2026-11-07
 

@@ -150,15 +150,27 @@ than one agent, Herdboard counts from when it first saw each one's status instea
 ## Update
 
 ```sh
-cd herdboard
-git pull
-scripts/install.sh
+herdboard/scripts/update.sh
 ```
 
-Herdr reloads the layout and mods by itself; no restart needed. To see first which
-files the update would overwrite, run `scripts/install.sh --dry-run`: it lists each file
+It fast-forwards your clone (`git pull --ff-only`) and runs `scripts/install.sh`
+again. Herdr reloads the layout and mods by itself; no restart needed. To see which
+files an install would overwrite, run `scripts/install.sh --dry-run`: it lists each file
 as **new**, **overwrite** or **unchanged**, says what would happen to `keys.json`, and
 changes nothing.
+
+If you edited a file in the clone (`STUCK_MIN`, say), the update stops before
+pulling and lists what you changed. To keep your edits, run this inside the clone:
+
+```sh
+git stash && scripts/update.sh && git stash pop && scripts/install.sh
+```
+
+If it stops partway, your edits stay stashed; `git stash pop` brings them back. If
+you'd rather commit your edits, the update can't fast-forward anymore: run
+`git pull --rebase && scripts/install.sh` instead. The update also stops, without
+installing, whenever your branch can't fast-forward (it has commits of yours, or it
+isn't tracking a remote branch), and says so.
 
 ## Uninstall
 

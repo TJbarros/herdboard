@@ -160,15 +160,28 @@ de `mods/herdboard/main.js`; depois rode `scripts/install.sh` de novo.
 ## Atualizar
 
 ```sh
-cd herdboard
-git pull
-scripts/install.sh
+herdboard/scripts/update.sh
 ```
 
-O Herdr recarrega o layout e os mods sozinho; não precisa reiniciar. Para ver antes
-quais arquivos a atualização sobrescreveria, rode `scripts/install.sh --dry-run`: ele
-lista cada arquivo como **new** (novo), **overwrite** (sobrescreve) ou **unchanged**
-(igual), diz o que aconteceria com o `keys.json` e não muda nada.
+Ele avança o seu clone (`git pull --ff-only`) e roda `scripts/install.sh` de novo.
+O Herdr recarrega o layout e os mods sozinho; não precisa reiniciar. Para ver quais
+arquivos uma instalação sobrescreveria, rode `scripts/install.sh --dry-run`: ele lista
+cada arquivo como **new** (novo), **overwrite** (sobrescreve) ou **unchanged** (igual),
+diz o que aconteceria com o `keys.json` e não muda nada.
+
+Se você editou algum arquivo do clone (o `STUCK_MIN`, por exemplo), a atualização
+para antes do pull e lista o que você mudou. Para manter as suas edições, rode
+dentro do clone:
+
+```sh
+git stash && scripts/update.sh && git stash pop && scripts/install.sh
+```
+
+Se parar no meio, as suas edições continuam guardadas no stash; `git stash pop` as
+traz de volta. Se preferir fazer commit delas, a atualização não consegue mais
+avançar direto: rode `git pull --rebase && scripts/install.sh` no lugar dela. A
+atualização também para, sem instalar, sempre que o seu branch não pode avançar
+direto (ele tem commits seus, ou não acompanha nenhum branch remoto), e avisa.
 
 ## Desinstalar
 
