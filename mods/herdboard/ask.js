@@ -47,9 +47,11 @@ function optionsAfter(lines, q) {
 
 // The request as a whole, for the check before a key is pressed: the dialog's lines exactly as
 // the screen has them (nothing collapsed or dropped: two commands that differ only in spacing
-// are two requests), through the last option, with the option cursor ("❯") blanked, since
-// moving it changes nothing a digit answers. The screen above the dialog is left out: Claude
-// Code blinks its tool line there ("●" on one read, a space on the next).
+// are two requests), through the last option. Only the option cursor ("❯") is blanked, and only
+// on the lines after the question, since moving it changes nothing a digit answers: the request
+// above the question stays byte for byte (a heredoc's "> 1. x" line is not a cursor).
+// The screen above the dialog is left out: Claude Code blinks its tool line there ("●" on one
+// read, a space on the next).
 // The dialog opens with a rule at column 0: Claude Code's full-width "───", or a box's "╭───╮".
 // Command lines can't start one: Claude Code indents them, and a box's start with "│".
 // Claude Code frames the command between two dashed lines ("╌"), so a forged rule inside the
@@ -62,7 +64,7 @@ function requestId(raw, all, q, end) {
   const frame = all.slice(rule + 1, q).filter(dashed).length;
   if (frame !== 0 && frame !== 2) return "";
   return raw.slice(rule + 1, end + 1)
-    .map(l => l.replace(/^(\s*)[❯>](?=\s+\d+\.\s)/, "$1 ").trimEnd())
+    .map((l, j) => (rule + 1 + j > q ? l.replace(/^(\s*)[❯>](?=\s+\d+\.\s)/, "$1 ") : l).trimEnd())
     .join("\n");
 }
 

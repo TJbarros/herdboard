@@ -56,7 +56,9 @@ column, top to bottom:
   asking." Parsed by `mods/herdboard/ask.js` (pure; `node --test` runs
   `tests/ask.test.js`). The same parse gives the request's `id`: the dialog's raw
   lines (nothing collapsed or dropped) from the solid rule that opens it through the
-  last option, the `❯` cursor blanked; the screen above the dialog is left out (it
+  last option, the `❯` cursor blanked on the option lines after the question only
+  (the request above it stays byte for byte: a heredoc's `> 1. x` line is not a
+  cursor); the screen above the dialog is left out (it
   blinks Claude Code's `●` tool line). The opening rule starts at column 0 (`───`
   or a box's `╭───╮`), which command lines can't (indented, or `│` in a box). Any
   doubt about the shape (no rule, a dashed `╌` line above it, other than 0 or 2
@@ -74,8 +76,10 @@ column, top to bottom:
   (no `enter`). Any mismatch: type nothing, forget the read, so the card reads again.
   A screen read is kept only while its `address#seq` is still the agent's current
   one, and never over a kept read of that spell (reads overlap and finish in any
-  order). `tests/answer.test.js` drives this path in the real `main.js`, with the
-  Herdr runtime stood in by `tests/runtime/`.
+  order). A kept read is dropped when its spell ends, not when its card is hidden
+  (This space filter, put-away tab), so an answered request stays answered.
+  `tests/answer.test.js` drives this path in the real `main.js`, with the Herdr
+  runtime stood in by `tests/runtime/`.
 - Space pill: `space.select`. Filter, language and Idle fold persist in shared
   `herdboard.filter`, `herdboard.lang`, `herdboard.idleOpen`.
 - ⋯ menu (popup copy of the mod, role `menu`): New space and New tab in the active

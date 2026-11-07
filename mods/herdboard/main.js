@@ -192,9 +192,10 @@ export default class Herdboard extends View {
   // `choices` holds the Yes / No options when the screen shows a dialog with both.
   // Reads can overlap and finish in any order: a read is kept only if its spell is still the
   // agent's current one, and never over a read of that spell already kept (it may be answered).
+  // `blocked` is only the cards shown (filter, put-away tabs): a kept read is dropped when its
+  // spell ends, not when its card is hidden, so an answered request stays answered.
   fetchAsks(blocked, cx) {
-    const live = new Set(blocked.map(a => a.address));
-    for (const k of Object.keys(this.asks)) if (!live.has(k)) delete this.asks[k];
+    for (const [k, ask] of Object.entries(this.asks)) if (!stillOn(k, ask.key)) delete this.asks[k];
     for (const a of blocked) {
       const key = spell(a);
       if (this.asks[a.address]?.key === key || this.pending.has(key)) continue;

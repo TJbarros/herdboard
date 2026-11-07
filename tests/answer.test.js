@@ -153,3 +153,57 @@ test("a dialog whose shape is in doubt gets no Yes / No buttons", async () => {
   assert.equal(b.asks.t1.choices, null);
   assert.equal(draw(b, blocked(1)).yes, null);
 });
+
+// Review P1 (f0f3c07): only the options' cursor is blanked, never the request itself. A heredoc
+// line "> 1. example" and the same line with a space for ">" are two requests.
+test("a command line that only differs by a leading '>' is another request", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  await readFor(b, blocked(1), screen(["cat <<EOF", "  1. example", "EOF"]));
+  await draw(b, blocked(1)).yes();
+  await settle(reads().at(-1), screen(["cat <<EOF", "> 1. example", "EOF"]));
+  await settleKeys();
+  assert.deepEqual(keys(), []);
+});
+
+// Review P2 (f0f3c07): hiding the card (filter "This space", agent in another space) and showing
+// it again must not re-arm a request already answered while its spell lasts.
+test("hiding and showing an answered card again does not re-arm it", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  await readFor(b, blocked(1), screen("touch /tmp/a"));
+  await draw(b, blocked(1)).yes();
+  await settle(reads().at(-1), screen("touch /tmp/a"));
+  await settleKeys();
+  assert.deepEqual(keys(), [["t1", "1"]]);
+
+  const before = reads().length;
+  b.fetchAsks([], cx);                               // filter "This space": the card is hidden
+  b.fetchAsks([blocked(1)], cx);                     // back to "All": same status, same seq
+  assert.equal(reads().length, before, "the kept read is reused, the screen is not read again");
+  for (const r of reads()) if (!r.settled) { r.settled = true; await settle(r, screen("touch /tmp/a")); }
+  const again = draw(b, blocked(1));
+  if (again.yes) await again.yes();
+  for (const r of reads()) if (!r.settled) { r.settled = true; await settle(r, screen("touch /tmp/a")); }
+  await settleKeys();
+  assert.deepEqual(keys(), [["t1", "1"]], "no second key until the status or seq changes");
+});
+
+// The kept read lasts as long as its spell: a new request met while the card was hidden is read
+// and answerable again.
+test("a new request met while the card was hidden gets its own buttons", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  await readFor(b, blocked(1), screen("touch /tmp/a"));
+  await draw(b, blocked(1)).yes();
+  await settle(reads().at(-1), screen("touch /tmp/a"));
+  await settleKeys();
+
+  b.fetchAsks([], cx);                               // hidden
+  herdr.agents = [blocked(2)];                       // meanwhile the agent asks something else
+  await readFor(b, blocked(2), screen("touch /tmp/b"));
+  await draw(b, blocked(2)).yes();
+  await settle(reads().at(-1), screen("touch /tmp/b"));
+  await settleKeys();
+  assert.deepEqual(keys(), [["t1", "1"], ["t1", "1"]]);
+});
