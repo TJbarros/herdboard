@@ -25,4 +25,4 @@ It includes work derived from the following Apache-2.0 licensed projects:
    Files derived: mods/herdboard-picker/, mods/herdboard-new-menu/
    Changes: renamed; texts follow Herdboard's language (pt-BR / English); the new-tab
    menu lets you pick the folder a tab starts in (default: the active tab's live
-   folder) and passes it, with the machine, to tab.new and space.new.
+   folder) and passes it to tab.new, and with the machine to space.new.

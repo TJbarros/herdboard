@@ -83,8 +83,9 @@ column, top to bottom:
 - **herdr API**: `agents`, `spaces`, `panes`, `layout`, `theme`, `shared` /
   `setShared`, `run`, `hc`, `openOverlay` / `closeOverlay`, `notify`,
   `setAgentOrder`, `knownAgents`.
-- **Program run**: `hc read` only. **Art**: `maximize.svg`, `minimize.svg`,
-  `preview.svg`.
+- **Programs run**: `hc read <t> --lines 0` (board, blocked agents) and
+  `hc machine ls` (picker, as Herdr's own); `knownAgents()` (new-tab menu). **Art**:
+  `logo.svg`, `maximize.svg`, `minimize.svg`, `preview.svg`.
 - **Keys** (`keys.json`, section `layout:herdboard`): Ctrl+Shift+T new-tab menu,
   Ctrl+Shift+K picker.
 

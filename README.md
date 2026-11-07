@@ -66,13 +66,14 @@ the three `mods/herdboard*` folders to `~/.config/herdr-app/mods/`, and merge
 3. Pick **Terminal** or an agent (Claude Code, Codex, Gemini…). The new tab opens
    in that folder, in the current space.
 
-Need a new project instead? **⋯ › New space** (or **+ › New space**) creates a
-space in the active tab's folder, on the same machine.
+Need a new project instead? **⋯ › New space** creates a space in the active tab's
+folder; **+ › New space** creates it in the folder picked under **Open in**. Both
+stay on the active space's machine.
 
 ### Answer an agent that needs you
 
-When an agent stops to ask something, its card jumps to **Needs you**, the column
-turns red and its space pill in the header lights up.
+When an agent stops to ask something, its card jumps to **Needs you** and the column
+turns red. If it's in another space, that space's pill in the header turns red too.
 
 1. Read the question right on the card: it shows the last lines of the agent's
    screen, for example *"npm run db:migrate --env=staging · Apply 3 pending
@@ -133,9 +134,10 @@ them all.
 
 ## Good to know
 
-- The mod runs `hc read` (Herdr's own CLI) once per blocked spell to read the
-  agent's question. It doesn't use the network, run other programs or read files
-  outside its folder.
+- What runs besides drawing: the board runs `hc read <terminal> --lines 0`
+  (Herdr's own CLI) once per blocked spell to read the agent's question; the search
+  runs `hc machine ls`, as Herdr's own search does; the new-tab menu asks Herdr which
+  agents are installed. No mod downloads anything from the internet or reads your files.
 - The Peek window and Herdr's sidebar are Herdr's own and stay in English.
 - Herdr can't change a space's registered folder after it's made; Herdboard always
   uses the terminals' live folders instead.
@@ -144,8 +146,8 @@ them all.
 ## FAQ
 
 **A card says "No task title".** The agent hasn't named a task yet (for example, a
-session where you only said hello). Claude Code names it as soon as it starts real
-work; after that, Herdboard keeps the title even through `/clear`.
+session where you only said hello). Agents such as Claude Code set the title once they
+start working on a task; from then on, Herdboard keeps it even through `/clear`.
 
 **A new tab opened in the wrong folder.** New tabs start where the active tab's
 terminal *is*, not where the agent works: an agent started in `~/projects` that runs

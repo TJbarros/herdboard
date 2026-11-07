@@ -70,13 +70,15 @@ Para instalar manualmente, copie `layouts/herdboard.json` para
 3. Escolha **Terminal** ou um agente (Claude Code, Codex, Gemini…). A nova aba abre
    nessa pasta, no espaço atual.
 
-Precisa de um projeto novo? **⋯ › Novo espaço** (ou **+ › Novo espaço**) cria um
-espaço na pasta da aba ativa, na mesma máquina.
+Precisa de um projeto novo? **⋯ › Novo espaço** cria um espaço na pasta da aba
+ativa; **+ › Novo espaço** cria na pasta escolhida em **Abrir em**. Os dois ficam na
+mesma máquina do espaço ativo.
 
 ### Responder um agente que precisa de você
 
-Quando um agente para e pergunta algo, o card dele vai para **Precisa de você**, a
-coluna fica vermelha e o espaço dele se destaca no cabeçalho.
+Quando um agente para e pergunta algo, o card dele vai para **Precisa de você** e a
+coluna fica vermelha. Se ele estiver em outro espaço, esse espaço também fica vermelho
+no cabeçalho.
 
 1. Leia a pergunta no próprio card: ele mostra as últimas linhas da tela do agente,
    por exemplo *"npm run db:migrate --env=staging · Aplicar 3 migrações pendentes ·
@@ -141,9 +143,11 @@ Layout** lista todos.
 
 ## Bom saber
 
-- O mod executa `hc read` (a linha de comando do próprio Herdr) uma vez a cada
-  bloqueio, para ler a pergunta do agente. Ele não acessa a rede, não executa outros
-  programas e não lê arquivos fora da própria pasta.
+- O que roda além do desenho: o quadro executa `hc read <terminal> --lines 0` (a
+  linha de comando do próprio Herdr) uma vez a cada bloqueio, para ler a pergunta do
+  agente; a busca executa `hc machine ls`, como a busca original do Herdr; o menu de
+  nova aba pergunta ao Herdr quais agentes estão instalados. Nenhum mod baixa nada
+  da internet nem lê seus arquivos.
 - A janela do Espiar e a barra lateral são do próprio Herdr e ficam em inglês.
 - O Herdr não permite mudar a pasta registrada de um espaço depois de criado; o
   Herdboard sempre usa a pasta atual dos terminais.
@@ -152,9 +156,9 @@ Layout** lista todos.
 ## Perguntas frequentes
 
 **O card diz "Sem título da tarefa".** O agente ainda não deu nome a uma tarefa
-(por exemplo, numa sessão em que você só disse "olá"). O Claude Code dá o nome assim
-que começa um trabalho de verdade; a partir daí, o Herdboard guarda o título mesmo
-depois de um `/clear`.
+(por exemplo, numa sessão em que você só disse "olá"). Agentes como o Claude Code
+definem o título quando começam a trabalhar numa tarefa; a partir daí, o Herdboard
+guarda o título mesmo depois de um `/clear`.
 
 **A nova aba abriu na pasta errada.** Novas abas começam onde o terminal da aba
 ativa *está*, não onde o agente trabalha: um agente iniciado em `~/projetos` que roda
