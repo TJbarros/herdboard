@@ -166,6 +166,17 @@ test("a command line that only differs by a leading '>' is another request", asy
   assert.deepEqual(keys(), []);
 });
 
+// Review P1 (2eaed32): a no-break space at the end of a heredoc line is part of the command.
+test("a command line that only loses a trailing no-break space is another request", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  await readFor(b, blocked(1), screen(["cat <<EOF", "a ", "EOF"]));
+  await draw(b, blocked(1)).yes();
+  await settle(reads().at(-1), screen(["cat <<EOF", "a", "EOF"]));
+  await settleKeys();
+  assert.deepEqual(keys(), []);
+});
+
 // Review P2 (f0f3c07): hiding the card (filter "This space", agent in another space) and showing
 // it again must not re-arm a request already answered while its spell lasts.
 test("hiding and showing an answered card again does not re-arm it", async () => {

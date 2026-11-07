@@ -148,3 +148,24 @@ test("a rule-like line inside a boxed dialog does not cut the id short", () => {
 test("no rule above the question: no id", () => {
   assert.equal(parseAsk(" Bash command\n touch x\n Do you want to proceed?\n ❯ 1. Yes\n   2. No\n").id, "");
 });
+
+// Review P1: a line's last characters are part of the command (a no-break space at the end
+// of a heredoc or quoted line changes what runs), so the id keeps every line as read.
+test("commands that differ only at the end of a line have different ids", () => {
+  const id = (line) => parseAsk(LIVE("●", ["cat <<EOF", line, "EOF"])).id;
+  assert.notEqual(id("a "), id("a"));
+  // hc read already drops trailing ASCII spaces (checked live); parseAsk trims nothing itself.
+  assert.notEqual(id("a "), id("a"));
+});
+
+// Review P2: in a boxed dialog the option lines start with the box's "│", then the cursor.
+test("the request id ignores where the option cursor sits in a boxed dialog", () => {
+  const moved = FIXTURE.replace("│ ❯ 1. Yes", "│   1. Yes").replace("│   4. No  ", "│ ❯ 4. No  ");
+  assert.notEqual(moved, FIXTURE);
+  assert.equal(parseAsk(moved).id, parseAsk(FIXTURE).id);
+});
+
+test("a boxed command line that looks like an option keeps its cursor in the id", () => {
+  const box = (l) => FIXTURE.replace("│   touch /tmp/x  ", `│ ${l} 1. x       `);
+  assert.notEqual(parseAsk(box(">")).id, parseAsk(box(" ")).id);
+});

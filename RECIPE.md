@@ -55,8 +55,9 @@ column, top to bottom:
   tail kept (≤180 chars). No "?": "Open the terminal to see what the agent is
   asking." Parsed by `mods/herdboard/ask.js` (pure; `node --test` runs
   `tests/ask.test.js`). The same parse gives the request's `id`: the dialog's raw
-  lines (nothing collapsed or dropped) from the solid rule that opens it through the
-  last option, the `❯` cursor blanked on the option lines after the question only
+  lines (nothing collapsed, trimmed or dropped: a no-break space ending a line counts)
+  from the solid rule that opens it through the last option, the `❯` cursor (after
+  the box's `│` in a boxed dialog) blanked on the option lines after the question only
   (the request above it stays byte for byte: a heredoc's `> 1. x` line is not a
   cursor); the screen above the dialog is left out (it
   blinks Claude Code's `●` tool line). The opening rule starts at column 0 (`───`
