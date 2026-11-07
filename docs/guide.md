@@ -30,8 +30,9 @@ turns red. If it's in another space, that space's pill in the header turns red t
 *A blocked agent: its question, **Open and answer**, **Peek** and how long it has been waiting.*
 
 1. Read the question right on the card: it shows the last lines of the agent's
-   screen, for example *"npm run db:migrate --env=staging · Apply 3 pending
-   migrations · Do you want to proceed?"*.
+   screen, without frames or separator lines (so a command between Claude Code's
+   dashed rows shows), for example *"npm run db:migrate --env=staging · Apply 3
+   pending migrations · Do you want to proceed?"*.
 2. **Open and answer** focuses that agent's terminal, so you can type the answer.
    **Peek** opens it on top, without leaving the tab you're in.
 
@@ -113,8 +114,11 @@ them all.
 ## Good to know
 
 - What runs besides drawing: the board runs `hc read <terminal> --lines 0`
-  (Herdr's own CLI) once per blocked spell to read the agent's question, again
-  when you click Yes / No, and then `hc keys <terminal> <digit>`; the search
+  (Herdr's own CLI) each time an agent gets blocked, to read its question; if that
+  read misses it (no question on screen yet or, for a Claude Code permission
+  dialog, no Yes / No), it reads up to two more times, 0.5 s later and then another
+  1.5 s later, only while the agent stays blocked. It reads again when you click
+  Yes / No, and then runs `hc keys <terminal> <digit>`; the search
   runs `hc machine ls`, as Herdr's own search does; the new-tab menu asks Herdr which
   agents are installed. No mod downloads anything from the internet or reads your files.
 - The Peek window and Herdr's sidebar are Herdr's own and stay in English.

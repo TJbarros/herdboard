@@ -4,6 +4,15 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+- A blocked card's question shows the command a Claude Code permission dialog asks
+  about, not the dashed separator rows around it: lines made only of horizontal
+  line glyphs (`─`, `╌`, `┄` …) are left out.
+- When the first screen read of a blocked agent misses the question (it isn't on
+  screen yet or, for a Claude Code permission dialog, the Yes / No can't be shown
+  yet), the board reads it up to two more times, after 0.5 s and then 1.5 s more,
+  while the agent stays blocked, so the card gets the question (and, for a
+  permission dialog, its Yes / No) without a status change.
+
 ## [1.1.0] - 2026-11-07
 
 - Blocked cards answer a Claude Code permission dialog: **Yes** / **No** (*Sim* /
