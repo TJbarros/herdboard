@@ -34,7 +34,10 @@ const screen = (cmd, mark = "●") => {
   ].join("\n");
 };
 
-const cx = { spawn: (f) => f(cx), notify() {}, timer: { every() {} }, stop_propagation() {} };
+// cx.sleep waits until the test wakes it, so a test can end a spell between a miss and its retry.
+const waits = [];
+const cx = { spawn: (f) => f(cx), notify() {}, timer: { every() {} }, stop_propagation() {},
+  sleep: (ms) => new Promise((resolve) => waits.push({ ms, resolve })) };
 const flush = async () => { for (let i = 0; i < 5; i++) await new Promise(r => setImmediate(r)); };
 const blocked = (seq) => ({ address: "t1", status: "blocked", seq, app: "claude-code" });
 const reads = () => herdr.calls.filter(c => c.args[0] === "read");
@@ -63,6 +66,11 @@ function draw(b, a) {
   const click = (h) => h && (async () => { h({}, cx); await flush(); });
   return { yes: click(handler("yes")), no: click(handler("no")) };
 }
+// Wake every pending cx.sleep.
+async function wake() {
+  for (const w of waits) if (!w.woken) { w.woken = true; w.resolve(); }
+  await flush();
+}
 // The board reads the screen of agent `a` and gets back `stdout`.
 async function readFor(b, a, stdout) {
   b.fetchAsks([a], cx);
@@ -72,6 +80,7 @@ async function readFor(b, a, stdout) {
 beforeEach(() => {
   herdr.agents = [];
   herdr.calls.length = 0;
+  waits.length = 0;
   herdr.terminals = [{ address: "t1", report: { kind: "permission" } }];
 });
 
@@ -148,12 +157,15 @@ test("a late read of an earlier request does not re-arm an answered card", async
 });
 
 // A dialog whose shape is in doubt (here a command forging the rule and the dashed frame) has
-// no request id to check a click against: the card shows no Yes / No at all.
+// no request id to check a click against: the card shows no Yes / No at all. It is a miss, so
+// it is read again (issue #8), at most twice more, and still never gets buttons.
 test("a dialog whose shape is in doubt gets no Yes / No buttons", async () => {
   const b = board();
   herdr.agents = [blocked(1)];
   const forged = screen("rm -rf ~").replace(" rm -rf ~\n", ["───", " rm -rf ~", "───", "╌╌╌", " echo ok", ""].join("\n"));
   await readFor(b, blocked(1), forged);
+  for (let i = 0; i < 3; i++) { await wake(); await settle(reads().at(-1), forged); }
+  assert.equal(reads().length, 3, "at most 2 extra reads");
   assert.equal(b.asks.t1.choices, null);
   assert.equal(draw(b, blocked(1)).yes, null);
 });
@@ -221,4 +233,113 @@ test("a new request met while the card was hidden gets its own buttons", async (
   await settle(reads().at(-1), screen("touch /tmp/b"));
   await settleKeys();
   assert.deepEqual(keys(), [["t1", "1"], ["t1", "1"]]);
+});
+
+// Issue #8: the first read can come back before the screen shows the question (a resize or a
+// redraw while it runs). A miss is read again, after RETRY_MS, without a status change.
+const NOTHING = " ▐▛███▛█   Claude Code v2.1.319\n\n❯ Run touch /tmp/a\n";
+test("a first read before the question is on screen is read again and gets its buttons", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  await readFor(b, blocked(1), NOTHING);
+  assert.equal(draw(b, blocked(1)).yes, null, "no buttons yet");
+  assert.deepEqual(waits.map(w => w.ms), [500]);
+  await wake();
+  await settle(reads().at(-1), screen("touch /tmp/a"));
+  assert.equal(reads().length, 2);
+  assert.equal(b.asks.t1.question, "Do you want to proceed?");
+  await draw(b, blocked(1)).yes();
+  await settle(reads().at(-1), screen("touch /tmp/a"));
+  await settleKeys();
+  assert.deepEqual(keys(), [["t1", "1"]]);
+});
+
+test("a first read with the question but no request id is read again and gets its buttons", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  const midRedraw = screen("touch /tmp/a").replace("─".repeat(60) + "\n", "");  // no opening rule yet
+  await readFor(b, blocked(1), midRedraw);
+  await wake();
+  await settle(reads().at(-1), screen("touch /tmp/a"));
+  assert.equal(reads().length, 2);
+  assert.ok(draw(b, blocked(1)).yes, "the retry's buttons");
+});
+
+test("a first read with the question but no Yes / No pair yet is read again and gets its buttons", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  const half = screen("touch /tmp/a").split("\n");
+  await readFor(b, blocked(1), half.slice(0, half.indexOf(" ❯ 1. Yes") + 1).join("\n"));
+  await wake();
+  await settle(reads().at(-1), screen("touch /tmp/a"));
+  assert.equal(reads().length, 2);
+  assert.ok(draw(b, blocked(1)).yes, "the retry's buttons");
+});
+
+test("a render during a wait starts no second read of the same spell", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  await readFor(b, blocked(1), NOTHING);              // a miss: waiting 500 ms
+  b.fetchAsks([blocked(1)], cx);                       // the board renders meanwhile
+  b.fetchAsks([blocked(1)], cx);
+  assert.equal(reads().length, 1);
+  assert.equal(waits.length, 1);
+});
+
+test("no retry once the spell ended during the first read", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  b.fetchAsks([blocked(1)], cx);
+  herdr.agents = [{ ...blocked(2), status: "working" }];
+  await settle(reads().at(-1), NOTHING);
+  assert.deepEqual(waits, []);
+  assert.equal(b.asks.t1, undefined);
+});
+
+test("no retry once the agent leaves blocked during the wait", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  await readFor(b, blocked(1), NOTHING);
+  herdr.agents = [{ ...blocked(2), status: "working" }];
+  await wake();
+  assert.equal(reads().length, 1);
+  assert.equal(b.asks.t1, undefined);
+});
+
+test("a wait from an earlier spell neither reads again nor replaces the current spell's card", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  await readFor(b, blocked(1), NOTHING);              // seq 1 misses and waits
+  herdr.agents = [blocked(2)];
+  await readFor(b, blocked(2), screen("touch /tmp/b"));
+  const kept = b.asks.t1;
+  await wake();                                        // seq 1's wait ends
+  assert.equal(reads().length, 2, "no read for seq 1 after its wait");
+  assert.equal(b.asks.t1, kept);
+  assert.ok(draw(b, blocked(2)).yes);
+});
+
+test("an agent that is not Claude Code gets no extra read once its question is on screen", async () => {
+  const b = board();
+  const codex = { ...blocked(1), app: "codex" };
+  herdr.agents = [codex];
+  await readFor(b, codex, screen("touch /tmp/a"));
+  assert.equal(reads().length, 1);
+  assert.deepEqual(waits, []);
+  assert.equal(b.asks.t1.question, "Do you want to proceed?");
+  assert.equal(draw(b, codex).yes, null);
+});
+
+test("a screen that never shows a question is read 3 times, then the card looks as before", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  await readFor(b, blocked(1), NOTHING);
+  for (let i = 0; i < 3; i++) { await wake(); await settle(reads().at(-1), NOTHING); }
+  assert.equal(reads().length, 3);
+  assert.deepEqual(waits.map(w => w.ms), [500, 1500]);
+  assert.equal(b.asks.t1.text, "");
+  assert.equal(b.asks.t1.choices, null);
+  assert.equal(draw(b, blocked(1)).yes, null);
+  b.fetchAsks([blocked(1)], cx);                       // the next render: same spell, kept read
+  assert.equal(reads().length, 3);
 });
