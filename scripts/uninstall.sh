@@ -9,7 +9,8 @@
 # first: keys.json.before-herdboard-uninstall; keys.json is deleted if that section was all
 # it had). Parts already gone are reported and skipped, so running it twice is safe. Leaves
 # alone your other layouts, mods and keys, and Herdr's own files (shared.json, seen.json,
-# installed.json). The Herdr home and the names of what it removes come from scripts/common.sh.
+# installed.json). The Herdr home, the names of what it removes, the option and the report's
+# shape come from scripts/common.sh.
 set -eu
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)

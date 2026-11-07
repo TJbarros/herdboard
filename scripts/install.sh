@@ -7,7 +7,8 @@
 #
 # Copies files only; never deletes anything of yours. Keys: adds the
 # "layout:herdboard" section to keys.json if it isn't there (backup first).
-# The Herdr home and the names of what it installs come from scripts/common.sh.
+# The Herdr home, the names of what it installs, the option and the report's shape come
+# from scripts/common.sh.
 set -eu
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)

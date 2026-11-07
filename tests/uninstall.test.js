@@ -92,7 +92,9 @@ test("after an install, uninstall removes the layout, the three mods and the key
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(home, "keys.json"), "utf8")), THEIR_KEYS);
 });
 
-test("a real run prints the keys change before removing files, so a removal that fails still shows it", () => {
+// The failing removal is a read-only mods/ folder, which root can still write to.
+test("a real run prints the keys change before removing files, so a removal that fails still shows it",
+  { skip: process.getuid?.() === 0 && "root ignores the read-only folder" }, () => {
   const home = homeWithTheirs();
   install(home);
   const mods = path.join(home, "mods");

@@ -1,4 +1,5 @@
-# Shared by the Herdboard scripts: where the Herdr home is, and what Herdboard installs there.
+# Shared by the Herdboard scripts: where the Herdr home is, what Herdboard installs there,
+# and the --dry-run option and report shape of install.sh and uninstall.sh.
 # POSIX sh, sourced, never run:
 #
 #   ROOT=$(cd "$(dirname "$0")/.." && pwd)
