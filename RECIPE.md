@@ -54,17 +54,24 @@ column, top to bottom:
   --lines 0`; the last line ending in "?" and up to two before it, frames dropped,
   tail kept (≤180 chars). No "?": "Open the terminal to see what the agent is
   asking." Parsed by `mods/herdboard/ask.js` (pure; `node --test` runs
-  `tests/ask.test.js`).
+  `tests/ask.test.js`). The same parse gives the request's `id`: every dialog line
+  from the solid rule above the question through the last option, untruncated, the
+  `❯` cursor removed (the screen above blinks Claude Code's `●` tool line).
 - Yes / No: the same read also collects the numbered options below the question
   (`❯ 1. Yes` … `4. No`, numbered 1, 2, 3… in order; other lines skipped). Buttons
   only for a Claude Code agent (`app` "claude-code"), when one option's text is
   exactly "Yes" and one's exactly "No" (once each, digits 1–9), and the agent's
   `report.kind` (from `terminals()`) is `permission`.
   Mapped by text, never by position. Tooltip: the option's number and text. Click:
-  drop the cached options (buttons faded and inert until status or `seq` changes),
-  check the agent is still `blocked` with the same `address#seq`, read the screen
-  again and require the same card text, question and options, then `hc keys <t> <digit>` (no
-  `enter`). Any mismatch: type nothing, forget the read, so the card reads again.
+  answers only the read its card was drawn from (that object still cached, same
+  `address#seq`); drop the cached options (buttons faded and inert until status or
+  `seq` changes), check the agent is still `blocked` with the same `address#seq`,
+  read the screen again and require the same request `id`, then `hc keys <t> <digit>`
+  (no `enter`). Any mismatch: type nothing, forget the read, so the card reads again.
+  A screen read is kept only while its `address#seq` is still the agent's current
+  one, and never over a kept read of that spell (reads overlap and finish in any
+  order). `tests/answer.test.js` drives this path in the real `main.js`, with the
+  Herdr runtime stood in by `tests/runtime/`.
 - Space pill: `space.select`. Filter, language and Idle fold persist in shared
   `herdboard.filter`, `herdboard.lang`, `herdboard.idleOpen`.
 - ⋯ menu (popup copy of the mod, role `menu`): New space and New tab in the active
@@ -114,8 +121,11 @@ column, top to bottom:
 - Card action buttons stop propagation, or the card's `agent.focus` fires too
   (Yes / No as well, even when faded).
 - `hc keys` presses keys blindly: never send a Yes / No digit without the stale
-  check (same `address#seq` and the same dialog on a fresh read). `seq` alone is
-  not enough: the screen lags the status, and `turn` doesn't change on a decline.
+  check (same `address#seq` and the same request `id` on a fresh read, never the
+  card's shortened text). `seq` alone is not enough: the screen lags the status,
+  and `turn` doesn't change on a decline. Known limit: if both reads still show
+  the previous dialog, or it changes between the second read and the key, no
+  screen comparison can tell.
 - `blockedHeight` counts the Yes / No row (24px + 8px gap) when it shows; keep it
   in step with the card.
 - From a script, `space.new` without `machine` targets this computer, not the

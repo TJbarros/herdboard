@@ -41,8 +41,9 @@ card also shows **Yes** and **No**. Each one presses that option's number in the
 agent's terminal (no Enter), as you would; hover it to see the option's text. The
 card then follows the agent's new status: it leaves **Needs you** once the agent
 moves on. Before typing, the board checks that the agent is still blocked on the
-same dialog (it reads the screen again); if anything changed, it types nothing and
-reads the question again. After one answer the buttons stay faded until the agent's
+same dialog: it reads the screen again and compares the whole request (every line of
+the dialog, not just the part the card shows), and a button only answers the request
+its card showed; if anything changed, it types nothing and reads the question again. After one answer the buttons stay faded until the agent's
 status changes, so a second click types nothing. Other choices ("Yes, and always
 allow…") and dialogs without a plain Yes / No pair: use **Open and answer**.
 

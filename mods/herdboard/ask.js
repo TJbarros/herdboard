@@ -1,30 +1,61 @@
 // What a blocked agent is asking, read from its screen. Pure: no herdr or gpui-kit imports,
 // so it runs under `node --test` too (tests/ask.test.js).
 
-// From the visible screen (hc read --lines 0: no scrolling), the question and up to two lines
-// before it. Box-drawing frames, the input prompt and empty lines are dropped. No "?" on
-// screen: no snippet (the card then says to open the terminal) rather than a wrong guess.
+const FRAME = /[│┃║╭╮╰╯┌┐└┘]/g;
+const clean = (l) => l.replace(FRAME, " ").replace(/\s+/g, " ").trim();
+const isRule = (l) => /^[─━═\-_▔▁\s]+$/.test(l);
+const isQuestion = (l) => /\?\s*$/.test(l) || /\?\s+\(/.test(l);
+const OPTION = /^(?:[❯>]\s*)?(\d+)\.\s+(.+)$/;
+
+// From the visible screen (hc read --lines 0: no scrolling):
+// - text: the question and up to two lines before it, for the card. Box-drawing frames, the
+//   input prompt and empty lines are dropped. No "?" on screen: no snippet (the card then says
+//   to open the terminal) rather than a wrong guess.
+// - question and options: the last question and the numbered options after it.
+// - id: the whole request, untruncated, to tell two requests apart (see requestId).
 export function parseAsk(screen) {
-  const lines = String(screen ?? "").split(/\r?\n/)
-    .map(l => l.replace(/[│┃║╭╮╰╯┌┐└┘]/g, " ").replace(/\s+/g, " ").trim())
-    .filter(l => l && !/^[─━═\-_▔▁\s]+$/.test(l) && !/^[❯>]\s*$/.test(l));
+  const all = String(screen ?? "").split(/\r?\n/).map(clean);
   let q = -1;
-  for (let i = lines.length - 1; i >= 0; i--) if (/\?\s*$/.test(lines[i]) || /\?\s+\(/.test(lines[i])) { q = i; break; }
-  if (q < 0) return { text: "", question: "", options: [] };
+  for (let i = all.length - 1; i >= 0; i--) if (isQuestion(all[i])) { q = i; break; }
+  if (q < 0) return { text: "", question: "", options: [], id: "" };
+  const before = all.slice(0, q).filter(l => l && !isRule(l) && !/^[❯>]\s*$/.test(l));
   // Keep the end: the question itself matters more than the lines leading to it.
-  const text = lines.slice(Math.max(0, q - 2), q + 1).join("\n");
-  return { text: text.length > 180 ? "…" + text.slice(-179) : text, question: lines[q], options: optionsAfter(lines, q) };
+  const text = [...before.slice(-2), all[q]].join("\n");
+  const { options, end } = optionsAfter(all, q);
+  return {
+    text: text.length > 180 ? "…" + text.slice(-179) : text,
+    question: all[q],
+    options,
+    id: requestId(all, q, end),
+  };
 }
 
-// The numbered options after the question ("❯ 1. Yes", "4. No"), in order 1, 2, 3…
-// Other lines (a long option's wrapped tail, the "Esc to cancel" footer) are skipped.
+// The numbered options after the question ("❯ 1. Yes", "4. No"), in order 1, 2, 3…, and the
+// line the last one is on. Other lines (a long option's wrapped tail, the "Esc to cancel"
+// footer) are skipped.
 function optionsAfter(lines, q) {
   const options = [];
-  for (const l of lines.slice(q + 1)) {
-    const m = /^(?:[❯>]\s*)?(\d+)\.\s+(.+)$/.exec(l);
-    if (m && Number(m[1]) === options.length + 1) options.push({ n: options.length + 1, text: m[2].trim() });
+  let end = q;
+  for (let i = q + 1; i < lines.length; i++) {
+    const m = OPTION.exec(lines[i]);
+    if (m && Number(m[1]) === options.length + 1) { options.push({ n: options.length + 1, text: m[2].trim() }); end = i; }
   }
-  return options;
+  return { options, end };
+}
+
+// The request as a whole, for the check before a key is pressed: every line of the dialog, from
+// the solid rule that opens it (Claude Code draws one; a box's top edge counts too) through the
+// last option, with the option cursor ("❯") removed, since moving it changes nothing a digit
+// answers. The screen above the dialog is left out: Claude Code blinks its tool line there
+// ("●" on one read, a space on the next). No rule above the question: from the top of the screen
+// (two reads may then differ, and the answer is refused: safe, not wrong).
+function requestId(all, q, end) {
+  let start = 0;
+  for (let i = q - 1; i >= 0; i--) if (/^[─━═]{3,}$/.test(all[i])) { start = i + 1; break; }
+  return all.slice(start, end + 1)
+    .filter(l => l && !/^[─━═╌┄┈\-_▔▁\s]+$/.test(l))
+    .map(l => l.replace(/^[❯>]\s*(?=\d+\.\s)/, ""))
+    .join("\n");
 }
 
 // The options a Yes / No button answers: the ones whose text is exactly "Yes" and "No".

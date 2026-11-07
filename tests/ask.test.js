@@ -70,3 +70,51 @@ test("numbered lines out of order after the question are not options", () => {
   const ask = parseAsk("Proceed?\n 2. Yes\n 3. No\n");
   assert.deepEqual(ask.options, []);
 });
+
+// Claude Code v2.1.319, read live twice from the same dialog: the tool line above it blinks
+// ("●" then a space). The dashed lines frame the command; the solid rule starts the dialog.
+const LIVE = (mark, command = ["touch probe.txt"]) => [
+  " ▐▛███▛█   Claude Code v2.1.319",
+  "",
+  "❯ Run the bash command: touch probe.txt",
+  "",
+  `${mark} Creating empty probe file`,
+  "  ⎿  $ touch probe.txt",
+  "",
+  "─".repeat(80),
+  " Bash command",
+  " Tip: auto mode handles these prompts for you — choose \"switch to auto mode\" below",
+  " Create empty probe file",
+  "╌".repeat(80),
+  ...command.map(l => ` ${l}`),
+  "╌".repeat(80),
+  " Do you want to proceed?",
+  " ❯ 1. Yes",
+  "   2. Yes, and always allow access to /tmp/live from this project",
+  "   3. Yes, and switch to auto mode · auto mode handles these prompts for you",
+  "   4. No",
+  "",
+  " Esc to cancel · Tab to amend",
+].join("\n");
+
+test("the request id is the whole dialog: the same on two reads although the screen above it blinks", () => {
+  assert.notEqual(LIVE("●"), LIVE(" "));
+  assert.equal(parseAsk(LIVE("●")).id, parseAsk(LIVE(" ")).id);
+  assert.match(parseAsk(LIVE("●")).id, /^Bash command\n[\s\S]*touch probe\.txt[\s\S]*\n4\. No$/);
+});
+
+test("two requests that end the same have different ids although the card text matches", () => {
+  const a = parseAsk(LIVE("●", ["touch /tmp/a &&", "make"]));
+  const b = parseAsk(LIVE("●", ["rm -rf ~ &&", "make"]));
+  assert.equal(a.text, b.text);
+  assert.notEqual(a.id, b.id);
+});
+
+test("the request id ignores where the option cursor sits", () => {
+  const moved = LIVE("●").replace(" ❯ 1. Yes", "   1. Yes").replace("   4. No", " ❯ 4. No");
+  assert.equal(parseAsk(moved).id, parseAsk(LIVE("●")).id);
+});
+
+test("no question on screen: no request id", () => {
+  assert.equal(parseAsk("Running tests…\n").id, "");
+});

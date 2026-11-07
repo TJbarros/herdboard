@@ -133,7 +133,13 @@ function mayAnswer(a) {
   if (a.app !== "claude-code") return false;
   return terminals().find(t => t.address === a.address)?.report?.kind === "permission";
 }
-const sameOptions = (x, y) => JSON.stringify(x ?? []) === JSON.stringify(y ?? []);
+// The blocked spell a read or an answer belongs to: Herdr bumps seq when the status changes.
+const spell = (a) => `${a.address}#${a.seq}`;
+// The agent at `address` now, if it is still blocked on `key`'s spell; else null.
+const stillOn = (address, key) => {
+  const now = agents().find(x => x.address === address);
+  return now?.status === "blocked" && spell(now) === key ? now : null;
+};
 // The visible screen (no scrolling), parsed; null when it can't be read.
 async function readAsk(address) {
   const r = await hc(["read", address, "--lines", "0"]);
@@ -147,7 +153,7 @@ const shownChoices = (ask) => ask?.choices ?? ask?.sent ?? null;
 export default class Herdboard extends View {
   init(_p, cx) {
     this.observed = {};
-    this.asks = {};      // address -> { key, text, question, options, choices, sent } for blocked agents
+    this.asks = {};      // address -> { key, text, question, options, id, choices, sent } for blocked agents
     this.pending = new Set();
     this.hovered = null; // address of the card under the pointer (shows its actions)
     this.w = 0;          // this copy's size, from on_size_change; 0 until the first layout (treated as wide)
@@ -184,19 +190,23 @@ export default class Herdboard extends View {
 
   // Read a blocked agent's screen once per blocked spell (keyed by address + seq), off the UI thread.
   // `choices` holds the Yes / No options when the screen shows a dialog with both.
+  // Reads can overlap and finish in any order: a read is kept only if its spell is still the
+  // agent's current one, and never over a read of that spell already kept (it may be answered).
   fetchAsks(blocked, cx) {
     const live = new Set(blocked.map(a => a.address));
     for (const k of Object.keys(this.asks)) if (!live.has(k)) delete this.asks[k];
     for (const a of blocked) {
-      const key = `${a.address}#${a.seq}`;
+      const key = spell(a);
       if (this.asks[a.address]?.key === key || this.pending.has(key)) continue;
       this.pending.add(key);
       cx.spawn(async (cx) => {
         let ask = null;
         try { ask = await readAsk(a.address); } catch (_e) { ask = null; }
-        ask ??= { text: "", question: "", options: [] };
+        ask ??= { text: "", question: "", options: [], id: "" };
         this.pending.delete(key);
-        const choices = mayAnswer(a) ? pickAnswers(ask.options) : null;
+        const now = stillOn(a.address, key);
+        if (!now || this.asks[a.address]?.key === key) return;
+        const choices = mayAnswer(now) ? pickAnswers(ask.options) : null;
         this.asks[a.address] = { key, ...ask, choices, sent: null };
         cx.notify();
       });
@@ -222,29 +232,27 @@ export default class Herdboard extends View {
   }
 
   // Answer a permission dialog with the option labelled "Yes" or "No" (which: "yes" | "no").
+  // `a` and `ask` are what the clicked card was drawn from: the click answers that request and
+  // nothing else, so it does nothing once the board holds a newer read for the agent.
   // hc keys presses keys blindly, so first confirm the agent is still blocked on the same
-  // spell (address#seq) and that a fresh screen read shows the same dialog; else type
-  // nothing and read the screen again. The cached options are dropped at once, so the
-  // buttons stay disabled until the status or seq changes (a second click types nothing).
-  answer(a, which, cx) {
-    const ask = this.asks[a.address];
-    const pick = ask?.choices?.[which];
-    if (!pick) return;
+  // spell (address#seq) and that a fresh screen read shows the same whole dialog (its id, not
+  // the card's shortened text); else type nothing and read the screen again. The cached options
+  // are dropped at once, so the buttons stay disabled until the status or seq changes (a
+  // second click types nothing).
+  answer(a, ask, which, cx) {
+    if (!ask || this.asks[a.address] !== ask || ask.key !== spell(a)) return;
+    const pick = ask.choices?.[which];
+    if (!pick || !ask.id) return;
     ask.sent = ask.choices;
     ask.choices = null;
     cx.notify();
-    const stillBlocked = () => {
-      const now = agents().find(x => x.address === a.address);
-      return now?.status === "blocked" && `${now.address}#${now.seq}` === ask.key && mayAnswer(now);
-    };
+    const stillBlocked = () => { const now = stillOn(a.address, ask.key); return !!now && mayAnswer(now); };
     cx.spawn(async (cx) => {
       let typed = false;
       try {
         if (stillBlocked()) {
           const again = await readAsk(a.address);
-          // The same dialog: the lines the card shows (the command), the question and the options.
-          const same = again && again.text === ask.text && again.question === ask.question && sameOptions(again.options, ask.options);
-          if (same && stillBlocked()) {
+          if (again?.id === ask.id && stillBlocked()) {
             const k = await hc(["keys", a.address, String(pick.n)]);
             typed = !k?.code;
           }
@@ -291,8 +299,8 @@ export default class Herdboard extends View {
             .child(ask?.text || L.noAsk))
           // Yes / No for a permission dialog; disabled once one was sent (see answer()).
           .when(!!choices, el => el.child(h_flex().gap(6).items_center()
-            .child(this.actionButton(`yes-${a.address}`, L.yes, L.answerTip(choices.yes.n, choices.yes.text), (cx) => this.answer(a, "yes", cx), null, !ask.choices))
-            .child(this.actionButton(`no-${a.address}`, L.no, L.answerTip(choices.no.n, choices.no.text), (cx) => this.answer(a, "no", cx), null, !ask.choices))))
+            .child(this.actionButton(`yes-${a.address}`, L.yes, L.answerTip(choices.yes.n, choices.yes.text), (cx) => this.answer(a, ask, "yes", cx), null, !ask.choices))
+            .child(this.actionButton(`no-${a.address}`, L.no, L.answerTip(choices.no.n, choices.no.text), (cx) => this.answer(a, ask, "no", cx), null, !ask.choices))))
           .child(h_flex().gap(6).items_center()
             .child(this.actionButton(`answer-${a.address}`, L.answer, L.answer, () => run("agent.focus", { terminal: a.address }), state.color))
             .child(this.actionButton(`peek-b-${a.address}`, L.peek, L.peekTip, () => run("terminal.peek", { terminal: a.address })))

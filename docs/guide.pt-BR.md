@@ -43,8 +43,10 @@ o card também mostra **Sim** e **Não**. Cada um aperta o número dessa opção
 terminal do agente (sem Enter), como você faria; passe o mouse para ver o texto da
 opção. O card então acompanha o novo status do agente: sai de **Precisa de você**
 quando o agente segue. Antes de digitar, o quadro confere se o agente continua
-bloqueado no mesmo pedido (lê a tela de novo); se algo mudou, não digita nada e lê
-a pergunta outra vez. Depois de uma resposta, os botões ficam apagados até o status
+bloqueado no mesmo pedido: lê a tela de novo e compara o pedido inteiro (todas as
+linhas do diálogo, não só o trecho que o card mostra), e um botão só responde ao
+pedido que o card dele mostrou; se algo mudou, não digita nada e lê a pergunta outra
+vez. Depois de uma resposta, os botões ficam apagados até o status
 do agente mudar, então um segundo clique não digita nada. Outras escolhas ("Yes, and
 always allow…") e pedidos sem um par Yes / No simples: use **Abrir e responder**.
 

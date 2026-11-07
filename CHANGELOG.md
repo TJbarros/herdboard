@@ -7,7 +7,9 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 - Blocked cards answer a Claude Code permission dialog: **Yes** / **No** (*Sim* /
   *Não*) press the number of the option labelled exactly "Yes" or "No" in the
   agent's terminal, after checking that the agent is still blocked on the same
-  dialog. Shown only when the screen has both options.
+  dialog (the whole request on a fresh screen read, not just the card's text) and
+  that the button belongs to the request currently shown. Shown only when the
+  screen has both options.
 
 ## [1.0.0] - 2026-11-07
 
