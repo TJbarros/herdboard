@@ -185,7 +185,17 @@ direto (ele tem commits seus, ou não acompanha nenhum branch remoto), e avisa.
 
 ## Desinstalar
 
-Troque para outro layout e apague `layouts/herdboard.json` e as pastas
-`mods/herdboard`, `mods/herdboard-picker` e `mods/herdboard-new-menu` da pasta do
-Herdr (`~/.config/herdr-app`); depois remova a seção `"layout:herdboard"` do
-`keys.json` dela. Seus outros layouts e atalhos não mudam.
+```sh
+herdboard/scripts/uninstall.sh
+```
+
+Ele encontra a pasta do Herdr do mesmo jeito que a instalação e remove
+`layouts/herdboard.json`, as pastas `mods/herdboard`, `mods/herdboard-picker` e
+`mods/herdboard-new-menu` e a seção `"layout:herdboard"` do `keys.json`, fazendo antes
+um backup do `keys.json` em `keys.json.before-herdboard-uninstall` (se essa seção era
+tudo o que ele tinha, o `keys.json` é apagado). Seus outros layouts, mods e atalhos não
+mudam. O que já não existe é pulado, então rodar duas vezes não faz mal. Se o Herdboard
+era o seu layout ativo, troque para outro no Herdr (**Settings › Look › Layout**) ou com `Ctrl+Shift+L`.
+
+Para ver antes o que seria removido, rode `scripts/uninstall.sh --dry-run`: ele lista
+cada arquivo, pasta e mudança no `keys.json`, e não muda nada.

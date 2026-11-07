@@ -26,6 +26,12 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
   file has local edits (listing them, with `git stash` / commit as the way to keep
   them), and before installing if the pull can't fast-forward. The guide's "Update"
   section now uses it.
+- `scripts/uninstall.sh` removes Herdboard in one step: the layout file, its three
+  mod folders and the `"layout:herdboard"` section of `keys.json` (backup first:
+  `keys.json.before-herdboard-uninstall`; `keys.json` is deleted if that section was
+  all it had), nothing else. Parts already gone are skipped; a `keys.json` that isn't
+  valid JSON stops it before anything is removed. `--dry-run` lists every change and
+  makes none. The guide's "Uninstall" section now uses it.
 
 ## [1.1.0] - 2026-11-07
 
