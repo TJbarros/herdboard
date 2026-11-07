@@ -155,7 +155,10 @@ git pull
 scripts/install.sh
 ```
 
-Herdr reloads the layout and mods by itself; no restart needed.
+Herdr reloads the layout and mods by itself; no restart needed. To see first which
+files the update would overwrite, run `scripts/install.sh --dry-run`: it lists each file
+as **new**, **overwrite** or **unchanged**, says what would happen to `keys.json`, and
+changes nothing.
 
 ## Uninstall
 

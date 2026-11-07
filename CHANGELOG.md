@@ -16,6 +16,11 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
   each mod in `mods/` (every folder with a `mod.json`), then `node --test` from the
   repository root, from any directory. Every step runs even after one fails; it
   exits non-zero and names the failed steps, or the missing `herdr-app` / `node`.
+- `scripts/install.sh --dry-run` shows what an install would do without changing
+  anything: the Herdr home it found, every file it would copy (new, overwrite or
+  unchanged) and what would happen to `keys.json`. Any other option is now an error
+  with a usage line (before, options were ignored and the install ran). The Herdr
+  home and the names of what Herdboard installs live in `scripts/common.sh`.
 
 ## [1.1.0] - 2026-11-07
 

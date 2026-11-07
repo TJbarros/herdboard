@@ -3,47 +3,76 @@
 #
 #   scripts/install.sh                 # finds the Herdr home (WSL: the Windows one)
 #   HERDR_APP_HOME=/path scripts/install.sh
+#   scripts/install.sh --dry-run       # shows what it would copy and change; changes nothing
 #
 # Copies files only; never deletes anything of yours. Keys: adds the
 # "layout:herdboard" section to keys.json if it isn't there (backup first).
+# The Herdr home and the names of what it installs come from scripts/common.sh.
 set -eu
 
+DRY_RUN=0
+case "$#:${1:-}" in
+  0:) ;;
+  1:--dry-run) DRY_RUN=1 ;;
+  *) echo "usage: $0 [--dry-run]" >&2; exit 2 ;;
+esac
+
 SRC=$(cd "$(dirname "$0")/.." && pwd)
+. "$SRC/scripts/common.sh"
+DEST=$(herdr_home) || exit 1
 
-if [ -n "${HERDR_APP_HOME:-}" ]; then
-  DEST=$HERDR_APP_HOME
-elif grep -qi microsoft /proc/version 2>/dev/null; then
-  # WSL: assumes the Herdr app runs on Windows, whose home is C:\Users\<user>\.config\herdr-app.
-  WINUSER=$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r')
-  DEST="/mnt/c/Users/$WINUSER/.config/herdr-app"
+# put <file> <folder>: copies the file into the folder or, in a dry run, prints whether the
+# copy would be new, overwrite a different file or leave an identical one unchanged.
+put() {
+  if [ "$DRY_RUN" = 0 ]; then
+    cp "$1" "$2/"
+    return
+  fi
+  put_to="$2/$(basename "$1")"
+  if [ ! -e "$put_to" ]; then put_state=new
+  elif cmp -s "$1" "$put_to"; then put_state=unchanged
+  else put_state=overwrite
+  fi
+  printf '  %-9s  %s\n' "$put_state" "${put_to#"$DEST/"}"
+}
+
+# folder <path>: creates it, except in a dry run.
+folder() {
+  if [ "$DRY_RUN" = 0 ]; then mkdir -p "$1"; fi
+}
+
+if [ "$DRY_RUN" = 1 ]; then
+  echo "Dry run: nothing is created or changed."
+  echo "Herdr home: $DEST"
+  echo "Files:"
 else
-  DEST="$HOME/.config/herdr-app"
+  echo "Installing Herdboard into $DEST"
 fi
-
-if [ ! -d "$DEST" ]; then
-  echo "Herdr home not found: $DEST (open Herdr once, or set HERDR_APP_HOME)" >&2
-  exit 1
-fi
-
-echo "Installing Herdboard into $DEST"
-mkdir -p "$DEST/layouts" "$DEST/mods"
-cp "$SRC/layouts/herdboard.json" "$DEST/layouts/herdboard.json"
-for mod in herdboard herdboard-picker herdboard-new-menu; do
-  mkdir -p "$DEST/mods/$mod"
-  for f in "$SRC/mods/$mod"/*; do cp "$f" "$DEST/mods/$mod/"; done
+folder "$DEST/layouts"
+folder "$DEST/mods"
+put "$SRC/layouts/$HERDBOARD_LAYOUT.json" "$DEST/layouts"
+for mod in $HERDBOARD_MODS; do
+  folder "$DEST/mods/$mod"
+  for f in "$SRC/mods/$mod"/*; do put "$f" "$DEST/mods/$mod"; done
 done
 
 # Keys: merge the layout's section, never replacing one the person already has.
 KEYS="$DEST/keys.json"
 if command -v python3 >/dev/null 2>&1; then
-  python3 - "$SRC/keys.json" "$KEYS" <<'PY'
+  python3 - "$SRC/keys.json" "$KEYS" "$DRY_RUN" "$HERDBOARD_LAYOUT" <<'PY'
 import json, shutil, sys, os
-src, dest = sys.argv[1], sys.argv[2]
+src, dest, dry_run, layout = sys.argv[1], sys.argv[2], sys.argv[3] == "1", sys.argv[4]
 ours = json.load(open(src, encoding="utf-8"))
 mine = json.load(open(dest, encoding="utf-8")) if os.path.exists(dest) else {}
 added = [k for k in ours if k not in mine]
 if not added:
-    print("keys.json: 'layout:herdboard' already there, left as it is")
+    print("keys.json: 'layout:" + layout + "' already there, left as it is")
+    sys.exit(0)
+if dry_run:
+    if os.path.exists(dest):
+        print("keys.json: would add " + ", ".join(added) + " (backup: keys.json.before-herdboard)")
+    else:
+        print("keys.json: would be created with " + ", ".join(added))
     sys.exit(0)
 if os.path.exists(dest):
     shutil.copy(dest, dest + ".before-herdboard")
@@ -57,4 +86,8 @@ else
   echo "python3 not found: add the section in keys.json from $SRC/keys.json by hand"
 fi
 
-echo "Done. In Herdr: Settings > Look > Layout > herdboard (or: herdr-app do layout.switch --name herdboard)."
+if [ "$DRY_RUN" = 1 ]; then
+  echo "Dry run done: run scripts/install.sh without --dry-run to install."
+else
+  echo "Done. In Herdr: Settings > Look > Layout > $HERDBOARD_LAYOUT (or: herdr-app do layout.switch --name $HERDBOARD_LAYOUT)."
+fi
