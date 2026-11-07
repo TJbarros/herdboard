@@ -12,7 +12,8 @@ const OPTION = /^(?:[❯>]\s*)?(\d+)\.\s+(.+)$/;
 //   input prompt and empty lines are dropped. No "?" on screen: no snippet (the card then says
 //   to open the terminal) rather than a wrong guess.
 // - question and options: the last question and the numbered options after it.
-// - id: the whole request, untruncated, to tell two requests apart (see requestId).
+// - id: the whole request, untruncated, to tell two requests apart; "" when the dialog's shape
+//   is in doubt (see requestId).
 export function parseAsk(screen) {
   const raw = String(screen ?? "").split(/\r?\n/);
   const all = raw.map(clean);
@@ -47,23 +48,19 @@ function optionsAfter(lines, q) {
 // The request as a whole, for the check before a key is pressed: the dialog's lines exactly as
 // the screen has them (nothing collapsed or dropped: two commands that differ only in spacing
 // are two requests), through the last option, with the option cursor ("❯") blanked, since
-// moving it changes nothing a digit answers.
-// Where the dialog starts: the solid rule that opens it (Claude Code draws one; a box's top edge
-// counts too). Claude Code frames the command between two dashed lines ("╌"), so the rule is
-// looked for above that frame: a command line drawn like a rule can't cut the command short.
-// The screen above the dialog is left out: Claude Code blinks its tool line there ("●" on one
-// read, a space on the next). No rule found: from the top of the screen (two reads may then
-// differ, and the answer is refused: safe, not wrong).
+// moving it changes nothing a digit answers. The screen above the dialog is left out: Claude
+// Code blinks its tool line there ("●" on one read, a space on the next).
+// The dialog opens with a rule at column 0: Claude Code's full-width "───", or a box's "╭───╮".
+// Command lines can't start one: Claude Code indents them, and a box's start with "│".
+// Claude Code frames the command between two dashed lines ("╌"), so a forged rule inside the
+// command would have a dashed line above it. Any doubt (no rule, a dashed line above the rule,
+// other than 0 or 2 dashed lines below it): no id, and the card offers no Yes / No.
 function requestId(raw, all, q, end) {
   const dashed = (l) => /^╌{3,}$/.test(l);
-  const solid = (l) => /^[─━═]{3,}$/.test(l);
-  let from = q;
-  const lower = all.findLastIndex((l, i) => i < q && dashed(l));
-  if (lower >= 0) {
-    const upper = all.findLastIndex((l, i) => i < lower && dashed(l));
-    if (upper >= 0) from = upper;
-  }
-  const rule = all.findLastIndex((l, i) => i < from && solid(l));
+  const rule = raw.findLastIndex((l, i) => i < q && /^(?:[─━═]{3,}|╭─+╮)\s*$/.test(l));
+  if (rule < 0 || all.slice(0, rule).some(dashed)) return "";
+  const frame = all.slice(rule + 1, q).filter(dashed).length;
+  if (frame !== 0 && frame !== 2) return "";
   return raw.slice(rule + 1, end + 1)
     .map(l => l.replace(/^(\s*)[❯>](?=\s+\d+\.\s)/, "$1 ").trimEnd())
     .join("\n");

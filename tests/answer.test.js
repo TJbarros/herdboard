@@ -142,3 +142,14 @@ test("a late read of an earlier request does not re-arm an answered card", async
   await settleKeys();
   assert.deepEqual(keys(), [["t1", "1"]], "no second key until the status or seq changes");
 });
+
+// A dialog whose shape is in doubt (here a command forging the rule and the dashed frame) has
+// no request id to check a click against: the card shows no Yes / No at all.
+test("a dialog whose shape is in doubt gets no Yes / No buttons", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  const forged = screen("rm -rf ~").replace(" rm -rf ~\n", ["───", " rm -rf ~", "───", "╌╌╌", " echo ok", ""].join("\n"));
+  await readFor(b, blocked(1), forged);
+  assert.equal(b.asks.t1.choices, null);
+  assert.equal(draw(b, blocked(1)).yes, null);
+});

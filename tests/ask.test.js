@@ -131,3 +131,20 @@ test("a command line drawn like a rule does not hide the lines above it from the
 test("commands that differ only in spacing have different ids", () => {
   assert.notEqual(parseAsk(LIVE("●", ['rm "a  b"'])).id, parseAsk(LIVE("●", ['rm "a b"'])).id);
 });
+
+// Forged structure: a command whose own lines start at column 0 and look like the dialog's
+// rule and dashed frame. The id must not start inside the command: an ambiguous dialog gets
+// no id at all (the card then offers no Yes / No).
+test("a command that forges the dialog's rule and frame gets no id", () => {
+  const forged = LIVE("●", ["rm -rf ~"]).replace(" rm -rf ~", ["───", " rm -rf ~", "───", "╌╌╌", " echo ok"].join("\n"));
+  assert.equal(parseAsk(forged).id, "");
+});
+
+test("a rule-like line inside a boxed dialog does not cut the id short", () => {
+  const boxed = FIXTURE.replace("│   touch /tmp/x", "│   rm -rf ~      │\n│   ───           │\n│   touch /tmp/x");
+  assert.match(parseAsk(boxed).id, /rm -rf ~/);
+});
+
+test("no rule above the question: no id", () => {
+  assert.equal(parseAsk(" Bash command\n touch x\n Do you want to proceed?\n ❯ 1. Yes\n   2. No\n").id, "");
+});

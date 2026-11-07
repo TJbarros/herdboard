@@ -56,9 +56,11 @@ column, top to bottom:
   asking." Parsed by `mods/herdboard/ask.js` (pure; `node --test` runs
   `tests/ask.test.js`). The same parse gives the request's `id`: the dialog's raw
   lines (nothing collapsed or dropped) from the solid rule that opens it through the
-  last option, the `❯` cursor blanked. The rule is looked for above the dashed `╌`
-  frame around the command, so a command line drawn like a rule can't cut it short;
-  the screen above the dialog is left out (it blinks Claude Code's `●` tool line).
+  last option, the `❯` cursor blanked; the screen above the dialog is left out (it
+  blinks Claude Code's `●` tool line). The opening rule starts at column 0 (`───`
+  or a box's `╭───╮`), which command lines can't (indented, or `│` in a box). Any
+  doubt about the shape (no rule, a dashed `╌` line above it, other than 0 or 2
+  dashed lines between it and the question): no `id`, and no Yes / No.
 - Yes / No: the same read also collects the numbered options below the question
   (`❯ 1. Yes` … `4. No`, numbered 1, 2, 3… in order; other lines skipped). Buttons
   only for a Claude Code agent (`app` "claude-code"), when one option's text is

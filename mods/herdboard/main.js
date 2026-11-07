@@ -206,7 +206,8 @@ export default class Herdboard extends View {
         this.pending.delete(key);
         const now = stillOn(a.address, key);
         if (!now || this.asks[a.address]?.key === key) return;
-        const choices = mayAnswer(now) ? pickAnswers(ask.options) : null;
+        // No id (the dialog's shape is in doubt): nothing to check a click against, so no buttons.
+        const choices = ask.id && mayAnswer(now) ? pickAnswers(ask.options) : null;
         this.asks[a.address] = { key, ...ask, choices, sent: null };
         cx.notify();
       });
