@@ -1,0 +1,25 @@
+name: Bug report · Relatar problema
+description: Something in Herdboard doesn't work as described · Algo não funciona como descrito
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: herdr-app version · versão do herdr-app
+      description: Output of `herdr-app --version`
+    validations:
+      required: true
+  - type: dropdown
+    id: system
+    attributes:
+      label: System · Sistema
+      options: [Windows + WSL, Linux, macOS]
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps and what happened · Passos e o que aconteceu
+      description: What you did, what you expected and what you saw. Screenshots help (leave out private data). · O que você fez, o que esperava e o que viu. Prints ajudam (sem dados privados).
+    validations:
+      required: true

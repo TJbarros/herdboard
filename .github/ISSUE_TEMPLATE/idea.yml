@@ -1,0 +1,10 @@
+name: Idea · Ideia
+description: Suggest an improvement · Sugira uma melhoria
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help, and why · O que ajudaria, e por quê
+    validations:
+      required: true
