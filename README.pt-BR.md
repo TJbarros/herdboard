@@ -60,6 +60,75 @@ Para instalar manualmente, copie `layouts/herdboard.json` para
 `~/.config/herdr-app/layouts/`, as três pastas `mods/herdboard*` para
 `~/.config/herdr-app/mods/` e junte o `keys.json` ao seu.
 
+## Como usar
+
+### Iniciar um agente no projeto certo
+
+1. Clique no **+** ao lado das abas (ou aperte `Ctrl+Shift+T`).
+2. Em **Abrir em**, escolha a pasta do projeto. A primeira é onde a aba ativa está
+   agora; as outras são as pastas dos seus outros terminais abertos.
+3. Escolha **Terminal** ou um agente (Claude Code, Codex, Gemini…). A nova aba abre
+   nessa pasta, no espaço atual.
+
+Precisa de um projeto novo? **⋯ › Novo espaço** (ou **+ › Novo espaço**) cria um
+espaço na pasta da aba ativa, na mesma máquina.
+
+### Responder um agente que precisa de você
+
+Quando um agente para e pergunta algo, o card dele vai para **Precisa de você**, a
+coluna fica vermelha e o espaço dele se destaca no cabeçalho.
+
+1. Leia a pergunta no próprio card: ele mostra as últimas linhas da tela do agente,
+   por exemplo *"npm run db:migrate --env=staging · Aplicar 3 migrações pendentes ·
+   Deseja continuar?"*.
+2. **Abrir e responder** foca o terminal desse agente para você digitar a resposta.
+   **Espiar** abre o terminal por cima, sem sair da aba em que você está.
+
+Se a pergunta não estiver na tela (por exemplo, rolou para cima), o card diz
+*"Abra o terminal para ver o que o agente pede."*
+
+### Acompanhar muitos agentes
+
+- **Todos / Este espaço** no cabeçalho: todos os agentes, ou só os do espaço ativo.
+- **Fixar** (passe o mouse no card): mantém o agente no topo da coluna.
+- **Guardar** (passe o mouse no card): tira a aba do quadro enquanto ela roda; ela
+  volta sozinha quando um agente nela precisar de você.
+- **"travado?"**: um card trabalhando há mais de 30 minutos ganha esse aviso. Espie
+  para ver se ele ainda está avançando.
+- **Ocioso › recolher**: recolhe a coluna Ocioso quando você só quer ver o trabalho
+  ativo.
+- Clique em qualquer card para ir ao espaço e à aba dele; clique num espaço do
+  cabeçalho para trocar de espaço.
+
+### Focar no terminal
+
+**Expandir** (à direita das abas) esconde o cabeçalho e o quadro, e os terminais
+ocupam a janela toda; **Restaurar** traz tudo de volta. As abas, o **+** e o **×**
+continuam na barra enquanto está expandido.
+
+### Como ler um card
+
+```
+┌─┬───────────────────────────────────────────────────┐
+│█│ [ícone] Limitar requisições em /v1/orders           │  ← agente + título da tarefa
+│█│ web-app · aba 1 · feat/rate-limit        há 12 min  │  ← espaço · aba · branch · tempo
+└─┴───────────────────────────────────────────────────┘
+ └ faixa: cor do status
+```
+
+- **Título**: o nome que o agente deu à tarefa. Depois de um `/clear`, o card mostra
+  **Última: …**, o último título que o Herdboard viu naquele terminal.
+- **Tempo**: há quanto tempo ele está nesse status (*esperando há*, *há*, *concluiu
+  há*).
+- Passe o mouse no card para ver o título completo, o local, o programa e o endereço
+  do terminal.
+
+### Voltar ao layout de sempre
+
+**⋯ › Voltar ao layout padrão** troca para o layout do próprio Herdr (um aviso
+explica como voltar). `Ctrl+Shift+L` alterna os layouts; **Settings › Look ›
+Layout** lista todos.
+
 ## Atalhos (com o Herdboard aberto)
 
 | Tecla | Ação |
@@ -79,6 +148,45 @@ Para instalar manualmente, copie `layouts/herdboard.json` para
 - O Herdr não permite mudar a pasta registrada de um espaço depois de criado; o
   Herdboard sempre usa a pasta atual dos terminais.
 - As preferências ficam no estado compartilhado do Herdr, em `herdboard.*`.
+
+## Perguntas frequentes
+
+**O card diz "Sem título da tarefa".** O agente ainda não deu nome a uma tarefa
+(por exemplo, numa sessão em que você só disse "olá"). O Claude Code dá o nome assim
+que começa um trabalho de verdade; a partir daí, o Herdboard guarda o título mesmo
+depois de um `/clear`.
+
+**A nova aba abriu na pasta errada.** Novas abas começam onde o terminal da aba
+ativa *está*, não onde o agente trabalha: um agente iniciado em `~/projetos` que roda
+`cd meu-app && …` dentro dos comandos continua em `~/projetos`. Escolha o projeto em
+**Abrir em**, no menu do **+**, ou inicie os agentes por esse menu para que eles já
+comecem na pasta do projeto.
+
+**O tempo de um card parece errado.** O Herdr registra os tempos por aba. Quando uma
+aba tem mais de um agente, o Herdboard conta a partir de quando viu o status de cada
+um.
+
+**Dá para mudar o limite de 30 minutos do "travado?"?** Sim: `STUCK_MIN` no início
+de `mods/herdboard/main.js`; depois rode `scripts/install.sh` de novo.
+
+**Funciona com temas claros?** Sim. Todas as cores vêm do tema do seu Herdr.
+
+## Atualizar
+
+```sh
+cd herdboard
+git pull
+scripts/install.sh
+```
+
+O Herdr recarrega o layout e os mods sozinho; não precisa reiniciar.
+
+## Desinstalar
+
+Troque para outro layout e apague `layouts/herdboard.json` e as pastas
+`mods/herdboard`, `mods/herdboard-picker` e `mods/herdboard-new-menu` da pasta do
+Herdr (`~/.config/herdr-app`); depois remova a seção `"layout:herdboard"` do
+`keys.json` dela. Seus outros layouts e atalhos não mudam.
 
 ## Licença
 
