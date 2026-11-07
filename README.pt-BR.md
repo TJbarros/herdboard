@@ -19,6 +19,20 @@
 
 ## Instalação
 
+### Pelo seu agente do Herdr
+
+O Herdboard está na [galeria do herdr.dev](https://herdr.dev/layouts). Cole num agente
+rodando no Herdr a linha que o card dele mostra:
+
+```
+Read ~/.config/herdr-app/AGENTS.md, then add this layout: https://github.com/TJbarros/herdboard/tree/main
+```
+
+O agente lê todos os arquivos antes de adicionar o layout. O seu layout atual continua
+como está.
+
+### Pelo script
+
 ```sh
 git clone https://github.com/TJbarros/herdboard.git
 cd herdboard

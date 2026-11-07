@@ -19,6 +19,19 @@
 
 ## Install
 
+### With your Herdr agent
+
+Herdboard is in the [herdr.dev gallery](https://herdr.dev/layouts). Paste the line its
+card gives into an agent running in Herdr:
+
+```
+Read ~/.config/herdr-app/AGENTS.md, then add this layout: https://github.com/TJbarros/herdboard/tree/main
+```
+
+The agent reads every file before it adds the layout. Your own layout stays as it is.
+
+### With the script
+
 ```sh
 git clone https://github.com/TJbarros/herdboard.git
 cd herdboard
