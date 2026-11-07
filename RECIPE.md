@@ -1,9 +1,9 @@
 # Herdboard
 
-A kanban board of every coding agent in every space, above the live terminals of
-the active tab. Four columns (Needs you, Working, Done, Idle); blocked cards show
-what the agent asks. Colors follow the person's theme; texts switch between
-Portuguese (Brazil) and English.
+A kanban board for your coding agents in Herdr. See which one needs you, and what it
+is asking, at a glance: every agent of every space in four columns (Needs you,
+Working, Done, Idle), above the live terminals of the active tab. Follows your Herdr
+theme; English and Portuguese.
 
 ![Herdboard](preview.png)
 
