@@ -17,7 +17,7 @@ const temps = [];
 after(() => { for (const t of temps) rmSync(t, { recursive: true, force: true }); });
 
 // A repository with mods (name -> { broken }), one folder under mods/ that isn't a mod, and one
-// test file that passes or fails.
+// test file that passes or fails, leaving a file named `ran` at the root once it has run.
 function makeRepo({ mods = { alpha: {}, beta: {}, gamma: {} }, testsPass = true } = {}) {
   const root = mkdtempSync(join(tmpdir(), "herdboard-check-repo-"));
   temps.push(root);
@@ -31,8 +31,9 @@ function makeRepo({ mods = { alpha: {}, beta: {}, gamma: {} }, testsPass = true 
   mkdirSync(join(root, "mods", "not-a-mod"), { recursive: true });
   mkdirSync(join(root, "tests"));
   writeFileSync(join(root, "tests", "sample.test.js"),
-    `import { test } from "node:test";\n` +
-    `test("sample", () => { ${testsPass ? "" : "throw new Error('sample failed');"} });\n`);
+    `import { test } from "node:test";\nimport { writeFileSync } from "node:fs";\n` +
+    `test("sample", () => {\n  writeFileSync(new URL("../ran", import.meta.url), "");\n` +
+    `  ${testsPass ? "" : "throw new Error('sample failed');"}\n});\n`);
   return root;
 }
 
@@ -96,7 +97,10 @@ test("a broken mod fails its step, the other mods and the tests still run", () =
   assert.notEqual(code, 0, out);
   assert.deepEqual(checked(log).sort(),
     ["alpha", "beta", "gamma"].map((m) => join(root, "mods", m)));
-  assert.match(out, /^ℹ pass 1$/m, "node --test ran after the failing mod");
+  // The sample test's own trace and check.sh's verdict, not the node --test reporter's summary:
+  // Node 22 prints it as TAP ("# pass 1") when stdout isn't a terminal, Node 24 as "ℹ pass 1".
+  assert.ok(existsSync(join(root, "ran")), "node --test ran after the failing mod");
+  assert.match(out, /^PASS: node --test$/m);
   assert.deepEqual(failedSteps(out), ["herdr-app check mods/beta"]);
   assert.doesNotMatch(out, /all checks passed/i);
 });
