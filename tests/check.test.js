@@ -1,16 +1,17 @@
 // Run with: node --test
-// scripts/check.sh, spawned under /bin/sh against a throwaway copy of the repository in a temp
-// directory: its own mods, its own tests, and a PATH holding only stand-ins (a herdr-app that
-// fails a mod with a FAIL file in it, the real node, dirname). It never touches the real repo's
-// tests (that would run this file again) and never installs anything.
+// scripts/check.sh, spawned under the PATH's sh against a throwaway copy of the repository in a
+// temp directory: its own mods, its own tests, and a PATH holding only stand-ins (a herdr-app
+// that fails a mod with a FAIL file in it, the real node, dirname). It never touches the real
+// repo's tests (that would run this file again) and never installs anything.
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
-import { spawnSync, execFileSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, copyFileSync, symlinkSync, readFileSync,
   existsSync, rmSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { SH, EXE, which } from "./runtime/which.mjs";
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), "..", "scripts", "check.sh");
 const temps = [];
@@ -51,9 +52,8 @@ function makeBin(tools = ["herdr-app", "node"]) {
       `echo "check passed: $2"\n`);
     chmodSync(join(bin, "herdr-app"), 0o755);
   }
-  if (tools.includes("node")) symlinkSync(process.execPath, join(bin, "node"));
-  symlinkSync(execFileSync("/bin/sh", ["-c", "command -v dirname"]).toString().trim(),
-    join(bin, "dirname"));
+  if (tools.includes("node")) symlinkSync(process.execPath, join(bin, `node${EXE}`));
+  symlinkSync(which("dirname"), join(bin, `dirname${EXE}`));
   return { bin, log };
 }
 
@@ -64,7 +64,7 @@ function check(root, bin) {
   temps.push(cwd);
   writeFileSync(join(cwd, "elsewhere.test.js"),
     `import { test } from "node:test";\ntest("elsewhere", () => { throw new Error("not ours"); });\n`);
-  const r = spawnSync("/bin/sh", [join(root, "scripts", "check.sh")],
+  const r = spawnSync(SH, [join(root, "scripts", "check.sh")],
     { cwd, env: { PATH: bin, HOME: cwd }, encoding: "utf8" });
   return { code: r.status, out: r.stdout + r.stderr };
 }

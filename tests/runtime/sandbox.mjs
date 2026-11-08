@@ -9,6 +9,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { SH, which } from "./which.mjs";
 
 export const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 export const TMP = fs.realpathSync(os.tmpdir());
@@ -32,12 +33,12 @@ export function tempHome(home) {
   return path.resolve(home);
 }
 
-// Runs /bin/sh with `shArgs` and nothing from this process's environment but PATH: HOME and the
+// Runs SH with `shArgs` and nothing from this process's environment but PATH: HOME and the
 // working folder are fresh temp folders (the scripts must work from any directory), and
 // HERDR_APP_HOME is `home`, guarded.
 export function sh(home, shArgs, { PATH = process.env.PATH } = {}) {
   const env = { PATH, HOME: tmpdir(), HERDR_APP_HOME: tempHome(home) };
-  return spawnSync("/bin/sh", shArgs, { env, cwd: tmpdir(), encoding: "utf8" });
+  return spawnSync(SH, shArgs, { env, cwd: tmpdir(), encoding: "utf8" });
 }
 
 // HERDBOARD_MODS from scripts/common.sh, sourced the way the scripts do.
@@ -66,8 +67,8 @@ export function snapshot(dir) {
 export function pathWithoutPython() {
   const bin = tmpdir();
   for (const tool of ["dirname", "basename", "cp", "mkdir", "cmp", "grep", "tr", "cat", "rm"]) {
-    const found = spawnSync("sh", ["-c", `command -v ${tool}`], { encoding: "utf8" }).stdout.trim();
-    if (found) fs.symlinkSync(found, path.join(bin, tool));
+    const found = which(tool);
+    if (found) fs.symlinkSync(found, path.join(bin, path.basename(found)));
   }
   return bin;
 }
