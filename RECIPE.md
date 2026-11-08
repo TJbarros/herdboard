@@ -101,6 +101,8 @@ column, top to bottom:
   on Escape, on an outside press, when the spell changes or the card leaves Needs
   you (including when hidden by a filter). The menu is layered above the window:
   More… stays in the Yes / No row and adds nothing to `blockedHeight`.
+- A blocked card's waiting time uses the space left beside Open and answer and
+  Peek, truncating with its full text in a tooltip when the column is narrow.
 - Space pill: `space.select`. Filter, language and Idle fold persist in shared
   `herdboard.filter`, `herdboard.lang`, `herdboard.idleOpen`.
 - ⋯ menu (popup copy of the mod, role `menu`): New space and New tab in the active

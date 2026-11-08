@@ -10,6 +10,8 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
   every answer control then stays disabled until the status or request changes.
   The menu closes on a choice, Escape, an outside press or the card leaving Needs
   you. Wrapped option text is joined and included in the guarded dialog id.
+- Waiting time stays inside narrow permission cards, with its full text in a
+  tooltip when the action row has to shorten it.
 
 ## [1.2.1] - 2026-11-07
 

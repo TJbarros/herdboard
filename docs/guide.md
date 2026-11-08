@@ -55,6 +55,8 @@ controls stay faded until the agent's status or request changes, so a second cli
 types nothing. More… appears only when Yes / No has other options to offer. For
 dialogs without a plain Yes / No pair, use **Open and answer**.
 
+In a narrow column, hover the shortened waiting time to read it in full.
+
 If the question isn't on screen (for example, it scrolled away), the card says
 *"Open the terminal to see what the agent is asking."*
 

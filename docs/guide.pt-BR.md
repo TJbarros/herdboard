@@ -58,6 +58,9 @@ status ou o pedido do agente mudar, então um segundo clique não digita nada. M
 só aparece quando há outras opções além de Sim / Não. Para pedidos sem um par
 Yes / No simples, use **Abrir e responder**.
 
+Em uma coluna estreita, passe o mouse sobre o tempo de espera cortado para lê-lo
+por completo.
+
 Se a pergunta não estiver na tela (por exemplo, rolou para cima), o card diz
 *"Abra o terminal para ver o que o agente pede."*
 
