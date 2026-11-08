@@ -74,17 +74,70 @@ test("reads the question and the numbered options below it", () => {
   ]);
 });
 
-test("a long option wrapped over two lines does not hide the ones after it", () => {
+test("a long option joins lines at its text column and keeps the options after it", () => {
   const narrow = [
     " Do you want to proceed?",
     " ❯ 1. Yes",
     "   2. Yes, and switch to auto mode · auto mode handles",
-    "   these prompts for you",
+    "      these prompts for you",
     "   3. No",
     " Esc to cancel · Tab to amend",
   ].join("\n");
-  assert.deepEqual(parseAsk(narrow).options.map(o => o.n), [1, 2, 3]);
-  assert.equal(parseAsk(narrow).options[2].text, "No");
+  assert.deepEqual(parseAsk(narrow).options, [
+    { n: 1, text: "Yes" },
+    { n: 2, text: "Yes, and switch to auto mode · auto mode handles these prompts for you" },
+    { n: 3, text: "No" },
+  ]);
+});
+
+test("the last option's continuations belong to its text and to the guarded dialog id", () => {
+  for (const [prefix, suffix] of [["", ""], ["│", " │"]]) {
+    const option = `${prefix}   4. No, and explain${suffix}`;
+    const tail = `${prefix}      what to do${suffix}\n${prefix}      differently${suffix}`;
+    const screen = FIXTURE.slice(0, FIXTURE.indexOf("│   4. No")) + [
+      option, tail, `${prefix}      Esc to cancel · Tab to amend${suffix}`,
+    ].join("\n");
+    const ask = parseAsk(screen);
+    assert.equal(ask.options[3].text, "No, and explain what to do differently");
+    assert.ok(ask.id.endsWith(option + "\n" + tail));
+    assert.notEqual(ask.id, parseAsk(screen.replace("differently", "instead")).id);
+  }
+});
+
+test("a continuation beginning with a number is text, not another option, and changes the id", () => {
+  const screen = "───\nProceed?\n   1. Yes\n   2. No\n   3. Yes, and always allow access to\n      1. archive from this project";
+  const ask = parseAsk(screen);
+  assert.deepEqual(ask.options, [
+    { n: 1, text: "Yes" },
+    { n: 2, text: "No" },
+    { n: 3, text: "Yes, and always allow access to 1. archive from this project" },
+  ]);
+  assert.notEqual(ask.id, parseAsk(screen.replace("1. archive", "2. archive")).id);
+  assert.deepEqual(parseAsk(screen.replace("1. archive", "4. archive")).options, [
+    { n: 1, text: "Yes" },
+    { n: 2, text: "No" },
+    { n: 3, text: "Yes, and always allow access to 4. archive from this project" },
+  ]);
+});
+
+test("a continuation that resembles an option cursor stays byte for byte in the guarded id", () => {
+  const screen = "───\nProceed?\n   1. Yes\n   2. No\n   3. Other\n      > 1. archive";
+  const ask = parseAsk(screen);
+  assert.ok(ask.id.endsWith("\n      > 1. archive"));
+  assert.notEqual(ask.id, parseAsk(screen.replace("> 1. archive", "❯ 1. archive")).id);
+});
+
+test("blank lines, the footer and lines outside the text column never continue an option", () => {
+  for (const after of [
+    "\n      unrelated text",
+    "      Esc to cancel · Tab to amend\n      unrelated text",
+    "   unaligned text\n      unrelated text",
+    "       too far right\n      unrelated text",
+  ]) {
+    const ask = parseAsk("───\nProceed?\n   1. Yes\n   2. No\n" + after);
+    assert.deepEqual(ask.options, [{ n: 1, text: "Yes" }, { n: 2, text: "No" }]);
+    assert.equal(ask.id, "Proceed?\n   1. Yes\n   2. No");
+  }
 });
 
 test("Yes and No map to the options labelled exactly so, by text, not position", () => {

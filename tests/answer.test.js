@@ -1,5 +1,5 @@
 // Run with: node --test
-// The Yes / No click path of the real main.js (card button -> answer() -> hc keys), with the
+// The permission answer path of the real main.js (card button/menu -> answer() -> hc keys), with the
 // Herdr runtime and gpui-kit replaced by stand-ins (tests/runtime). Each hc call waits until
 // the test settles it, so a test decides in which order screen reads come back.
 import { test, beforeEach } from "node:test";
@@ -8,7 +8,7 @@ import { register } from "node:module";
 
 register("./runtime/hooks.mjs", import.meta.url);
 const { herdr } = await import("./runtime/herdr.mjs");
-const { clicks } = await import("./runtime/gpui.mjs");
+const { clicks, elements, popovers } = await import("./runtime/gpui.mjs");
 const { default: Herdboard } = await import("../mods/herdboard/main.js");
 const { parseAsk } = await import("../mods/herdboard/ask.js");
 
@@ -33,6 +33,15 @@ const screen = (cmd, mark = "●") => {
     " Esc to cancel · Tab to amend",
   ].join("\n");
 };
+const MORE_TEXT = [
+  "Yes, and always allow access to /repo from this project",
+  "Yes, and switch to auto mode · auto mode handles these prompts for you",
+];
+const moreScreen = (cmd) => screen(cmd).replace("   3. No", [
+  "   3. Yes, and switch to auto mode · auto mode handles",
+  "      these prompts for you",
+  "   4. No",
+].join("\n"));
 
 // cx.sleep waits until the test wakes it, so a test can end a spell between a miss and its retry.
 const waits = [];
@@ -57,14 +66,23 @@ function board() {
   b.init(null, cx);
   return b;
 }
-// Draw the agent's card as the board would and return its Yes / No click handlers (null when
-// the card has no such button). Clicking runs the button's own on_click, disabled check included.
+// Draw the card and expose its controls. Trigger and item clicks use the real on_click;
+// native Escape/outside dismissal reports through on_open_change.
 function draw(b, a) {
   clicks.clear();
+  elements.clear();
+  popovers.clear();
   b.card(a, { color: "#000000" }, { tabs: new Map(), paneInfo: new Map() });
   const handler = (id) => clicks.get(`${id}-${a.address}`) ?? null;
   const click = (h) => h && (async () => { h({}, cx); await flush(); });
-  return { yes: click(handler("yes")), no: click(handler("no")) };
+  const menu = popovers.get(`more-${a.address}`);
+  const options = new Map(Array.from({ length: 9 }, (_, i) => [i + 1, handler(`option-${i + 1}`)]));
+  return { yes: click(handler("yes")), no: click(handler("no")),
+    more: menu && click(handler("more-trigger")),
+    dismiss: menu && (async () => { menu.props.on_open_change[0](false, cx); await flush(); }),
+    open: menu?.props.open[0] ?? false,
+    labels: menu?.props.open[0] ? menu.props.content[0].data.children.map(el => el.data.children[0].data.children[0]) : [],
+    option: n => menu?.props.open[0] ? click(options.get(n) ?? null) : null };
 }
 // Wake every pending cx.sleep.
 async function wake() {
@@ -80,6 +98,8 @@ async function readFor(b, a, stdout) {
 beforeEach(() => {
   herdr.agents = [];
   herdr.calls.length = 0;
+  herdr.runs.length = 0;
+  herdr.shared = {};
   waits.length = 0;
   herdr.terminals = [{ address: "t1", report: { kind: "permission" } }];
 });
@@ -102,6 +122,198 @@ test("No types the No digit", async () => {
   await settle(reads().at(-1), screen("touch /tmp/a"));
   await settleKeys();
   assert.deepEqual(keys(), [["t1", "3"]]);
+});
+
+test("More opens the remaining option and choosing it sends only its digit through a fresh read", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  await readFor(b, blocked(1), screen("touch /tmp/a"));
+  const closed = draw(b, blocked(1));
+  assert.ok(closed.more);
+  assert.equal(closed.open, false);
+  await closed.more();
+  const opened = draw(b, blocked(1));
+  assert.equal(opened.open, true);
+  assert.equal(opened.option(1), null);
+  assert.equal(opened.option(3), null);
+  await opened.option(2)();
+  assert.equal(draw(b, blocked(1)).open, false);
+  assert.deepEqual(keys(), [], "the screen must be checked first");
+  await settle(reads().at(-1), screen("touch /tmp/a", " "));
+  await settleKeys();
+  assert.deepEqual(keys(), [["t1", "2"]]);
+});
+
+test("a menu closed when its card is hidden stays closed when the card returns", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  await readFor(b, blocked(1), screen("touch /tmp/a"));
+  await draw(b, blocked(1)).more();
+  assert.equal(draw(b, blocked(1)).open, true);
+  b.fetchAsks([], cx);
+  b.fetchAsks([blocked(1)], cx);
+  assert.equal(draw(b, blocked(1)).open, false);
+});
+
+test("More lists options 2 and 3 in screen order with full wrapped text and tooltips", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  await readFor(b, blocked(1), moreScreen("touch /tmp/a"));
+  await draw(b, blocked(1)).more();
+  assert.deepEqual(draw(b, blocked(1)).labels, MORE_TEXT);
+  assert.deepEqual(elements.get("option-2-t1").props.tooltip, [MORE_TEXT[0]]);
+  assert.deepEqual(elements.get("option-3-t1").props.tooltip, [MORE_TEXT[1]]);
+  await draw(b, blocked(1)).option(3)();
+  await settle(reads().at(-1), moreScreen("touch /tmp/a"));
+  await settleKeys();
+  assert.deepEqual(keys(), [["t1", "3"]]);
+});
+
+for (const change of [
+  "seq", "status", "report", "seq during read", "report during read", "gone",
+  "last continuation", "last numbered continuation", "last cursor-like continuation", "replaced cache",
+]) {
+  test(`a More item types nothing and refreshes when ${change} changed`, async () => {
+    const b = board();
+    herdr.agents = [blocked(1)];
+    const tail = change === "last numbered continuation" ? "1. archive" : change === "last cursor-like continuation" ? "> 1. archive" : "action";
+    const dialog = moreScreen("touch /tmp/a").replace("   4. No", "   4. No\n   5. Other\n      " + tail);
+    await readFor(b, blocked(1), dialog);
+    await draw(b, blocked(1)).more();
+    const choose = draw(b, blocked(1)).option(2);
+    let fresh = dialog;
+    if (change === "seq") herdr.agents = [blocked(2)];
+    if (change === "status") herdr.agents = [{ ...blocked(2), status: "working" }];
+    if (change === "report") herdr.terminals[0].report.kind = "question";
+    if (change === "gone") fresh = "Running…";
+    if (change === "last continuation") fresh = dialog.replace("      action", "      changed");
+    if (change === "last numbered continuation") fresh = dialog.replace("1. archive", "2. archive");
+    if (change === "last cursor-like continuation") fresh = dialog.replace("> 1. archive", "❯ 1. archive");
+    let kept;
+    if (change === "replaced cache") {
+      herdr.agents = [blocked(2)];
+      await readFor(b, blocked(2), moreScreen("touch /tmp/b"));
+      kept = b.asks.t1;
+    }
+    await choose();
+    if (change === "seq during read") herdr.agents = [blocked(2)];
+    if (change === "report during read") herdr.terminals[0].report.kind = "question";
+    for (const r of reads()) await settle(r, fresh);
+    await settleKeys();
+    assert.deepEqual(keys(), []);
+    if (kept) assert.equal(b.asks.t1, kept, "the newer card stays answerable");
+    else assert.equal(b.asks.t1, undefined, "discarded so the next render reads again");
+  });
+}
+
+for (const answer of ["yes", "no", "more"]) {
+  test(`after ${answer}, all answer controls stay disabled until a new spell`, async () => {
+    const b = board();
+    herdr.agents = [blocked(1)];
+    await readFor(b, blocked(1), screen("touch /tmp/a"));
+    await draw(b, blocked(1)).more();
+    const old = draw(b, blocked(1));
+    await (answer === "more" ? old.option(2)() : old[answer]());
+    await old.yes();
+    await old.no();
+    await old.option(2)();
+    await old.more();
+    const disabled = draw(b, blocked(1));
+    assert.equal(disabled.open, false);
+    await disabled.yes();
+    await disabled.no();
+    await disabled.more();
+    assert.equal(draw(b, blocked(1)).open, false);
+    assert.equal(reads().length, 2, "a second click starts no extra read or send");
+    await settle(reads().at(-1), screen("touch /tmp/a"));
+    await settleKeys();
+    assert.deepEqual(keys(), [["t1", answer === "yes" ? "1" : answer === "no" ? "3" : "2"]]);
+    await draw(b, blocked(1)).more();
+    assert.equal(draw(b, blocked(1)).open, false, "still disabled after sending");
+    herdr.agents = [blocked(2)];
+    await readFor(b, blocked(2), screen("touch /tmp/b"));
+    await draw(b, blocked(2)).more();
+    assert.equal(draw(b, blocked(2)).open, true);
+  });
+}
+
+test("More is absent without both Yes / No or without remaining one-key options", async () => {
+  for (const [a, kind, dialog] of [
+    [blocked(1), "permission", "───\nProceed?\n 1. Yes\n 2. No"],
+    [blocked(1), "permission", "───\nProceed?\n 1. Yes, always\n 2. No"],
+    [{ ...blocked(1), app: "codex" }, "permission", screen("touch /tmp/a")],
+    [blocked(1), "question", screen("touch /tmp/a")],
+    [blocked(1), "permission", screen("touch /tmp/a").replace("─".repeat(60) + "\n", "")],
+  ]) {
+    const b = board();
+    herdr.agents = [a];
+    herdr.terminals[0].report.kind = kind;
+    await readFor(b, a, dialog);
+    assert.equal(draw(b, a).more, undefined);
+  }
+});
+
+test("More excludes option 10 while keeping every other remaining digit in screen order", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  const dialog = "───\nProceed?\n 1. No\n 2. Yes\n" + Array.from({ length: 8 }, (_, i) => ` ${i + 3}. Choice ${i + 3}`).join("\n");
+  await readFor(b, blocked(1), dialog);
+  await draw(b, blocked(1)).more();
+  const menu = draw(b, blocked(1));
+  assert.deepEqual(menu.labels, ["Choice 3", "Choice 4", "Choice 5", "Choice 6", "Choice 7", "Choice 8", "Choice 9"]);
+  assert.equal(menu.option(10), null);
+});
+
+test("native dismissal and a new spell close the controlled menu", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  await readFor(b, blocked(1), screen("touch /tmp/a"));
+  await draw(b, blocked(1)).more();
+  assert.equal(draw(b, blocked(1)).open, true);
+  await draw(b, blocked(1)).dismiss(); // Native Escape and outside press both use this callback.
+  assert.equal(draw(b, blocked(1)).open, false);
+  await draw(b, blocked(1)).more();
+  herdr.agents = [blocked(2)];
+  await readFor(b, blocked(2), screen("touch /tmp/b"));
+  assert.equal(draw(b, blocked(2)).open, false);
+  herdr.agents = [{ ...blocked(3), status: "working" }];
+  b.fetchAsks([], cx);
+  assert.equal(draw(b, herdr.agents[0]).more, undefined);
+});
+
+test("the More trigger, menu and items stop both the press and click before the card can focus", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  await readFor(b, blocked(1), screen("touch /tmp/a"));
+  await draw(b, blocked(1)).more();
+  draw(b, blocked(1));
+  const menu = popovers.get("more-t1").props.content[0].data;
+  for (const el of [elements.get("more-trigger-t1"), menu, elements.get("option-2-t1")]) {
+    for (const [event, index] of [["on_mouse_down", 1], ["on_click", 0]]) {
+      let stopped = false;
+      el.props[event][index]({}, { ...cx, stop_propagation() { stopped = true; } });
+      if (!stopped) clicks.get("agent-t1")({}, cx);
+      assert.equal(stopped, true, event);
+    }
+  }
+  assert.deepEqual(herdr.runs, []);
+  await settle(reads().at(-1), screen("touch /tmp/a"));
+  await settleKeys();
+});
+
+test("PT / EN changes the More label and leaves the agent's options untranslated", async () => {
+  const b = board();
+  herdr.agents = [blocked(1)];
+  await readFor(b, blocked(1), moreScreen("touch /tmp/a"));
+  for (const [language, label] of [["pt", "Mais…"], ["en", "More…"]]) {
+    herdr.shared["herdboard.lang"] = language;
+    b.render(cx);
+    await draw(b, blocked(1)).more();
+    const menu = draw(b, blocked(1));
+    assert.deepEqual(elements.get("more-trigger-t1").children, [label]);
+    assert.deepEqual(menu.labels, MORE_TEXT);
+    await menu.dismiss();
+  }
 });
 
 // Review P1: the card text keeps only the end of the request (two lines, 180 characters).

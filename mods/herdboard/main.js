@@ -1,5 +1,5 @@
 import { View, div, svg, image } from "gpui-kit";
-import { h_flex, v_flex } from "gpui-base";
+import { h_flex, v_flex, Popover } from "gpui-base";
 import { agents, terminals, spaces, panes, props, run, setAgentOrder, theme, notify, layout, shared, setShared, hc, openOverlay, closeOverlay } from "herdr";
 import { parseAsk, pickAnswers } from "./ask.js";
 
@@ -58,7 +58,7 @@ const TEXT = {
     peekTip: "Ver o terminal por cima, sem trocar de aba", pinTip: "Manter no topo da coluna",
     settleTip: "Tirar a aba do quadro até um agente nela precisar de você",
     noAsk: "Abra o terminal para ver o que o agente pede.",
-    yes: "Sim", no: "Não", answerTip: (n, text) => `Responde no terminal com a opção ${n}: "${text}"`,
+    yes: "Sim", no: "Não", moreOptions: "Mais…", answerTip: (n, text) => `Responde no terminal com a opção ${n}: "${text}"`,
     fold: "recolher", unfold: "mostrar", lastTask: "Última:", hereShort: "Este",
   },
   en: {
@@ -79,7 +79,7 @@ const TEXT = {
     peekTip: "See the terminal on top, without switching tabs", pinTip: "Keep at the top of the column",
     settleTip: "Take the tab off the board until an agent in it needs you",
     noAsk: "Open the terminal to see what the agent is asking.",
-    yes: "Yes", no: "No", answerTip: (n, text) => `Answers in the terminal with option ${n}: "${text}"`,
+    yes: "Yes", no: "No", moreOptions: "More…", answerTip: (n, text) => `Answers in the terminal with option ${n}: "${text}"`,
     fold: "fold", unfold: "show", lastTask: "Last:", hereShort: "Here",
   },
 };
@@ -178,6 +178,7 @@ export default class Herdboard extends View {
     this.observed = {};
     this.asks = {};      // address -> { key, text, question, options, id, choices, sent } for blocked agents
     this.pending = new Set();
+    this.moreOpen = null; // address#seq of the card whose permission options are open
     this.hovered = null; // address of the card under the pointer (shows its actions)
     this.w = 0;          // this copy's size, from on_size_change; 0 until the first layout (treated as wide)
     this.h = 0;
@@ -221,6 +222,7 @@ export default class Herdboard extends View {
   // `blocked` is only the cards shown (filter, put-away tabs): a kept read is dropped when its
   // spell ends, not when its card is hidden, so an answered request stays answered.
   fetchAsks(blocked, cx) {
+    if (this.moreOpen && !blocked.some(a => spell(a) === this.moreOpen && stillOn(a.address, this.moreOpen) && mayAnswer(a))) this.moreOpen = null;
     for (const [k, ask] of Object.entries(this.asks)) if (!stillOn(k, ask.key)) delete this.asks[k];
     for (const a of blocked) {
       const key = spell(a);
@@ -254,7 +256,33 @@ export default class Herdboard extends View {
       .child(label);
   }
 
-  // Answer a permission dialog with the option labelled "Yes" or "No" (which: "yes" | "no").
+  // Other permission options stay one click beyond Yes / No, in this board copy's render.
+  moreOptions(a, ask, options) {
+    const disabled = !ask.choices;
+    const changeOpen = (open, cx) => {
+      const now = stillOn(a.address, ask.key);
+      if (open && ask.choices && this.asks[a.address] === ask && now && mayAnswer(now)) this.moreOpen = ask.key;
+      else if (this.moreOpen === ask.key) this.moreOpen = null;
+      cx.notify();
+    };
+    return Popover.new(`more-${a.address}`).anchor("bottom_left")
+      .open(this.moreOpen === ask.key && !disabled)
+      .on_open_change(changeOpen)
+      // Stopping the card's press also stops the native trigger: toggle controlled state here.
+      .trigger(this.actionButton(`more-trigger-${a.address}`, L.moreOptions, L.moreOptions, (cx) => changeOpen(this.moreOpen !== ask.key, cx), null, disabled))
+      .content(v_flex().w(Math.min(360, this.w > 0 ? this.w - 32 : 360)).max_h(280).overflow_y_scrollbar()
+        .p(4).gap(2).rounded(6).bg(C.pop).border(1).border_color(C.strong)
+        .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
+        .on_click((_e, cx) => cx.stop_propagation())
+        .children(options.map(o => div().id(`option-${o.n}-${a.address}`).h(28).flex_none().px(8)
+          .flex().items_center().rounded(4).text_size(11).text_color(C.ink).cursor_pointer()
+          .hover(st => st.bg(C.hover)).tooltip(o.text)
+          .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
+          .on_click((_e, cx) => { cx.stop_propagation(); this.answer(a, ask, o.n, cx); })
+          .child(div().flex_1().min_w(0).truncate().child(o.text)))));
+  }
+
+  // Answer a permission dialog with its numbered option (Yes, No or a More… item).
   // `a` and `ask` are what the clicked card was drawn from: the click answers that request and
   // nothing else, so it does nothing once the board holds a newer read for the agent.
   // hc keys presses keys blindly, so first confirm the agent is still blocked on the same
@@ -262,12 +290,13 @@ export default class Herdboard extends View {
   // the card's shortened text); else type nothing and read the screen again. The cached options
   // are dropped at once, so the buttons stay disabled until the status or seq changes (a
   // second click types nothing).
-  answer(a, ask, which, cx) {
+  answer(a, ask, n, cx) {
     if (!ask || this.asks[a.address] !== ask || ask.key !== spell(a)) return;
-    const pick = ask.choices?.[which];
+    const pick = ask.choices && ask.options.find(o => o.n === n && n >= 1 && n <= 9);
     if (!pick || !ask.id) return;
     ask.sent = ask.choices;
     ask.choices = null;
+    if (this.moreOpen === ask.key) this.moreOpen = null;
     cx.notify();
     const stillBlocked = () => { const now = stillOn(a.address, ask.key); return !!now && mayAnswer(now); };
     cx.spawn(async (cx) => {
@@ -300,6 +329,7 @@ export default class Herdboard extends View {
     const hovered = this.hovered === a.address;
     const ask = blocked ? this.asks[a.address] : null;
     const choices = shownChoices(ask);
+    const extras = choices ? ask.options.filter(o => o.n >= 1 && o.n <= 9 && o.n !== choices.yes.n && o.n !== choices.no.n) : [];
     return h_flex().id(`agent-${a.address}`).w_full().flex_none().rounded(7).overflow_hidden().relative()
       .when(!blocked, el => el.h(64))
       .bg(C.card).border(1).border_color(a.focused ? C.accent : hovered ? C.strong : C.line).cursor_pointer()
@@ -320,15 +350,16 @@ export default class Herdboard extends View {
           .child(div().w_full().px(10).py(7).rounded(6).bg(wash(state.color, "14")).border(1).border_color(wash(state.color, "40"))
             .text_size(11).text_color(ask?.text ? C.ink : C.muted).when(!!ask?.text, d => d.font_family("Geist Mono"))
             .child(ask?.text || L.noAsk))
-          // Yes / No for a permission dialog; disabled once one was sent (see answer()).
+          // Permission answers share one row and are disabled once one was sent (see answer()).
           .when(!!choices, el => el.child(h_flex().gap(6).items_center()
-            .child(this.actionButton(`yes-${a.address}`, L.yes, L.answerTip(choices.yes.n, choices.yes.text), (cx) => this.answer(a, ask, "yes", cx), null, !ask.choices))
-            .child(this.actionButton(`no-${a.address}`, L.no, L.answerTip(choices.no.n, choices.no.text), (cx) => this.answer(a, ask, "no", cx), null, !ask.choices))))
+            .child(this.actionButton(`yes-${a.address}`, L.yes, L.answerTip(choices.yes.n, choices.yes.text), (cx) => this.answer(a, ask, choices.yes.n, cx), null, !ask.choices))
+            .child(this.actionButton(`no-${a.address}`, L.no, L.answerTip(choices.no.n, choices.no.text), (cx) => this.answer(a, ask, choices.no.n, cx), null, !ask.choices))
+            .when(extras.length > 0, row => row.child(this.moreOptions(a, ask, extras)))))
           .child(h_flex().gap(6).items_center()
             .child(this.actionButton(`answer-${a.address}`, L.answer, L.answer, () => run("agent.focus", { terminal: a.address }), state.color))
             .child(this.actionButton(`peek-b-${a.address}`, L.peek, L.peekTip, () => run("terminal.peek", { terminal: a.address })))
-            .child(div().flex_1())
-            .child(div().flex_none().text_size(10).text_color(state.color).child(ageText))))
+            .child(div().flex_1().min_w(0).truncate().text_right().text_size(10).text_color(state.color)
+              .tooltip(ageText).child(ageText))))
         .when(!blocked, el => el.child(h_flex().items_center().gap(8).text_size(11).text_color(C.muted)
           .when(showState, r => r.child(dot(state.color, 6)).child(div().flex_none().font_semibold().text_color(state.color).child(state.label)))
           .child(div().flex_1().min_w(0).truncate().child(where))

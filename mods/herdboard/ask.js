@@ -7,7 +7,7 @@ const clean = (l) => l.replace(FRAME, " ").replace(/\s+/g, " ").trim();
 // vertical glyphs and corners (╎ ┆ ├ ┼ …) that FRAME keeps.
 const isRule = (l) => /^[─━┄┅┈┉╌╍═╴╶╸╺╼╾\-_▔▁\s]+$/.test(l);
 const isQuestion = (l) => /\?\s*$/.test(l) || /\?\s+\(/.test(l);
-const OPTION = /^(?:[❯>]\s*)?(\d+)\.\s+(.+)$/;
+const OPTION = /^(\s*(?:[❯>]\s*)?(\d+)\.\s+)(\S.*)$/;
 
 // From the visible screen (hc read --lines 0: no scrolling):
 // - text: the question and up to two lines before it, for the card. Box-drawing frames, the
@@ -25,33 +25,47 @@ export function parseAsk(screen) {
   const before = all.slice(0, q).filter(l => l && !isRule(l) && !/^[❯>]\s*$/.test(l));
   // Keep the end: the question itself matters more than the lines leading to it.
   const text = [...before.slice(-2), all[q]].join("\n");
-  const { options, end } = optionsAfter(all, q);
+  const { options, end, optionLines } = optionsAfter(raw, q);
   return {
     text: text.length > 180 ? "…" + text.slice(-179) : text,
     question: all[q],
     options,
-    id: requestId(raw, all, q, end),
+    id: requestId(raw, all, q, end, optionLines),
   };
 }
 
 // The numbered options after the question ("❯ 1. Yes", "4. No"), in order 1, 2, 3…, and the
-// line the last one is on. Other lines (a long option's wrapped tail, the "Esc to cancel"
-// footer) are skipped.
+// last line they occupy. An immediately following line at the option's text column continues
+// its text. Keep the columns until then: clean() would lose the indentation.
 function optionsAfter(lines, q) {
   const options = [];
+  const optionLines = new Set();
   let end = q;
+  let column = null;
   for (let i = q + 1; i < lines.length; i++) {
-    const m = OPTION.exec(lines[i]);
-    if (m && Number(m[1]) === options.length + 1) { options.push({ n: options.length + 1, text: m[2].trim() }); end = i; }
+    const line = lines[i].replace(FRAME, " ");
+    const m = OPTION.exec(line);
+    // At this column even "1. folder" or "> 1. folder" is continuation text.
+    if (column !== null && line.search(/\S/) === column && !/^Esc to cancel\b/.test(line.trim())) {
+      options.at(-1).text += " " + line.trim();
+      end = i;
+    } else if (m && Number(m[2]) === options.length + 1) {
+      options.push({ n: options.length + 1, text: m[3].trim() });
+      optionLines.add(i);
+      column = m[1].length;
+      end = i;
+    } else {
+      column = null;
+    }
   }
-  return { options, end };
+  return { options, end, optionLines };
 }
 
 // The request as a whole, for the check before a key is pressed: the dialog's lines exactly as
 // the screen has them (nothing collapsed, trimmed or dropped: two commands that differ only in
 // spacing, or by a no-break space at the end of a line, are two requests), through the last
-// option. Only the option cursor ("❯", after the box's "│" in a boxed dialog) is blanked, and
-// only on the lines after the question, since moving it changes nothing a digit answers: the
+// option's last continuation. Only the option cursor ("❯", after the box's "│" in a boxed
+// dialog) is blanked, on recognized option lines, since moving it changes nothing a digit answers: the
 // request above the question stays byte for byte (a heredoc's "> 1. x" line is not a cursor).
 // The screen above the dialog is left out: Claude Code blinks its tool line there ("●" on one
 // read, a space on the next).
@@ -60,14 +74,14 @@ function optionsAfter(lines, q) {
 // Claude Code frames the command between two dashed lines ("╌"), so a forged rule inside the
 // command would have a dashed line above it. Any doubt (no rule, a dashed line above the rule,
 // other than 0 or 2 dashed lines below it): no id, and the card offers no Yes / No.
-function requestId(raw, all, q, end) {
+function requestId(raw, all, q, end, optionLines) {
   const dashed = (l) => /^╌{3,}$/.test(l);
   const rule = raw.findLastIndex((l, i) => i < q && /^(?:[─━═]{3,}|╭─+╮)\s*$/.test(l));
   if (rule < 0 || all.slice(0, rule).some(dashed)) return "";
   const frame = all.slice(rule + 1, q).filter(dashed).length;
   if (frame !== 0 && frame !== 2) return "";
   return raw.slice(rule + 1, end + 1)
-    .map((l, j) => (rule + 1 + j > q ? l.replace(/^(\s*(?:│\s*)?)[❯>](?=\s+\d+\.\s)/, "$1 ") : l))
+    .map((l, j) => (optionLines.has(rule + 1 + j) ? l.replace(/^(\s*(?:│\s*)?)[❯>](?=\s+\d+\.\s)/, "$1 ") : l))
     .join("\n");
 }
 

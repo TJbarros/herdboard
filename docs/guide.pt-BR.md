@@ -47,9 +47,19 @@ quando o agente segue. Antes de digitar, o quadro confere se o agente continua
 bloqueado no mesmo pedido: lê a tela de novo e compara o pedido inteiro (todas as
 linhas do diálogo, não só o trecho que o card mostra), e um botão só responde ao
 pedido que o card dele mostrou; se algo mudou, não digita nada e lê a pergunta outra
-vez. Depois de uma resposta, os botões ficam apagados até o status
-do agente mudar, então um segundo clique não digita nada. Outras escolhas ("Yes, and
-always allow…") e pedidos sem um par Yes / No simples: use **Abrir e responder**.
+vez. **Mais…**, ao lado de Sim / Não, lista as outras opções numeradas do pedido
+(dígitos 1–9), como "Yes, and always allow…" ou "Yes, and switch to auto mode".
+Elas podem conceder mais de uma aprovação. O menu mantém o texto do agente, inclusive
+as linhas quebradas; passe o mouse sobre uma opção cortada para ler tudo. Escolher
+uma opção faz a mesma conferência e aperta só o dígito dela. O menu fecha depois da
+escolha, com Escape, ao clicar fora ou quando o card sai de Precisa de você ou recebe
+um novo pedido. Depois de qualquer resposta, os três controles ficam apagados até o
+status ou o pedido do agente mudar, então um segundo clique não digita nada. Mais…
+só aparece quando há outras opções além de Sim / Não. Para pedidos sem um par
+Yes / No simples, use **Abrir e responder**.
+
+Em uma coluna estreita, passe o mouse sobre o tempo de espera cortado para lê-lo
+por completo.
 
 Se a pergunta não estiver na tela (por exemplo, rolou para cima), o card diz
 *"Abra o terminal para ver o que o agente pede."*
@@ -125,7 +135,7 @@ Layout** lista todos.
   se essa leitura não a encontrar (a pergunta ainda não está na tela ou, num pedido
   de permissão do Claude Code, falta o Sim / Não), lê até mais duas vezes, 0,5 s
   depois e, de novo, 1,5 s depois disso, só enquanto o agente continuar bloqueado.
-  Lê de novo quando você clica em Sim / Não, e então executa `hc keys <terminal>
+  Lê de novo quando você clica em Sim / Não ou escolhe uma opção de Mais…, e então executa `hc keys <terminal>
   <dígito>`; a busca executa `hc machine ls`, como a busca original do Herdr; o menu de
   nova aba pergunta ao Herdr quais agentes estão instalados. Nenhum mod baixa nada
   da internet nem lê seus arquivos.
