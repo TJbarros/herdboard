@@ -1,7 +1,314 @@
 // Run with: node --test
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { parseAsk, pickAnswers } from "../mods/herdboard/ask.js";
+
+// Complete hc read --lines 0 capture, Claude Code 2.1.319 at 200 columns (issue #3).
+const TRUST = readFileSync(new URL("./fixtures/workspace-trust.txt", import.meta.url), "utf8");
+const TRUST_NARROW = readFileSync(new URL("./fixtures/workspace-trust-narrow.txt", import.meta.url), "utf8");
+// Native 48-column capture, with a same-length replacement for the temporary folder name.
+const TRUST_WRAPPED_FOLDER = readFileSync(new URL("./fixtures/workspace-trust-wrapped-folder.txt", import.meta.url), "utf8");
+// Native 30-column capture; the temporary directory segment has a same-length replacement.
+const TRUST_WRAPPED_FOOTER = readFileSync(new URL("./fixtures/workspace-trust-wrapped-footer.txt", import.meta.url), "utf8");
+const FOOTER_FOLDER = "/tmp/herdboard-p2-footer-fixture1/workspace";
+// Native Claude Code 2.1.319 at 24 columns; the temporary directory segment has an equal-length replacement.
+const TRUST_WRAPPED_OPTIONS = readFileSync(new URL("./fixtures/workspace-trust-wrapped-options.txt", import.meta.url), "utf8");
+const OPTIONS_FOLDER = "/tmp/herdboard-p2-option-fixture1/workspace";
+// Native Claude Code 2.1.319 captures; the temporary directory replacement has equal length.
+const TRUST_WRAPPED_HEADINGS = [20, 21].map(columns => readFileSync(
+  new URL(`./fixtures/workspace-trust-wrapped-heading-${columns}.txt`, import.meta.url), "utf8"));
+const HEADING_FOLDER = "/tmp/herdboard-p2-heading-fixture00001";
+// Native Claude Code 2.1.319 at 24 columns; the temporary directory replacement has equal length.
+const TRUST_FOLDER_GUIDE = readFileSync(new URL("./fixtures/workspace-trust-folder-guide-24.txt", import.meta.url), "utf8");
+const GUIDE_FOLDER = "/tmp/herdboard-guide-fixture1/xxxxxxxxxxxxx/Security guide";
+// Native Claude Code 2.1.319 review captures; temporary directory replacements have equal length.
+const TRUST_WRAPPED_GUIDE = readFileSync(new URL("./fixtures/workspace-trust-wrapped-guide-15.txt", import.meta.url), "utf8");
+const TRUST_TRAILING_SPACE = readFileSync(new URL("./fixtures/workspace-trust-trailing-space-200.txt", import.meta.url), "utf8");
+const REVIEW_FOLDER = "/tmp/herdboard-guide-path-fixture1/workspace";
+test("workspace trust finds the complete dialog below preceding output and guards only its raw identity", () => {
+  const expected = parseAsk(TRUST, "<folder>");
+  for (const prefix of ["previous output\n", "previous prompt\nprevious output\n",
+    "───\nearlier menu\n", TRUST + "previous output\n"]) {
+    const screen = prefix + TRUST;
+    assert.deepEqual(parseAsk(screen, "<folder>"), expected);
+    assert.ok(pickAnswers(parseAsk(screen, "<folder>")));
+    assert.notEqual(parseAsk(prefix + TRUST.replace("\n <folder>", "\n  <folder>"), "<folder>").id, expected.id);
+    for (const changed of [TRUST + "extra content\n",
+      TRUST.replace("Enter to confirm · Esc to cancel", ""),
+      TRUST.replace("Security guide", "Other guide")]) {
+      assert.equal(pickAnswers(parseAsk(prefix + changed, "<folder>")), null);
+    }
+  }
+});
+test("workspace trust consumes the complete wrapped Security guide and preserves raw identity", () => {
+  for (const [screen, cwd] of [
+    [TRUST.replace("Security guide", "Security\n guide"), "<folder>"],
+    [TRUST_WRAPPED_GUIDE, REVIEW_FOLDER],
+    [TRUST_FOLDER_GUIDE.replace("\n Security guide\n\n ❯", "\n Security\n guide\n\n ❯"), GUIDE_FOLDER],
+  ]) {
+    const ask = parseAsk(screen, cwd);
+    assert.equal(ask.dialog, "workspace-trust");
+    assert.equal(ask.folder, cwd);
+    assert.ok(pickAnswers(ask));
+    assert.equal(ask.id, screen.slice(1).trimEnd());
+    assert.notEqual(ask.id, parseAsk(screen.replace("Security\n guide", "Security guide"), cwd).id);
+  }
+  for (const label of ["Security", "guide", "Security\n other guide", "Security\n extra\n guide",
+    "Security\n guide\n guide", "Securityguide"]) {
+    assert.equal(pickAnswers(parseAsk(TRUST.replace("Security guide", label), "<folder>")), null);
+  }
+});
+test("workspace trust accounts for terminal-trimmed trailing cwd whitespace without changing raw identity", () => {
+  for (const [screen, cwd] of [
+    [TRUST.replace("<folder>", "/tmp/workspace"), "/tmp/workspace "],
+    [TRUST.replace("<folder>", "/tmp/work\n space"), "/tmp/workspace  "],
+    [TRUST.replace("<folder>", "/tmp/workspace"), "/tmp/workspace\t"],
+    [TRUST_TRAILING_SPACE, REVIEW_FOLDER + " "],
+  ]) {
+    const ask = parseAsk(screen, cwd);
+    assert.equal(ask.dialog, "workspace-trust");
+    assert.equal(ask.folder, cwd);
+    assert.equal(ask.text, `Accessing workspace:\n${cwd}`);
+    assert.ok(pickAnswers(ask));
+    assert.equal(ask.id, screen.slice(1).trimEnd());
+  }
+  for (const cwd of ["/tmp/workspace/other ", "/tmp/workspaces ", "/tmp/work space "]) {
+    assert.equal(pickAnswers(parseAsk(TRUST.replace("<folder>", "/tmp/workspace"), cwd)), null);
+  }
+});
+test("workspace trust distinguishes a folder named Security guide from the dialog guide", () => {
+  for (const [screen, cwd] of [
+    [TRUST.replace("<folder>", "/a/\n Security guide"), "/a/Security guide"],
+    [TRUST_FOLDER_GUIDE, GUIDE_FOLDER],
+  ]) {
+    const ask = parseAsk(screen, cwd);
+    assert.equal(ask.mode, "cursor");
+    assert.equal(ask.folder, cwd);
+    assert.equal(ask.text, `Accessing workspace:\n${cwd}`);
+    assert.deepEqual(ask.options, parseAsk(TRUST).options);
+    assert.ok(pickAnswers(ask));
+    assert.equal(ask.id, screen.slice(1).trimEnd());
+  }
+});
+test("a folder named Security guide cannot replace missing or altered trust structure", () => {
+  for (const screen of [
+    TRUST_FOLDER_GUIDE.replace("\n Security guide\n\n ❯", "\n\n ❯"),
+    TRUST_FOLDER_GUIDE.replace("\n Security guide\n\n ❯", "\n Other guide\n\n ❯"),
+    TRUST_FOLDER_GUIDE.replace("\n Security guide\n\n ❯", "\n extra\n Security guide\n\n ❯"),
+    TRUST_FOLDER_GUIDE.replace("\n Security guide\n\n ❯", "\n Security guide\n Security guide\n\n ❯"),
+    TRUST_FOLDER_GUIDE.replace(" execute files here.", " execute other files here."),
+  ]) assert.equal(pickAnswers(parseAsk(screen, GUIDE_FOLDER)), null);
+  assert.equal(pickAnswers(parseAsk(TRUST_FOLDER_GUIDE, GUIDE_FOLDER + "/other")), null);
+});
+test("workspace trust consumes its complete wrapped heading and preserves raw identity", () => {
+  const wide = parseAsk(TRUST);
+  for (const [screen, cwd] of [
+    [TRUST.replace("Accessing workspace:", "Accessing\n workspace:"), "<folder>"],
+    ...TRUST_WRAPPED_HEADINGS.map(screen => [screen, HEADING_FOLDER]),
+  ]) {
+    const ask = parseAsk(screen, cwd);
+    assert.equal(ask.mode, "cursor");
+    assert.equal(ask.folder, cwd);
+    assert.equal(ask.text, `Accessing workspace:\n${cwd}`);
+    assert.equal(ask.question, wide.question);
+    assert.deepEqual(ask.options, wide.options);
+    assert.ok(pickAnswers(ask));
+    assert.equal(ask.id, screen.slice(1).trimEnd());
+    assert.notEqual(ask.id, parseAsk(screen.replace("Accessing\n workspace:", "Accessing workspace:"), cwd).id);
+    assert.notEqual(ask.id, parseAsk(screen.replace("\n workspace:", "\n  workspace:"), cwd).id);
+  }
+});
+test("wrapped trust headings reject missing words, changed text and extra content", () => {
+  for (const heading of ["Accessing", "workspace:", "Accessing\n directory:",
+    "Accessing\n extra\n workspace:", "Accessing workspace:\n extra", "Accessingworkspace:",
+    "Accessing\n workspace", "Accessing\n workspace: extra"]) {
+    const screen = TRUST.replace("Accessing workspace:", heading);
+    assert.equal(pickAnswers(parseAsk(screen, "<folder>")), null);
+  }
+});
+test("workspace trust reconstructs wrapped option labels, preserving order, selection and raw identity", () => {
+  const wide = parseAsk(TRUST);
+  for (const [screen, cwd] of [
+    [TRUST_WRAPPED_OPTIONS, OPTIONS_FOLDER],
+    [TRUST.replace("Yes, I trust this folder", "Yes, I trust this\n   folder"), "<folder>"],
+    [TRUST.replace("No, exit", "No,\n   exit").replace("Yes, I trust this folder", "Yes,\n   I trust\n   this folder"), "<folder>"],
+    [TRUST.replace(" ❯ No, exit\n   Yes, I trust this folder", " ❯ Yes, I trust this\n   folder\n   No, exit"), "<folder>"],
+  ]) {
+    for (const selectedIndex of [0, 1]) {
+      const nextLabel = screen.includes(" ❯ No,") ? "Yes," : "No,";
+      const selected = selectedIndex === 0 ? screen : screen.replace(" ❯ ", "   ")
+        .replace(`   ${nextLabel}`, ` ❯ ${nextLabel}`);
+      const ask = parseAsk(selected, cwd);
+      assert.equal(ask.mode, "cursor");
+      assert.equal(ask.folder, cwd);
+      assert.equal(ask.question, wide.question);
+      assert.equal(ask.selectedIndex, selectedIndex);
+      assert.deepEqual(ask.options.map(o => o.index), [0, 1]);
+      assert.deepEqual(ask.options.map(o => o.text), screen.includes(" ❯ No,")
+        ? wide.options.map(o => o.text) : wide.options.map(o => o.text).reverse());
+      assert.equal(pickAnswers(ask).yes.text, "Yes, I trust this folder");
+      assert.equal(pickAnswers(ask).no.text, "No, exit");
+      assert.equal(ask.id, selected.slice(1).trimEnd());
+      assert.notEqual(ask.id, wide.id);
+      assert.notEqual(parseAsk(selected.replace("\n   ", "\n    "), cwd).id, ask.id);
+    }
+  }
+});
+test("wrapped trust options still reject incomplete labels, extra content and ambiguous cursors", () => {
+  for (const screen of [
+    TRUST_WRAPPED_OPTIONS.replace("\n   folder", ""),
+    TRUST_WRAPPED_OPTIONS.replace("\n   folder", "\n   directory"),
+    TRUST_WRAPPED_OPTIONS.replace("\n   folder", "\n   extra\n   folder"),
+    TRUST_WRAPPED_OPTIONS.replace("\n   folder", "\n ❯ folder"),
+    TRUST_WRAPPED_OPTIONS.replace(" ❯ No, exit", "   No, exit"),
+    TRUST_WRAPPED_OPTIONS.replace("   Yes,", " ❯ Yes,"),
+    TRUST_WRAPPED_OPTIONS.replace("\n   folder", "\n   folder\n   No, exit"),
+    TRUST_WRAPPED_OPTIONS.replace("\n to cancel", ""),
+    TRUST_WRAPPED_OPTIONS + "extra content\n",
+  ]) assert.equal(pickAnswers(parseAsk(screen, OPTIONS_FOLDER)), null);
+});
+test("workspace trust recognises its wrapped footer and preserves the complete raw identity", () => {
+  const wide = parseAsk(TRUST);
+  for (const [screen, cwd] of [
+    [TRUST_WRAPPED_FOOTER, FOOTER_FOLDER],
+    [TRUST.replace("Enter to confirm · Esc to cancel", "Enter to confirm · Esc to\n cancel"), "<folder>"],
+    [TRUST.replace("Enter to confirm · Esc to cancel", "Enter to confirm ·\n Esc to cancel"), "<folder>"],
+    [TRUST.replace("Enter to confirm · Esc to cancel", "Enter\n to confirm\n · Esc to\n cancel"), "<folder>"],
+  ]) {
+    const ask = parseAsk(screen, cwd);
+    assert.equal(ask.mode, "cursor");
+    assert.equal(ask.folder, cwd);
+    assert.equal(ask.question, wide.question);
+    assert.deepEqual(ask.options, wide.options);
+    assert.ok(pickAnswers(ask));
+    assert.equal(ask.id, screen.slice(1).trimEnd());
+    assert.notEqual(ask.id, wide.id);
+    assert.notEqual(parseAsk(screen.replace(" Enter", "  Enter"), cwd).id, ask.id);
+  }
+});
+test("a wrapped trust footer still requires the complete known text and no extra content", () => {
+  for (const screen of [
+    TRUST_WRAPPED_FOOTER.replace("\n cancel", ""),
+    TRUST_WRAPPED_FOOTER.replace("\n cancel", "\n continue"),
+    TRUST_WRAPPED_FOOTER.replace("Enter to confirm", "Enter to approve"),
+    TRUST_WRAPPED_FOOTER.replace("\n cancel", "\n extra\n cancel"),
+    TRUST_WRAPPED_FOOTER + "extra content\n",
+    TRUST_WRAPPED_FOOTER + "Enter to confirm · Esc to cancel\n",
+    TRUST_WRAPPED_FOOTER.replace("Enter to confirm · Esc to", "Enter to confirm · Esc to cancel"),
+  ]) assert.equal(pickAnswers(parseAsk(screen, FOOTER_FOLDER)), null);
+});
+test("workspace trust uses the cwd to distinguish word wraps from breaks inside a name", () => {
+  for (const [wrapped, folder] of [
+    ["/a\n b", "/a b"],
+    ["/a\n b", "/ab"],
+    ["/a\n b", "/a  b"],
+    ["/work/my project/long-na\n me for\n wrapping/project", "/work/my project/long-name for wrapping/project"],
+    ["C:\\work\\a[1].(project)\n repo", "C:\\work\\a[1].(project) repo"],
+  ]) {
+    const screen = TRUST_NARROW.replace("<folder>", wrapped);
+    const ask = parseAsk(screen, folder);
+    assert.equal(ask.mode, "cursor");
+    assert.equal(ask.folder, folder);
+    assert.equal(ask.text, `Accessing workspace:\n${folder}`);
+    assert.equal(ask.id, screen.slice(1).trimEnd());
+    assert.ok(pickAnswers(ask));
+  }
+});
+test("workspace trust permits lost spaces only at path wraps and still requires the exact cwd", () => {
+  for (const [wrapped, cwd] of [
+    ["/a b", "/ab"],
+    ["/ab", "/a b"],
+    ["/a b\n c", "/a  b c"],
+    ["/a\n b", "/a/b"],
+    ["/a\n b", "/other/a b"],
+    ["/a\n b", "/a b/other"],
+  ]) assert.equal(pickAnswers(parseAsk(TRUST_NARROW.replace("<folder>", wrapped), cwd)), null);
+});
+test("workspace trust reconstructs wrapped workspace paths and keeps their raw identity", () => {
+  const folder = "/tmp/herdboard-p2-path-fixture1/workspace-with-a-long-name/project";
+  const unwrapped = TRUST.replace("<folder>", folder);
+  for (const [screen, expected] of [
+    [TRUST_WRAPPED_FOLDER, folder],
+    [TRUST.replace("<folder>", "/a\n b"), "/ab"],
+    [TRUST.replace("<folder>", "/a/\n b/\n c"), "/a/b/c"],
+    [TRUST.replace("<folder>", "C:\\work\\long-\n project\\repo"), "C:\\work\\long-project\\repo"],
+    [TRUST.replace("<folder>", "/work/my project/\n repo"), "/work/my project/repo"],
+  ]) {
+    const ask = parseAsk(screen);
+    assert.equal(ask.mode, "cursor");
+    assert.equal(ask.folder, expected);
+    assert.equal(ask.text, `Accessing workspace:\n${expected}`);
+    assert.equal(ask.question, parseAsk(TRUST).question);
+    assert.deepEqual(ask.options, parseAsk(TRUST).options);
+    assert.ok(pickAnswers(ask));
+    assert.equal(ask.id, screen.slice(1).trimEnd());
+  }
+  assert.notEqual(parseAsk(TRUST_WRAPPED_FOLDER).id, parseAsk(unwrapped).id);
+  assert.notEqual(parseAsk(TRUST_WRAPPED_FOLDER.replace(" -a-long-name", "  -a-long-name")).id,
+    parseAsk(TRUST_WRAPPED_FOLDER).id, "raw continuation whitespace remains guarded");
+});
+test("wrapped workspace paths still require the complete known trust question and explanation", () => {
+  for (const screen of [
+    TRUST_WRAPPED_FOLDER.replace(" Quick safety check: Is this a project you\n", ""),
+    TRUST_WRAPPED_FOLDER.replace(" review what's in this folder first.", " review something else first."),
+    TRUST_WRAPPED_FOLDER.replace(" execute files here.", ""),
+    TRUST_WRAPPED_FOLDER.replace(" Security guide", " extra context\n Security guide"),
+  ]) assert.equal(pickAnswers(parseAsk(screen)), null);
+});
+test("workspace trust keeps its folder, ordered cursor options and complete raw identity", () => {
+  const ask = parseAsk(TRUST);
+  assert.equal(ask.mode, "cursor");
+  assert.equal(ask.dialog, "workspace-trust");
+  assert.equal(ask.folder, "<folder>");
+  assert.equal(ask.selectedIndex, 0);
+  assert.deepEqual(ask.options, [{ index: 0, text: "No, exit" }, { index: 1, text: "Yes, I trust this folder" }]);
+  assert.equal(ask.id, TRUST.slice(1).trimEnd());
+  assert.equal(ask.text, "Accessing workspace:\n<folder>");
+  assert.deepEqual(pickAnswers(ask), { yes: ask.options[1], no: ask.options[0] });
+  assert.equal(pickAnswers(ask.options), null, "trust labels alone are not a recognised dialog");
+});
+test("workspace trust joins its wrapped explanation while keeping the raw identity", () => {
+  const wide = parseAsk(TRUST);
+  const wrapped = TRUST.replace("Claude Code'll be able to read, edit, and execute files here.",
+    "Claude Code'll be able to read, edit, and\n execute files here.");
+  for (const screen of [TRUST_NARROW, wrapped]) {
+    const ask = parseAsk(screen);
+    assert.equal(ask.mode, "cursor");
+    assert.equal(ask.question, wide.question);
+    assert.deepEqual(ask.options, wide.options);
+    assert.equal(ask.id, screen.slice(1).trimEnd());
+    assert.notEqual(ask.id, wide.id, "wrapping must remain part of the guarded raw identity");
+    assert.notEqual(parseAsk(screen.replace(" execute files here.", "  execute files here.")).id, ask.id);
+    for (const changed of [screen.replace(" execute files here.", ""),
+      screen.replace(" execute files here.", " execute other files here."),
+      screen.replace(" Security guide", " extra context\n Security guide")]) {
+      assert.equal(pickAnswers(parseAsk(changed)), null, "only the complete known explanation is recognised");
+    }
+  }
+});
+test("trust recognition rejects incomplete, ambiguous and unrelated cursor menus", () => {
+  for (const screen of [TRUST.replace(" ❯ No, exit", "   No, exit"),
+    TRUST.replace("   Yes, I trust this folder", " ❯ Yes, I trust this folder"),
+    TRUST.replace("   Yes, I trust this folder\n", ""),
+    TRUST.replace("Enter to confirm · Esc to cancel", ""),
+    TRUST.replace("─".repeat(200), ""),
+    TRUST.replace("Accessing workspace:", "Something else:"),
+    TRUST.replace("Yes, I trust this folder", "Yes, allow everything"),
+    TRUST + "More unrelated content\n", "❯ No, exit\n  Yes, I trust this folder\n"]) {
+    const ask = parseAsk(screen);
+    assert.equal(pickAnswers(ask), null);
+    assert.notEqual(ask.mode, "cursor");
+  }
+});
+test("trust identity includes raw folder context, whitespace, options, footer and cursor", () => {
+  const id = parseAsk(TRUST).id;
+  for (const screen of [TRUST.replace("<folder>", "<other folder>"),
+    TRUST.replace("<folder>", "<folder> "),
+    TRUST.replace(" ❯ No, exit\n   Yes, I trust this folder", "   No, exit\n ❯ Yes, I trust this folder"),
+    TRUST.replace(" ❯ No, exit\n   Yes, I trust this folder", "   Yes, I trust this folder\n ❯ No, exit"),
+    TRUST.replace("Security guide", " Security guide")]) assert.notEqual(parseAsk(screen).id, id);
+});
 
 // Claude Code v2.1.319 permission dialog, from `hc read <t> --lines 0` (issue #1).
 const FIXTURE = [

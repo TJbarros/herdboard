@@ -16,22 +16,93 @@ const OPTION = /^(\s*(?:[❯>]\s*)?(\d+)\.\s+)(\S.*)$/;
 // - question and options: the last question and the numbered options after it.
 // - id: the whole request, untruncated, to tell two requests apart; "" when the dialog's shape
 //   is in doubt (see requestId).
-export function parseAsk(screen) {
+// A known cwd disambiguates whitespace lost at workspace-path wraps or the final path row.
+export function parseAsk(screen, cwd = undefined) {
   const raw = String(screen ?? "").split(/\r?\n/);
+  const trust = workspaceTrust(raw, cwd);
+  if (trust) return trust;
   const all = raw.map(clean);
   let q = -1;
   for (let i = all.length - 1; i >= 0; i--) if (isQuestion(all[i])) { q = i; break; }
-  if (q < 0) return { text: "", question: "", options: [], id: "" };
+  if (q < 0) return { mode: "numbered", text: "", question: "", options: [], id: "" };
   const before = all.slice(0, q).filter(l => l && !isRule(l) && !/^[❯>]\s*$/.test(l));
   // Keep the end: the question itself matters more than the lines leading to it.
   const text = [...before.slice(-2), all[q]].join("\n");
   const { options, end, optionLines } = optionsAfter(raw, q);
   return {
+    mode: "numbered",
     text: text.length > 180 ? "…" + text.slice(-179) : text,
     question: all[q],
     options,
     id: requestId(raw, all, q, end, optionLines),
   };
+}
+
+// The row after a complete known label, even when it wraps; -1 for missing or altered text.
+function afterWrappedText(lines, start, label) {
+  if (start < 0) return -1;
+  let text = lines[start] ?? "", next = start + 1;
+  while (next < lines.length && label.startsWith(text + " ")) text += " " + lines[next++];
+  return text === label ? next : -1;
+}
+
+// The captured Claude Code 2.1.319 startup dialog, not an arbitrary Yes/No menu. Require the
+// complete dialog, including its explanation and confirmation footer, below any earlier output.
+// Its raw identity keeps the cursor: unlike a digit shortcut, movement changes what Enter confirms.
+function workspaceTrust(raw, cwd) {
+  const start = raw.findLastIndex(l => /^─{3,}\s*$/.test(l));
+  const end = raw.findLastIndex(l => l.trim());
+  if (start < 0) return null;
+  const lines = raw.slice(start, end + 1).map(l => l.trim()).filter(Boolean);
+  const folderStart = afterWrappedText(lines, 1, "Accessing workspace:");
+  if (folderStart < 0) return null;
+  const question = "Quick safety check: Is this a project you created or one you trust? (Like your own code, a well-known open source project, or work from your team). If not, take a moment to review what's in this folder first.";
+  const explanation = "Claude Code'll be able to read, edit, and execute files here.";
+  const prose = `${question} ${explanation}`;
+  // Locate the complete known prose before the guide: a folder chunk can also be "Security guide".
+  // The cwd resolves word wraps versus mid-name breaks. The guarded id still uses raw below.
+  const questionStart = lines.findIndex((_, i) => i > folderStart
+    && lines.slice(i).join(" ").startsWith(prose + " "));
+  const folder = workspaceFolder(lines.slice(folderStart, questionStart), cwd);
+  if (questionStart <= folderStart || !folder) return null;
+  const proseEnd = afterWrappedText(lines, questionStart, prose);
+  const guideEnd = afterWrappedText(lines, proseEnd, "Security guide");
+  if (proseEnd < questionStart + 2 || guideEnd < 0) return null;
+  // Options can occupy more than two physical rows. Consume each complete known label before
+  // reading the footer; normalise recognition only, preserving the cursor and raw id below.
+  const labels = ["No, exit", "Yes, I trust this folder"], options = [];
+  let next = guideEnd, selectedIndex = -1;
+  for (let index = 0; index < 2; index++) {
+    let text = lines[next++] ?? "";
+    if (text.startsWith("❯ ")) {
+      if (selectedIndex !== -1) return null;
+      selectedIndex = index;
+      text = text.slice(2);
+    }
+    while (next < lines.length && labels.some(label => label.startsWith(text + " "))) text += " " + lines[next++];
+    if (!labels.includes(text) || options.some(option => option.text === text)) return null;
+    options.push({ index, text });
+  }
+  if (selectedIndex === -1 || lines.slice(next).join(" ") !== "Enter to confirm · Esc to cancel") return null;
+  return { mode: "cursor", dialog: "workspace-trust", folder,
+    selectedIndex,
+    text: `Accessing workspace:\n${folder}`, question, options,
+    id: raw.slice(start, end + 1).join("\n") };
+}
+
+// A wrap can discard spaces between words or split a name without a separator. Match chunks
+// in order against the known cwd, permitting missing spaces only at wraps, never inside a line.
+// The final row can also lose trailing whitespace; recover it from the known cwd only.
+// Without a cwd, retain the historical concatenation for callers that only inspect the screen.
+function workspaceFolder(chunks, cwd) {
+  if (cwd === undefined) return chunks.join("");
+  let offset = 0;
+  for (let i = 0; i < chunks.length; i++) {
+    if (i > 0) while (cwd[offset] === " ") offset++;
+    if (!cwd.startsWith(chunks[i], offset)) return null;
+    offset += chunks[i].length;
+  }
+  return cwd.slice(offset).trim() === "" ? cwd : null;
 }
 
 // The numbered options after the question ("❯ 1. Yes", "4. No"), in order 1, 2, 3…, and the
@@ -87,7 +158,14 @@ function requestId(raw, all, q, end, optionLines) {
 
 // The options a Yes / No button answers: the ones whose text is exactly "Yes" and "No".
 // Null unless both are there, once each, with a one-key digit (hc keys presses one key).
-export function pickAnswers(options) {
+export function pickAnswers(ask) {
+  const options = Array.isArray(ask) ? ask : ask?.options;
+  if (ask?.mode === "cursor") {
+    if (ask.dialog !== "workspace-trust" || !ask.id || ![0, 1].includes(ask.selectedIndex) || options?.length !== 2) return null;
+    const yes = options.find(o => o.text === "Yes, I trust this folder");
+    const no = options.find(o => o.text === "No, exit");
+    return yes && no ? { yes, no } : null;
+  }
   const only = (label) => {
     const found = (options ?? []).filter(o => o.text === label);
     return found.length === 1 && found[0].n >= 1 && found[0].n <= 9 ? found[0] : null;

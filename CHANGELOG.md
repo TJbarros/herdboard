@@ -4,6 +4,42 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+- Blocked cards use their rendered height when sizing the board. Long workspace
+  paths can wrap earlier than a character-count estimate, which clipped Open and
+  answer, Peek and the waiting time on a single card in a wide window.
+- Workspace-trust discovery finds a complete dialog below earlier terminal output,
+  recognises a wrapped `Security guide` label at 15 columns, and recovers trailing
+  folder whitespace from the process cwd. Answer validation preserves the raw dialog id.
+- Startup waiting time begins when discovery recognises the request, including
+  time hidden by the current-space filter before its card is first rendered.
+- A workspace folder named `Security guide` can wrap onto its own row without
+  hiding its trust card, header count or put-away tab. Recognition locates the
+  complete known prose before the dialog's guide and preserves the raw id.
+- Startup waiting time starts again when the terminal/process/folder lifecycle
+  changes, even if the old source never disappears between polls. It uses that
+  source's own clock rather than the tab's earlier state-change timestamp.
+- Workspace-trust headings wrapped at 20–21 terminal columns are recognised before
+  locating the folder, restoring the card, header count and put-away tab. Answer
+  validation still requires the complete raw dialog, including heading wrapping.
+- Workspace-trust options wrapped across terminal lines are reconstructed before
+  checking the footer. At 24 columns, the continuation of "Yes, I trust this folder"
+  was treated as footer text, hiding its card and header count. Cursor selection
+  and the complete raw dialog id remain part of answer validation.
+- Claude Code's recognised workspace-trust screen appears in Needs you before its
+  first status report, using a separate terminal/process lifecycle. Yes trusts the
+  displayed folder; No exits. Cursor answers send the required arrows and Enter
+  together after rechecking the complete screen, cursor and source. Numbered
+  permissions still send only their digit.
+- A newly recognised startup trust request brings its put-away tab back to the
+  board and header count, including when another agent shares the tab. Repeated
+  reads of that request do not undo putting the tab away again, even after a
+  failed answer validation invalidates the screen cache. The trust explanation
+  is also recognised when it wraps in a narrow terminal, preserving the raw id.
+- Workspace-trust paths split across terminal lines are reconstructed before
+  matching the process cwd, so narrow terminals still show the card and header
+  count. The known cwd preserves spaces when the path wraps between words and
+  distinguishes breaks inside a name. The dialog id retains the original path
+  lines for answer validation.
 - Permission cards with **Yes** / **No** offer the dialog's other options in
   **More…** (*Mais…*), with the agent's full text in each tooltip. Choosing one
   checks the same whole dialog on a fresh screen read and presses only its digit;

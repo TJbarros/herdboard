@@ -53,7 +53,22 @@ only its digit. The menu closes after a choice, on Escape or a press outside it,
 when the card leaves Needs you or gets a new request. After any answer all three
 controls stay faded until the agent's status or request changes, so a second click
 types nothing. More… appears only when Yes / No has other options to offer. For
-dialogs without a plain Yes / No pair, use **Open and answer**.
+other dialogs without a plain Yes / No pair, use **Open and answer**.
+
+**Workspace trust at startup.** The recognised Claude Code screen headed
+"Accessing workspace:" also gets a card, even before Claude reports an agent status.
+This includes narrow terminals where the explanation, folder path, options or
+confirmation footer wrap across lines.
+The card shows the folder: **Yes** chooses "Yes, I trust this folder"; **No** chooses
+"No, exit". Each click moves from the selected row to that choice and confirms with
+Enter, without a numbered shortcut. The tooltip names the actual choice. If the
+folder, complete screen, cursor or Claude process changed, the click sends nothing.
+Both answers stay disabled after one is sent. Only the complete recognised screen,
+in a visible terminal running Claude in the foreground before its first status
+report, qualifies; an unrelated terminal or menu does not get direct answer buttons.
+Recognising a new trust request also brings a put-away tab back to the board and
+the header count. Polling that same request does not undo a later **Put away**,
+including after an answer fails validation.
 
 In a narrow column, hover the shortened waiting time to read it in full.
 
@@ -129,7 +144,10 @@ them all.
   1.5 s later, only while the agent stays blocked. It reads again when you click
   Yes / No or choose a More… option, and then runs `hc keys <terminal> <digit>`; the search
   runs `hc machine ls`, as Herdr's own search does; the new-tab menu asks Herdr which
-  agents are installed. No mod downloads anything from the internet or reads your files.
+  agents are installed. Startup discovery additionally reads eligible Claude terminals
+  about once a second while the board shows; a startup answer checks `hc get` before
+  and after its fresh screen read, then sends the arrows and Enter together.
+  No mod downloads anything from the internet or reads your files.
 - The Peek window and Herdr's sidebar are Herdr's own and stay in English.
 - Herdr can't change a space's registered folder after it's made; Herdboard always
   uses the terminals' live folders instead.

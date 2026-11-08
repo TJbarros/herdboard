@@ -103,6 +103,51 @@ column, top to bottom:
   More… stays in the Yes / No row and adds nothing to `blockedHeight`.
 - A blocked card's waiting time uses the space left beside Open and answer and
   Peek, truncating with its full text in a tooltip when the column is narrow.
+- Board sizing uses each blocked card's native `on_size_change` height after its
+  first layout. The text estimate is only a fallback until that measurement;
+  native word wrapping and font metrics determine the space its controls need.
+- Workspace trust is a separate startup source, approved for issue #3. Only a
+  terminal in a registered pane, running a foreground `claude` / `claude.exe` with
+  matching executable name, `state: live`, `screen: exact`, `reported: false` and
+  no status/report qualifies for discovery. Its lifecycle key includes address,
+  terminal creation time, terminal PID, foreground PID and foreground cwd. The
+  screen must match the complete captured Claude Code 2.1.319 trust dialog, and
+  its displayed folder must equal that cwd. The heading, folder, question,
+  explanation, options and confirmation footer may wrap across terminal lines.
+  Recognition consumes the complete known heading before locating the folder.
+  Only the footer lines after
+  the two options are joined for comparison with the complete known footer.
+  Recognition locates the complete known prose before selecting the following
+  `Security guide` marker; that same text can be a wrapped folder chunk. It
+  matches the preceding folder chunks against the known cwd in order. Only
+  at a path wrap may spaces be restored from the cwd; characters and spacing
+  inside each chunk must match exactly. This distinguishes word wraps from
+  mid-name breaks. Discovery and answer validation both supply that cwd to
+  `parseAsk(screen, cwd)`. The guarded id keeps all raw lines unchanged. No OSC report is
+  invented. The card's
+  `blocked` is a presentation state belonging to this explicit source.
+  The board polls eligible terminals about once a second (initial misses retain
+  the existing bounded retries); other mod roles never fetch. Unknown screens
+  stay off the board. Only recognised lifecycle keys are shared with the header
+  for its counts and space indicator. An ended source drops its cache.
+  Waiting time is observed per startup lifecycle, independent of the tab's
+  earlier state-change timestamp; a new lifecycle starts a new clock even when
+  the terminal address and presentation status stay the same between polls.
+  First recognition brings its current tab back with `tab.unsettle` if put away,
+  without changing focus. Recognition is remembered across polls and temporarily
+  missing screens, separately from the read cache that answer validation can
+  invalidate, so the same lifecycle does not undo a later Put away. Recognition
+  is dropped when that lifecycle ends.
+  Cursor options carry indices instead of digit shortcuts. Yes maps only to
+  `Yes, I trust this folder`, No only to `No, exit`. Its id includes every raw line
+  from the opening rule through the confirmation footer, including the selected
+  row. A click validates the cached object, lifecycle and eligibility around each
+  await, including fresh `hc get` calls before and after the screen read; then one
+  `hc keys` sends `targetIndex - selectedIndex` arrows followed by Enter. Any
+  mismatch sends nothing. Polls preserve the sent latch until the source ends,
+  including across filters or a temporarily missing screen. Tooltips name the
+  actual choice, with no invented option number. Numbered fingerprints and digit
+  answers keep their existing rules.
 - Space pill: `space.select`. Filter, language and Idle fold persist in shared
   `herdboard.filter`, `herdboard.lang`, `herdboard.idleOpen`.
 - ⋯ menu (popup copy of the mod, role `menu`): New space and New tab in the active
@@ -135,7 +180,9 @@ column, top to bottom:
   `layout`, `theme`, `shared` / `setShared`, `run`, `hc`, `openOverlay` /
   `closeOverlay`, `notify`, `setAgentOrder`, `knownAgents`.
 - **Programs run**: `hc read <t> --lines 0` (board, blocked agents; again on a Yes /
-  No click or More… choice), `hc keys <t> <digit>` (permission answers) and
+  No click or More… choice; also startup discovery), `hc get <t> --json` (startup
+  source validation), `hc keys <t> <digit>` (numbered permission answers),
+  `hc keys <t> <arrows...> enter` (recognised cursor answers) and
   `hc machine ls` (picker, as Herdr's own); `knownAgents()` (new-tab menu). **Art**:
   `logo.svg`, `maximize.svg`, `minimize.svg`, `preview.svg`.
 - **Keys** (`keys.json`, section `layout:herdboard`): Ctrl+Shift+T new-tab menu,

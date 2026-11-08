@@ -31,6 +31,7 @@ const LANG_KEY = "herdboard.lang";        // "pt" | "en"
 const FILTER_KEY = "herdboard.filter";    // "all" | "here"
 const IDLE_KEY = "herdboard.idleOpen";    // false: the Idle column is folded
 const TITLES_KEY = "herdboard.titles";    // address -> { title, at }: the last task title seen
+const STARTUP_KEY = "herdboard.startup";  // recognised lifecycle keys only, for the header copy
 const IDLE_ROW = 44;                  // height of an Idle row (task + where)
 
 
@@ -59,6 +60,7 @@ const TEXT = {
     settleTip: "Tirar a aba do quadro até um agente nela precisar de você",
     noAsk: "Abra o terminal para ver o que o agente pede.",
     yes: "Sim", no: "Não", moreOptions: "Mais…", answerTip: (n, text) => `Responde no terminal com a opção ${n}: "${text}"`,
+    cursorAnswerTip: text => `Confirma no terminal: "${text}"`,
     fold: "recolher", unfold: "mostrar", lastTask: "Última:", hereShort: "Este",
   },
   en: {
@@ -80,6 +82,7 @@ const TEXT = {
     settleTip: "Take the tab off the board until an agent in it needs you",
     noAsk: "Open the terminal to see what the agent is asking.",
     yes: "Yes", no: "No", moreOptions: "More…", answerTip: (n, text) => `Answers in the terminal with option ${n}: "${text}"`,
+    cursorAnswerTip: text => `Confirms in the terminal: "${text}"`,
     fold: "fold", unfold: "show", lastTask: "Last:", hereShort: "Here",
   },
 };
@@ -127,23 +130,59 @@ function taskTitle(a) {
 
 // ---- What a blocked agent is asking (parsed in ./ask.js) ------------------------------------
 
-// Yes / No only for Claude Code while its own report says the block is a permission dialog
-// (terminals()' report: {app, state, kind: "permission", msg}): a stronger signal than text.
+// Numbered permissions require Claude Code's own permission report. Startup trust uses the
+// separate foreground-process source below; screen text alone never makes a terminal eligible.
 function mayAnswer(a) {
+  if (a.source?.kind === "workspace-trust") return startupCandidates().some(x => spell(x) === spell(a));
   if (a.app !== "claude-code") return false;
   return terminals().find(t => t.address === a.address)?.report?.kind === "permission";
 }
-// The blocked spell a read or an answer belongs to: Herdr bumps seq when the status changes.
-const spell = (a) => `${a.address}#${a.seq}`;
+// Reported requests use address#seq; startup requests use their explicit process lifecycle.
+const spell = (a) => a.source?.key ?? `${a.address}#${a.seq}`;
+
+// A separate, explicitly identified startup source. These are terminal facts, never forged
+// OSC reports. Only a live Claude foreground process, before its first report, is eligible.
+function startupKey(t) {
+  const f = t?.foreground;
+  const executable = f?.argv?.[0]?.split(/[\\/]/).at(-1);
+  if (t?.state !== "live" || t.reported !== false || t.status != null || t.report != null
+    || t.screen !== "exact" || !(t.created_ms > 0) || !(t.pid > 0) || !(f?.pid > 0) || !f.cwd
+    || !["claude", "claude.exe"].includes(f.name) || !["claude", "claude.exe"].includes(executable)) return null;
+  return `${t.address}#startup:${JSON.stringify([t.created_ms, t.pid, f.pid, f.cwd])}`;
+}
+function startupCandidates() {
+  const reported = new Set(agents().map(a => a.address));
+  const result = [];
+  for (const t of terminals()) {
+    const key = startupKey(t);
+    if (!key || reported.has(t.address)) continue;
+    const p = panes().find(p => p.terminal === t.address);
+    const space = spaces().find(s => s.tabs.some(tab => tab.id === p?.tab));
+    const tab = space?.tabs.find(tab => tab.id === p.tab);
+    if (!p || !space || !tab) continue;
+    result.push({ address: t.address, pane: p.pane, tab: tab.id, tab_name: tab.name,
+      space: space.id, space_name: space.name, program: t.program, title: t.title ?? "",
+      focused: p.focused, status: "blocked", source: { kind: "workspace-trust", key, folder: t.foreground.cwd } });
+  }
+  return result;
+}
 // The agent at `address` now, if it is still blocked on `key`'s spell; else null.
 const stillOn = (address, key) => {
+  if (key.startsWith(`${address}#startup:`)) return startupCandidates().find(a => a.address === address && spell(a) === key) ?? null;
   const now = agents().find(x => x.address === address);
   return now?.status === "blocked" && spell(now) === key ? now : null;
 };
+function answersFor(a, ask) {
+  if (!ask?.id || !mayAnswer(a)) return null;
+  if (ask.mode === "cursor") {
+    if (a.source?.kind !== "workspace-trust" || ask.dialog !== "workspace-trust" || ask.folder !== a.source.folder) return null;
+  } else if (a.source) return null;
+  return pickAnswers(ask);
+}
 // The visible screen (no scrolling), parsed; null when it can't be read.
-async function readAsk(address) {
-  const r = await hc(["read", address, "--lines", "0"]);
-  return r?.code ? null : parseAsk(r?.stdout);
+async function readAsk(a) {
+  const r = await hc(["read", a.address, "--lines", "0"]);
+  return r?.code ? null : parseAsk(r?.stdout, a.source?.folder);
 }
 // A read misses when it shows no question, or, where the card offers Yes / No (mayAnswer), no
 // buttons: no id (the dialog's shape is in doubt, as a read during a redraw gives) or no exact
@@ -154,14 +193,16 @@ const RETRY_MS = [500, 1500];
 // and after each wait), so no read follows a status or seq change.
 async function readAskWithRetry(address, key, cx) {
   for (let i = 0; ; i++) {
+    const source = stillOn(address, key);
+    if (!source) return null;
     let ask = null;
-    try { ask = await readAsk(address); } catch (_e) { ask = null; }
+    try { ask = await readAsk(source); } catch (_e) { ask = null; }
     ask ??= parseAsk("");  // a failed read: an empty screen, no question
     const now = stillOn(address, key);
     if (!now) return null;
     const answerable = mayAnswer(now);
     // No id (the dialog's shape is in doubt): nothing to check a click against, so no buttons.
-    const choices = ask.id && answerable ? pickAnswers(ask.options) : null;
+    const choices = answersFor(now, ask);
     const miss = !ask.question || (answerable && !choices);
     if (!miss || i >= RETRY_MS.length) return { ...ask, choices };
     await cx.sleep(RETRY_MS[i]);
@@ -170,13 +211,16 @@ async function readAskWithRetry(address, key, cx) {
 }
 // The Yes / No pair a card shows: live, or faded after one was sent.
 const shownChoices = (ask) => ask?.choices ?? ask?.sent ?? null;
+const answerTip = (ask, option) => ask.mode === "cursor" ? L.cursorAnswerTip(option.text) : L.answerTip(option.n, option.text);
 
 // ---- The mod --------------------------------------------------------------------------------
 
 export default class Herdboard extends View {
   init(_p, cx) {
     this.observed = {};
+    this.cardHeights = {}; // terminal address -> last native blocked-card height
     this.asks = {};      // address -> { key, text, question, options, id, choices, sent } for blocked agents
+    this.recognisedStartups = new Map(); // address -> lifecycle key, independent of invalidatable reads
     this.pending = new Set();
     this.moreOpen = null; // address#seq of the card whose permission options are open
     this.hovered = null; // address of the card under the pointer (shows its actions)
@@ -184,9 +228,15 @@ export default class Herdboard extends View {
     this.h = 0;
     // Ages tick every 30 s, only on the cards copy, when there's something to age and the board shows.
     if (!props()?.role) cx.timer.every(30000, (cx) => {
-      const live = new Set(agents().map(a => a.address));
+      const live = new Set([...agents(), ...startupCandidates()].map(a => a.address));
       for (const k of Object.keys(this.observed)) if (!live.has(k)) delete this.observed[k];
+      for (const k of Object.keys(this.cardHeights)) if (!live.has(k)) delete this.cardHeights[k];
       if (live.size && !isExpanded()) cx.notify();
+    });
+    // Startup screens have no status events. Poll only eligible foreground terminals, from
+    // the board copy, until the source ends; unknown screens never become cards.
+    if (!props()?.role) cx.timer.every(1000, (cx) => {
+      if (!isExpanded() && startupCandidates().length) cx.notify();
     });
   }
 
@@ -201,11 +251,16 @@ export default class Herdboard extends View {
   }
   below(px) { return this.w > 0 && this.w < px; }
 
-  // How long the agent has been in its status. Herdr's own times (per tab) survive restarts;
-  // before anything changes since the app started, fall back to when this board first saw it.
+  // How long the agent has been in its status. Reported agents use Herdr's per-tab times;
+  // otherwise observe locally, with startup waits belonging to their process lifecycle.
   since(a, tab) {
     const old = this.observed[a.address];
-    if (!old || old.status !== a.status) this.observed[a.address] = { status: a.status, at: Date.now() };
+    const source = a.source?.key;
+    if (!old || old.status !== a.status || old.source !== source) {
+      this.observed[a.address] = { status: a.status, source, at: Date.now() };
+    }
+    // Startup has no reported status clock: its wait belongs to this lifecycle, not the tab.
+    if (source) return this.observed[a.address].at;
     // Herdr keeps times per tab: trust them only when this agent is the tab's only one.
     if (tab && this.perTab?.get(a.tab) > 1) return this.observed[a.address].at;
     const herdr = a.status === "working" ? (tab?.working_since ?? tab?.changed_at) : tab?.changed_at;
@@ -223,16 +278,40 @@ export default class Herdboard extends View {
   // spell ends, not when its card is hidden, so an answered request stays answered.
   fetchAsks(blocked, cx) {
     if (this.moreOpen && !blocked.some(a => spell(a) === this.moreOpen && stillOn(a.address, this.moreOpen) && mayAnswer(a))) this.moreOpen = null;
+    this.fetchRequests(blocked, cx);
+  }
+
+  fetchRequests(blocked, cx) {
     for (const [k, ask] of Object.entries(this.asks)) if (!stillOn(k, ask.key)) delete this.asks[k];
+    for (const [address, key] of this.recognisedStartups) if (!stillOn(address, key)) this.recognisedStartups.delete(address);
     for (const a of blocked) {
       const key = spell(a);
-      if (this.asks[a.address]?.key === key || this.pending.has(key)) continue;
+      const cached = this.asks[a.address];
+      const startup = a.source?.kind === "workspace-trust";
+      if (this.pending.has(key) || (cached?.key === key && (!startup || Date.now() - cached.checkedAt < 1000))) continue;
       this.pending.add(key);
       cx.spawn(async (cx) => {
         let ask = null;
         try { ask = await readAskWithRetry(a.address, key, cx); } finally { this.pending.delete(key); }
-        if (!ask || !stillOn(a.address, key) || this.asks[a.address]?.key === key) return;
-        this.asks[a.address] = { key, ...ask, sent: null };
+        const now = ask && stillOn(a.address, key);
+        if (!now || this.asks[a.address] !== cached) return;
+        const visible = startup && !!ask.choices;
+        const firstStartup = visible && this.recognisedStartups.get(a.address) !== key;
+        if (visible) {
+          this.recognisedStartups.set(a.address, key);
+          this.since(now, null); // Recognition starts the wait even while filters hide the card.
+        }
+        // A poll begun before a click can finish after it. Preserve the sent latch, including
+        // while hidden by filters or after the screen disappears, until this source ends.
+        if (startup && cached?.sent) {
+          cached.visible = visible;
+          cached.checkedAt = Date.now();
+        } else this.asks[a.address] = { key, ...ask, sent: null, visible, checkedAt: Date.now() };
+        // Startup has no OSC report to bring a put-away tab back. Do it once per recognised
+        // lifecycle, preserving that fact across polls where the screen temporarily disappears.
+        if (firstStartup && spaces().some(s => s.tabs.some(t => t.id === now.tab && t.settled))) {
+          run("tab.unsettle", { id: now.tab });
+        }
         cx.notify();
       });
     }
@@ -278,11 +357,11 @@ export default class Herdboard extends View {
           .flex().items_center().rounded(4).text_size(11).text_color(C.ink).cursor_pointer()
           .hover(st => st.bg(C.hover)).tooltip(o.text)
           .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
-          .on_click((_e, cx) => { cx.stop_propagation(); this.answer(a, ask, o.n, cx); })
+          .on_click((_e, cx) => { cx.stop_propagation(); this.answer(a, ask, o, cx); })
           .child(div().flex_1().min_w(0).truncate().child(o.text)))));
   }
 
-  // Answer a permission dialog with its numbered option (Yes, No or a More… item).
+  // Answer the clicked choice with a digit shortcut or a cursor plan, in one hc keys call.
   // `a` and `ask` are what the clicked card was drawn from: the click answers that request and
   // nothing else, so it does nothing once the board holds a newer read for the agent.
   // hc keys presses keys blindly, so first confirm the agent is still blocked on the same
@@ -290,22 +369,34 @@ export default class Herdboard extends View {
   // the card's shortened text); else type nothing and read the screen again. The cached options
   // are dropped at once, so the buttons stay disabled until the status or seq changes (a
   // second click types nothing).
-  answer(a, ask, n, cx) {
+  answer(a, ask, option, cx) {
     if (!ask || this.asks[a.address] !== ask || ask.key !== spell(a)) return;
-    const pick = ask.choices && ask.options.find(o => o.n === n && n >= 1 && n <= 9);
+    const pick = ask.choices && ask.options.includes(option) ? option : null;
     if (!pick || !ask.id) return;
+    const cursor = ask.mode === "cursor";
+    if (!cursor && !(pick.n >= 1 && pick.n <= 9)) return;
+    const delta = cursor ? pick.index - ask.selectedIndex : 0;
+    const plan = cursor ? [...Array(Math.abs(delta)).fill(delta > 0 ? "down" : "up"), "enter"] : [String(pick.n)];
     ask.sent = ask.choices;
     ask.choices = null;
     if (this.moreOpen === ask.key) this.moreOpen = null;
     cx.notify();
-    const stillBlocked = () => { const now = stillOn(a.address, ask.key); return !!now && mayAnswer(now); };
+    const stillBlocked = () => { const now = stillOn(a.address, ask.key); return this.asks[a.address] === ask && !!now && !!answersFor(now, ask); };
+    // App snapshots arrive asynchronously. For the pre-report source, re-read the core's
+    // process/lifecycle facts on both sides of the screen read as well as checking the snapshot.
+    const sameSource = async () => {
+      if (!a.source) return true;
+      const r = await hc(["get", a.address, "--json"]);
+      return r?.code === 0 && startupKey(JSON.parse(r.stdout)) === ask.key && stillBlocked();
+    };
     cx.spawn(async (cx) => {
       let typed = false;
       try {
-        if (stillBlocked()) {
-          const again = await readAsk(a.address);
-          if (again?.id === ask.id && stillBlocked()) {
-            const k = await hc(["keys", a.address, String(pick.n)]);
+        if (stillBlocked() && await sameSource() && stillBlocked()) {
+          const again = await readAsk(a);
+          if (again?.id === ask.id && again.mode === ask.mode && (!cursor || again.selectedIndex === ask.selectedIndex)
+            && stillBlocked() && await sameSource() && stillBlocked()) {
+            const k = await hc(["keys", a.address, ...plan]);
             typed = !k?.code;
           }
         }
@@ -329,9 +420,15 @@ export default class Herdboard extends View {
     const hovered = this.hovered === a.address;
     const ask = blocked ? this.asks[a.address] : null;
     const choices = shownChoices(ask);
-    const extras = choices ? ask.options.filter(o => o.n >= 1 && o.n <= 9 && o.n !== choices.yes.n && o.n !== choices.no.n) : [];
+    const extras = choices && ask.mode === "numbered" ? ask.options.filter(o => o.n >= 1 && o.n <= 9 && o.n !== choices.yes.n && o.n !== choices.no.n) : [];
     return h_flex().id(`agent-${a.address}`).w_full().flex_none().rounded(7).overflow_hidden().relative()
       .when(!blocked, el => el.h(64))
+      .when(blocked, el => el.on_size_change((size, cx) => {
+        const height = Math.ceil(size.height);
+        if (!Number.isFinite(height) || height <= 0 || this.cardHeights[a.address] === height) return;
+        this.cardHeights[a.address] = height;
+        cx.notify();
+      }))
       .bg(C.card).border(1).border_color(a.focused ? C.accent : hovered ? C.strong : C.line).cursor_pointer()
       .tooltip(`${title || L.noTitle}\n${where}\n${a.program?.name ?? ""} · ${a.address}`)
       .on_hover((h, cx) => {
@@ -352,8 +449,8 @@ export default class Herdboard extends View {
             .child(ask?.text || L.noAsk))
           // Permission answers share one row and are disabled once one was sent (see answer()).
           .when(!!choices, el => el.child(h_flex().gap(6).items_center()
-            .child(this.actionButton(`yes-${a.address}`, L.yes, L.answerTip(choices.yes.n, choices.yes.text), (cx) => this.answer(a, ask, choices.yes.n, cx), null, !ask.choices))
-            .child(this.actionButton(`no-${a.address}`, L.no, L.answerTip(choices.no.n, choices.no.text), (cx) => this.answer(a, ask, choices.no.n, cx), null, !ask.choices))
+            .child(this.actionButton(`yes-${a.address}`, L.yes, answerTip(ask, choices.yes), (cx) => this.answer(a, ask, choices.yes, cx), null, !ask.choices))
+            .child(this.actionButton(`no-${a.address}`, L.no, answerTip(ask, choices.no), (cx) => this.answer(a, ask, choices.no, cx), null, !ask.choices))
             .when(extras.length > 0, row => row.child(this.moreOptions(a, ask, extras)))))
           .child(h_flex().gap(6).items_center()
             .child(this.actionButton(`answer-${a.address}`, L.answer, L.answer, () => run("agent.focus", { terminal: a.address }), state.color))
@@ -387,7 +484,7 @@ export default class Herdboard extends View {
 
   // Remember each terminal's latest task title (one shared write, only when something changed).
   rememberTitles(list) {
-    const kept = shared(TITLES_KEY) ?? {};
+    const kept = /** @type {Record<string, {title: string, at: number}>} */ (shared(TITLES_KEY) ?? {});
     let changed = false;
     const next = { ...kept };
     for (const a of list) {
@@ -470,7 +567,10 @@ export default class Herdboard extends View {
       .when(!narrow, el => el.child(div().text_size(14).font_semibold().text_color(C.ink).flex_none().child("Herdboard")))
       .child(div().w(1).h(20).bg(C.line).mx(4).flex_none())
       .child(h_flex().id("space-strip").flex_1().min_w(0).gap(4).items_center().overflow_x_scrollbar()
-        .children(all.map(s => this.spacePill(s, list.filter(a => a.space === s.id && !s.tabs.find(t => t.id === a.tab)?.settled).length, tiny))))
+        .children(all.map(s => {
+          const shown = list.filter(a => a.space === s.id && !s.tabs.find(t => t.id === a.tab)?.settled);
+          return this.spacePill(shown.some(a => a.source) ? { ...s, status: "blocked" } : s, shown.length, tiny);
+        })))
       .child(this.segment("filter", [["all", L.all], ["here", tiny ? L.hereShort : L.here]], filter, (v) => setShared(FILTER_KEY, v), L.filterTip))
       .child(this.iconButton("space-find", "mods/workspace-chrome/search.svg", L.searchTip, () => run("mod.open", { name: "herdboard-picker" }), narrow ? null : L.search))
       .child(this.segment("lang", [["pt", "PT"], ["en", "EN"]], lang(), (v) => setShared(LANG_KEY, v), L.langTip))
@@ -574,6 +674,9 @@ export default class Herdboard extends View {
   }
 
   blockedHeight(a) {
+    // Native wrapping can break a path early at a slash, and font metrics vary. Once laid
+    // out, fit the actual card; the character estimate is only for its first frame.
+    if (this.cardHeights[a.address]) return this.cardHeights[a.address];
     const text = this.asks[a.address]?.text;
     // The snippet wraps: estimate its lines from the column width (11px mono ≈ 6.6px a character).
     const inner = Math.max(120, (this.colW || 300) - 3 - 24 - 20 - 14);
@@ -661,7 +764,18 @@ export default class Herdboard extends View {
     palette();
     const role = props()?.role;
     if (role === "menu") return this.menu();
-    const list = agents();
+    if (!role) this.fetchRequests(startupCandidates(), cx);
+    const knownStartup = shared(STARTUP_KEY);
+    const startup = startupCandidates().filter(a => {
+      if (role) return Array.isArray(knownStartup) && knownStartup.includes(spell(a));
+      const ask = this.asks[a.address];
+      return ask?.key === spell(a) && ask.visible;
+    });
+    if (!role) {
+      const keys = startup.map(spell);
+      if (JSON.stringify(knownStartup) !== JSON.stringify(keys)) setShared(STARTUP_KEY, keys);
+    }
+    const list = [...agents(), ...startup];
     if (role === "header") return this.header(list);
     if (role === "terminals") return this.rail();
     if (role === "pane") {
