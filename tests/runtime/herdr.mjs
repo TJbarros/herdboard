@@ -8,5 +8,11 @@ export const shared = (key) => herdr.shared[key];
 export const setShared = (key, value) => { herdr.shared[key] = value; };
 export const spaces = () => herdr.spaces, panes = () => herdr.panes, props = () => herdr.props, layout = () => ({});
 export const theme = () => ({}), notify = () => {}, setAgentOrder = () => {};
-export const run = (command, args) => herdr.runs.push({ command, args });
+export const run = (command, args) => {
+  herdr.runs.push({ command, args });
+  if (command === "tab.settle" || command === "tab.unsettle") {
+    const tab = herdr.spaces.flatMap(s => s.tabs).find(t => t.id === args.id);
+    if (tab) tab.settled = command === "tab.settle";
+  }
+};
 export const openOverlay = () => {}, closeOverlay = () => {};

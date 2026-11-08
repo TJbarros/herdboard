@@ -115,6 +115,9 @@ column, top to bottom:
   the existing bounded retries); other mod roles never fetch. Unknown screens
   stay off the board. Only recognised lifecycle keys are shared with the header
   for its counts and space indicator. An ended source drops its cache.
+  First recognition brings its current tab back with `tab.unsettle` if put away,
+  without changing focus. Recognition is remembered across polls and temporarily
+  missing screens, so the same lifecycle does not undo a later Put away.
   Cursor options carry indices instead of digit shortcuts. Yes maps only to
   `Yes, I trust this folder`, No only to `No, exit`. Its id includes every raw line
   from the opening rule through the confirmation footer, including the selected

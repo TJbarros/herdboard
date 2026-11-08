@@ -64,6 +64,8 @@ folder, complete screen, cursor or Claude process changed, the click sends nothi
 Both answers stay disabled after one is sent. Only the complete recognised screen,
 in a visible terminal running Claude in the foreground before its first status
 report, qualifies; an unrelated terminal or menu does not get direct answer buttons.
+Recognising a new trust request also brings a put-away tab back to the board and
+the header count. Polling that same request does not undo a later **Put away**.
 
 In a narrow column, hover the shortened waiting time to read it in full.
 

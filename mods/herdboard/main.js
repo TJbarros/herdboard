@@ -282,14 +282,22 @@ export default class Herdboard extends View {
       cx.spawn(async (cx) => {
         let ask = null;
         try { ask = await readAskWithRetry(a.address, key, cx); } finally { this.pending.delete(key); }
-        if (!ask || !stillOn(a.address, key) || this.asks[a.address] !== cached) return;
+        const now = ask && stillOn(a.address, key);
+        if (!now || this.asks[a.address] !== cached) return;
         const visible = startup && !!ask.choices;
+        const firstStartup = visible && !cached?.recognised;
         // A poll begun before a click can finish after it. Preserve the sent latch, including
         // while hidden by filters or after the screen disappears, until this source ends.
         if (startup && cached?.sent) {
           cached.visible = visible;
           cached.checkedAt = Date.now();
-        } else this.asks[a.address] = { key, ...ask, sent: null, visible, checkedAt: Date.now() };
+        } else this.asks[a.address] = { key, ...ask, sent: null, visible,
+          recognised: visible || !!cached?.recognised, checkedAt: Date.now() };
+        // Startup has no OSC report to bring a put-away tab back. Do it once per recognised
+        // lifecycle, preserving that fact across polls where the screen temporarily disappears.
+        if (firstStartup && spaces().some(s => s.tabs.some(t => t.id === now.tab && t.settled))) {
+          run("tab.unsettle", { id: now.tab });
+        }
         cx.notify();
       });
     }

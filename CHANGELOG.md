@@ -9,6 +9,9 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
   displayed folder; No exits. Cursor answers send the required arrows and Enter
   together after rechecking the complete screen, cursor and source. Numbered
   permissions still send only their digit.
+- A newly recognised startup trust request brings its put-away tab back to the
+  board and header count, including when another agent shares the tab. Repeated
+  reads of that request do not undo putting the tab away again.
 - Permission cards with **Yes** / **No** offer the dialog's other options in
   **More…** (*Mais…*), with the agent's full text in each tooltip. Choosing one
   checks the same whole dialog on a fresh screen read and presses only its digit;

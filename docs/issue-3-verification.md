@@ -43,8 +43,8 @@ asynchronous reads, cache replacement, stale buttons, duplicate clicks, failures
 filtering/polling after an answer, and unchanged numbered Yes/No/More behaviour.
 These mocked tests do not establish real startup reachability by themselves.
 
-Final local checks: `scripts/check.sh` passed all three mod checks and 164/164 Node
-tests. JavaScript typechecking passed with the generated host declarations:
+Before the P2 follow-up below, `scripts/check.sh` passed all three mod checks and
+164/164 Node tests. JavaScript typechecking passed with the generated host declarations:
 
 ```sh
 npm exec --yes --package=typescript -- tsc --allowJs --checkJs --noEmit \
@@ -53,8 +53,9 @@ npm exec --yes --package=typescript -- tsc --allowJs --checkJs --noEmit \
   mods/herdboard/ask.js mods/herdboard/main.js mods/herdboard/gpui-kit.d.ts
 ```
 
-`scripts/check.sh` passou nos três mods e em 164/164 testes Node. A checagem de tipos
-JavaScript acima também passou; ela não exige tipagem de parâmetros implícitos.
+Antes da correção P2 abaixo, `scripts/check.sh` passou nos três mods e em 164/164
+testes Node. A checagem de tipos JavaScript acima também passou; ela não exige
+tipagem de parâmetros implícitos.
 
 Os testes verificam reconhecimento, os quatro planos de teclas, identidade completa,
 mudanças durante leituras assíncronas, fontes inelegíveis, cache substituído, cliques
@@ -72,6 +73,36 @@ A revisão independente de padrões reproduziu no runtime simulado um desvio pel
 caminho de permissões reportadas. Após teste de regressão falhando, respostas por
 cursor foram restritas à fonte inicial, tanto nos controles quanto na validação do
 clique. A revisão da especificação não encontrou outro problema acionável.
+
+### Put-away tab regression / Regressão de aba guardada
+
+The P2 review scenario was reproduced before the fix: the startup cache had both
+`visible` and `choices`, but its tab remained `settled`, so the card and header
+count excluded it. Clearing only `settled` displayed the same cached request.
+Startup discovery has no OSC report to trigger the core's automatic return.
+First recognition now calls `tab.unsettle` for the source's current tab, without
+focusing it. Recognition survives polling and missing screens within that lifecycle.
+
+Regression tests render the real mod through the simulated runtime. They cover a
+split tab put away by another agent's card before trust appears, the header count,
+unchanged unrelated tabs, rejected screens, late reads from ended lifecycles, a
+pane moving tabs during a read, repeated polls after another Put away (answered or
+unanswered), and a new foreground process returning the tab again. This P2 scenario
+was not rerun in the real Herdr UI; the real-app checks below predate this fix.
+After the fix, `scripts/check.sh` passed all three mod checks and 173/173 Node tests.
+
+O P2 foi reproduzido antes da correção: `visible` e `choices` estavam presentes,
+mas a aba continuava `settled`, excluída do quadro e do cabeçalho. Limpar apenas
+esse estado fez o mesmo pedido aparecer. Como não há report OSC nessa descoberta,
+o core não provocava o retorno. O primeiro reconhecimento agora chama
+`tab.unsettle` na aba atual da fonte, sem mudar o foco. O reconhecimento persiste
+entre leituras e telas temporariamente ausentes no mesmo ciclo do processo.
+
+Os testes cobrem o fluxo com dois painéis, o clique em Guardar no outro agente,
+o diálogo posterior e a contagem do cabeçalho, além dos casos acima. A regressão
+foi validada no runtime simulado; as verificações reais abaixo são anteriores a
+esta correção e não validam esse cenário específico.
+Após a correção, `scripts/check.sh` passou nos três mods e em 173/173 testes Node.
 
 ## Real Herdr run / Execução real no Herdr
 

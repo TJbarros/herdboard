@@ -19,6 +19,7 @@ const terminal = () => ({ address: "t1", state: "live", reported: false, status:
   program: { key: "claude", name: "Claude Code" } });
 const reads = () => herdr.calls.filter(c => c.args[0] === "read");
 const keys = () => herdr.calls.filter(c => c.args[0] === "keys").map(c => c.args.slice(1));
+const unsettles = () => herdr.runs.filter(c => c.command === "tab.unsettle");
 function render(b) { clicks.clear(); elements.clear(); b.render(cx); }
 const strings = values => values.flatMap(v => typeof v === "string" ? [v] : strings(v?.data?.children ?? []));
 async function settle(call, stdout = TRUST, code = 0) {
@@ -43,7 +44,51 @@ test("a complete trust dialog reaches an answerable card without a reported agen
   assert.ok(elements.has("yes-t1")); assert.ok(elements.has("no-t1"));
   assert.ok(elements.has("answer-t1")); assert.ok(elements.has("peek-b-t1"));
   assert.deepEqual(herdr.agents, []); assert.equal(herdr.terminals[0].report, null);
+  assert.deepEqual(unsettles(), [], "an active tab needs no reactivation");
 });
+test("a new trust dialog in a put-away tab returns an answerable card", async () => {
+  herdr.spaces[0].tabs[0].settled = true;
+  const b = board(); render(b);
+  await settle(reads().at(-1)); render(b);
+  assert.ok(b.asks.t1.visible, "the complete startup dialog was recognised");
+  assert.ok(b.asks.t1.choices, "the recognised dialog has answer choices");
+  assert.ok(elements.has("agent-t1"), "a new request must bring its put-away tab back to the board");
+  assert.ok(elements.has("yes-t1")); assert.ok(elements.has("no-t1"));
+  assert.deepEqual(unsettles(), [{ command: "tab.unsettle", args: { id: "tab1" } }]);
+  assert.deepEqual(keys(), [], "discovery never answers the dialog");
+});
+test("putting away a split tab through another agent returns it when trust appears later", async () => {
+  herdr.agents = [{ address: "t2", pane: "p2", tab: "tab1", space: "s1", status: "working", seq: 1 }];
+  herdr.panes.push({ pane: "p2", terminal: "t2", tab: "tab1" });
+  herdr.spaces[0].tabs.push({ id: "other", name: "Other", settled: true });
+  const b = board(); render(b);
+  await settle(reads().at(-1), "Starting Claude…");
+  elements.get("agent-t2").props.on_hover[0](true, cx); render(b);
+  await click("settle-t2"); render(b);
+  assert.equal(herdr.spaces[0].tabs[0].settled, true);
+  assert.equal(elements.has("agent-t2"), false);
+  assert.deepEqual(unsettles(), [], "startup alone does not bring the tab back");
+  waits[0].resolve(); await flush(); await settle(reads().at(-1)); render(b);
+  assert.ok(elements.has("yes-t1"), "the late trust dialog brings back the split tab");
+  assert.ok(elements.has("agent-t2"));
+  assert.equal(herdr.spaces[0].tabs[1].settled, true, "other put-away tabs stay put away");
+  herdr.props = { role: "header" }; const header = board(); render(header);
+  assert.ok(strings(elements.get("space-s1").children).includes("2"));
+  assert.deepEqual(herdr.runs, [{ command: "tab.settle", args: { id: "tab1" } },
+    { command: "tab.unsettle", args: { id: "tab1" } }], "reactivation never changes focus");
+});
+for (const [label, screen] of [["loading", "Starting Claude…"],
+  ["incomplete dialog", TRUST.replace("Enter to confirm · Esc to cancel", "")],
+  ["another folder", TRUST.replace("<folder>", "<other>")]]) {
+  test(`an unrecognised ${label} screen does not reactivate a put-away tab`, async () => {
+    herdr.spaces[0].tabs[0].settled = true;
+    const b = board(); render(b); await settle(reads().at(-1), screen);
+    for (let i = 0; i < 2; i++) { waits[i].resolve(); await flush(); await settle(reads().at(-1), screen); }
+    render(b);
+    assert.deepEqual(unsettles(), []); assert.equal(herdr.spaces[0].tabs[0].settled, true);
+    assert.equal(elements.has("agent-t1"), false);
+  });
+}
 const moved = TRUST.replace(" ❯ No, exit", "   No, exit").replace("   Yes, I trust this folder", " ❯ Yes, I trust this folder");
 async function showTrust(screen = TRUST) {
   const b = board(); render(b); await settle(reads().at(-1), screen); render(b); return b;
@@ -56,6 +101,46 @@ async function finishAnswer(screen = TRUST) {
   }
   assert.fail("answer flow did not finish");
 }
+for (const answered of [false, true]) {
+  test(`polling the same ${answered ? "answered" : "unanswered"} startup does not undo putting its tab away again`, async t => {
+    t.mock.timers.enable({ apis: ["Date"], now: 10000 });
+    const b = await showTrust();
+    if (answered) { await click("no-t1"); await finishAnswer(); }
+    herdr.spaces[0].tabs[0].settled = true;
+    t.mock.timers.tick(1000); render(b); await settle(reads().at(-1)); render(b);
+    assert.deepEqual(unsettles(), []);
+    // Losing the screen briefly must not turn this lifecycle into a new request.
+    t.mock.timers.tick(1000); render(b); await settle(reads().at(-1), "Starting Claude…");
+    for (let i = 0; i < 2; i++) { waits[i].resolve(); await flush(); await settle(reads().at(-1), "Starting Claude…"); }
+    t.mock.timers.tick(1000); render(b); await settle(reads().at(-1)); render(b);
+    assert.deepEqual(unsettles(), []);
+    assert.equal(herdr.spaces[0].tabs[0].settled, true);
+    assert.equal(elements.has("agent-t1"), false);
+    // A new foreground process is a new startup lifecycle, even with the same text.
+    herdr.terminals[0].foreground.pid = 99;
+    render(b); await settle(reads().at(-1)); render(b);
+    assert.ok(elements.has("yes-t1"));
+    assert.deepEqual(unsettles(), [{ command: "tab.unsettle", args: { id: "tab1" } }]);
+  });
+}
+test("a stale discovery read cannot reactivate a put-away tab", async () => {
+  herdr.spaces[0].tabs[0].settled = true;
+  const b = board(); render(b);
+  herdr.terminals[0].foreground.pid = 99;
+  await settle(reads().at(-1));
+  assert.deepEqual(unsettles(), []);
+  assert.equal(herdr.spaces[0].tabs[0].settled, true);
+});
+test("discovery reactivates the current tab if the pane moves during its read", async () => {
+  herdr.spaces[0].tabs[0].settled = true;
+  herdr.spaces[0].tabs.push({ id: "moved", settled: true });
+  const b = board(); render(b);
+  herdr.panes[0].tab = "moved";
+  await settle(reads().at(-1)); render(b);
+  assert.ok(elements.has("yes-t1"));
+  assert.deepEqual(unsettles(), [{ command: "tab.unsettle", args: { id: "moved" } }]);
+  assert.equal(herdr.spaces[0].tabs[0].settled, true);
+});
 for (const [screen, target, expected] of [
   [TRUST, "yes", ["t1", "down", "enter"]], [TRUST, "no", ["t1", "enter"]],
   [moved, "yes", ["t1", "enter"]], [moved, "no", ["t1", "up", "enter"]],

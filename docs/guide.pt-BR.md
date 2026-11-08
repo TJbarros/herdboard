@@ -67,6 +67,8 @@ completa, o cursor ou o processo Claude mudou, o clique não envia nada. As duas
 respostas ficam desabilitadas depois do primeiro envio. Só a tela completa
 reconhecida, num terminal visível com Claude em primeiro plano e ainda sem status
 reportado, pode ganhar esses botões; outros terminais ou menus não são promovidos.
+Reconhecer um novo pedido de confiança também traz uma aba guardada de volta ao
+quadro e à contagem do cabeçalho. Reler o mesmo pedido não desfaz um novo **Guardar**.
 
 Em uma coluna estreita, passe o mouse sobre o tempo de espera cortado para lê-lo
 por completo.
