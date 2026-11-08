@@ -25,7 +25,8 @@ column, top to bottom:
    `background`, 7px corners, 3px status stripe: program icon + task title (13px
    semibold), then space · tab · branch and the age (11px `muted`). Blocked cards
    are taller: the question in a mono box tinted `blocked`, then, for a permission
-   dialog, *Yes* and *No* (24px outlined buttons, their own row), then *Open and
+   dialog, *Yes*, *No* and, when there are other options, *More…* (24px outlined
+   buttons, their own row), then *Open and
    answer* (solid `blocked`) and *Peek*. Idle agents are 44px rows (icon, task over where,
    age). Empty columns: a 40px outlined "None".
 3. **Workspace**, the rest, padding 12/24: a 36px `chrome` rail (tabs as 26px chips
@@ -58,7 +59,8 @@ column, top to bottom:
   what the agent is asking." Parsed by `mods/herdboard/ask.js` (pure; `node --test`
   runs `tests/ask.test.js`). The same parse gives the request's `id`: the dialog's
   raw lines (nothing collapsed, trimmed or dropped: a no-break space ending a line
-  counts) from the solid rule that opens it through the last option, the `❯` cursor
+  counts) from the solid rule that opens it through the last option's continuation,
+  the `❯` cursor
   (after the box's `│` in a boxed dialog) blanked on the option lines after the
   question only (the request above it stays byte for byte: a heredoc's `> 1. x` line
   is not a cursor); the screen above the dialog is left out (it blinks Claude Code's
@@ -71,7 +73,9 @@ column, top to bottom:
   more reads, `cx.sleep` in the same task, only while the spell lasts (checked
   before and after each wait). Only the last read of the spell is kept.
 - Yes / No: the same read also collects the numbered options below the question
-  (`❯ 1. Yes` … `4. No`, numbered 1, 2, 3… in order; other lines skipped). Buttons
+  (`❯ 1. Yes` … `4. No`, numbered 1, 2, 3… in order). Immediately following lines
+  aligned to an option's text column join its text with one space; blank lines and
+  the "Esc to cancel" footer never join. Buttons
   only for a Claude Code agent (`app` "claude-code"), when one option's text is
   exactly "Yes" and one's exactly "No" (once each, digits 1–9), and the agent's
   `report.kind` (from `terminals()`) is `permission`.
@@ -87,6 +91,16 @@ column, top to bottom:
   (This space filter, put-away tab), so an answered request stays answered.
   `tests/answer.test.js` drives this path in the real `main.js`, with the Herdr
   runtime stood in by `tests/runtime/`.
+- More… (*Mais…*): only beside Yes / No, only when other options have one-key
+  digits (1–9). Lists those options in screen order, excluding the Yes / No pair;
+  the agent's own text is truncated in a row with its full text in a tooltip.
+  A controlled `gpui-base` `Popover`, anchored `bottom_left`, holds its open state
+  in the board copy as `address#seq`; its content belongs to that render, so it can
+  use the cached ask and the same `answer(a, ask, n, cx)` guard. No popup copy of the
+  mod. Every answer disables all three controls. The menu closes after a choice,
+  on Escape, on an outside press, when the spell changes or the card leaves Needs
+  you (including when hidden by a filter). The menu is layered above the window:
+  More… stays in the Yes / No row and adds nothing to `blockedHeight`.
 - Space pill: `space.select`. Filter, language and Idle fold persist in shared
   `herdboard.filter`, `herdboard.lang`, `herdboard.idleOpen`.
 - ⋯ menu (popup copy of the mod, role `menu`): New space and New tab in the active
@@ -119,7 +133,7 @@ column, top to bottom:
   `layout`, `theme`, `shared` / `setShared`, `run`, `hc`, `openOverlay` /
   `closeOverlay`, `notify`, `setAgentOrder`, `knownAgents`.
 - **Programs run**: `hc read <t> --lines 0` (board, blocked agents; again on a Yes /
-  No click), `hc keys <t> <digit>` (Yes / No) and
+  No click or More… choice), `hc keys <t> <digit>` (permission answers) and
   `hc machine ls` (picker, as Herdr's own); `knownAgents()` (new-tab menu). **Art**:
   `logo.svg`, `maximize.svg`, `minimize.svg`, `preview.svg`.
 - **Keys** (`keys.json`, section `layout:herdboard`): Ctrl+Shift+T new-tab menu,
@@ -134,8 +148,8 @@ column, top to bottom:
   `role`) fetches questions, ticks the timer or migrates preferences.
 - Every header control stops `mouse_down`: the header is a window-drag block.
 - Card action buttons stop propagation, or the card's `agent.focus` fires too
-  (Yes / No as well, even when faded).
-- `hc keys` presses keys blindly: never send a Yes / No digit without the stale
+  (Yes / No and More… as well, even when faded, and every menu item).
+- `hc keys` presses keys blindly: never send a permission answer digit without the stale
   check (same `address#seq` and the same request `id` on a fresh read, never the
   card's shortened text). `seq` alone is not enough: the screen lags the status,
   and `turn` doesn't change on a decline. Known limit: if both reads still show
@@ -155,6 +169,9 @@ column, top to bottom:
 - A Claude Code permission dialog gets *Yes* / *No*; each presses its option's digit
   (no `enter`) and the card leaves Needs you when the status changes. A screen
   without an exact Yes / No pair looks as before. `node --test` passes.
+- More… lists only the other one-key options with full wrapped text, sends the
+  selected digit through the same guard, and closes on choice, Escape, outside
+  press, status or seq change. Every answer disables Yes / No / More… together.
 - Clicking a space pill, a tab chip, + and × do what they say; new tabs open in
   the active tab's live folder.
 - PT | EN switches every text of the board, picker and new-tab menu.

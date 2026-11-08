@@ -44,9 +44,16 @@ card then follows the agent's new status: it leaves **Needs you** once the agent
 moves on. Before typing, the board checks that the agent is still blocked on the
 same dialog: it reads the screen again and compares the whole request (every line of
 the dialog, not just the part the card shows), and a button only answers the request
-its card showed; if anything changed, it types nothing and reads the question again. After one answer the buttons stay faded until the agent's
-status changes, so a second click types nothing. Other choices ("Yes, and always
-allow…") and dialogs without a plain Yes / No pair: use **Open and answer**.
+its card showed; if anything changed, it types nothing and reads the question again.
+**More…**, next to Yes / No, lists the dialog's other numbered options (digits 1–9),
+such as "Yes, and always allow…" or "Yes, and switch to auto mode". These can grant
+more than one approval. The menu keeps the agent's own text, including wrapped lines;
+hover a shortened item to read all of it. Choosing one runs the same check and presses
+only its digit. The menu closes after a choice, on Escape or a press outside it, and
+when the card leaves Needs you or gets a new request. After any answer all three
+controls stay faded until the agent's status or request changes, so a second click
+types nothing. More… appears only when Yes / No has other options to offer. For
+dialogs without a plain Yes / No pair, use **Open and answer**.
 
 If the question isn't on screen (for example, it scrolled away), the card says
 *"Open the terminal to see what the agent is asking."*
@@ -118,7 +125,7 @@ them all.
   read misses it (no question on screen yet or, for a Claude Code permission
   dialog, no Yes / No), it reads up to two more times, 0.5 s later and then another
   1.5 s later, only while the agent stays blocked. It reads again when you click
-  Yes / No, and then runs `hc keys <terminal> <digit>`; the search
+  Yes / No or choose a More… option, and then runs `hc keys <terminal> <digit>`; the search
   runs `hc machine ls`, as Herdr's own search does; the new-tab menu asks Herdr which
   agents are installed. No mod downloads anything from the internet or reads your files.
 - The Peek window and Herdr's sidebar are Herdr's own and stay in English.
