@@ -4,6 +4,7 @@
 // the test settles it, so a test decides in which order screen reads come back.
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { register } from "node:module";
 
 register("./runtime/hooks.mjs", import.meta.url);
@@ -109,6 +110,18 @@ test("More stays open across a full board render while startup discovery runs", 
   b.render(cx); await settle(reads().at(-1), screen("touch /tmp/a")); b.render(cx);
   clicks.get("more-trigger-t1")({}, cx); await flush(); b.render(cx);
   assert.equal(popovers.get("more-t1").props.open[0], true);
+});
+
+test("a reported permission cannot answer a trust screen without the startup source", async () => {
+  const b = board(); herdr.agents = [blocked(1)];
+  herdr.terminals[0].foreground = { name: "bash", pid: 41, cwd: "/other" };
+  const trust = readFileSync(new URL("./fixtures/workspace-trust.txt", import.meta.url), "utf8");
+  await readFor(b, blocked(1), trust);
+  for (let i = 0; i < 2 && waits.some(w => !w.woken); i++) { await wake(); await settle(reads().at(-1), trust); }
+  assert.equal(draw(b, blocked(1)).yes, null);
+  assert.equal(draw(b, blocked(1)).no, null);
+  assert.ok(elements.has("answer-t1")); assert.ok(elements.has("peek-b-t1"));
+  assert.deepEqual(keys(), []);
 });
 
 test("Yes types the Yes digit once the fresh read shows the same dialog", async () => {

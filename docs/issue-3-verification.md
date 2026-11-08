@@ -43,7 +43,7 @@ asynchronous reads, cache replacement, stale buttons, duplicate clicks, failures
 filtering/polling after an answer, and unchanged numbered Yes/No/More behaviour.
 These mocked tests do not establish real startup reachability by themselves.
 
-Final local checks: `scripts/check.sh` passed all three mod checks and 163/163 Node
+Final local checks: `scripts/check.sh` passed all three mod checks and 164/164 Node
 tests. JavaScript typechecking passed with the generated host declarations:
 
 ```sh
@@ -53,7 +53,7 @@ npm exec --yes --package=typescript -- tsc --allowJs --checkJs --noEmit \
   mods/herdboard/ask.js mods/herdboard/main.js mods/herdboard/gpui-kit.d.ts
 ```
 
-`scripts/check.sh` passou nos três mods e em 163/163 testes Node. A checagem de tipos
+`scripts/check.sh` passou nos três mods e em 164/164 testes Node. A checagem de tipos
 JavaScript acima também passou; ela não exige tipagem de parâmetros implícitos.
 
 Os testes verificam reconhecimento, os quatro planos de teclas, identidade completa,
@@ -61,6 +61,17 @@ mudanças durante leituras assíncronas, fontes inelegíveis, cache substituído
 antigos ou duplicados, falhas e persistência do bloqueio após filtros e novas leituras.
 Os testes numerados existentes continuam verificando Yes/No/More. Os mocks não
 comprovam, sozinhos, a descoberta real do diálogo inicial.
+
+The independent Standards review reproduced one bypass in the simulated runtime:
+the trust screen could use the reported-permission path without startup metadata
+checks. A failing regression was added, then cursor answers were restricted to the
+startup source both when selecting controls and when revalidating a click. The Spec
+review found no additional actionable issue.
+
+A revisão independente de padrões reproduziu no runtime simulado um desvio pelo
+caminho de permissões reportadas. Após teste de regressão falhando, respostas por
+cursor foram restritas à fonte inicial, tanto nos controles quanto na validação do
+clique. A revisão da especificação não encontrou outro problema acionável.
 
 ## Real Herdr run / Execução real no Herdr
 

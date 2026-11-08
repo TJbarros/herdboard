@@ -174,7 +174,9 @@ const stillOn = (address, key) => {
 };
 function answersFor(a, ask) {
   if (!ask?.id || !mayAnswer(a)) return null;
-  if (a.source && (ask.dialog !== "workspace-trust" || ask.folder !== a.source.folder)) return null;
+  if (ask.mode === "cursor") {
+    if (a.source?.kind !== "workspace-trust" || ask.dialog !== "workspace-trust" || ask.folder !== a.source.folder) return null;
+  } else if (a.source) return null;
   return pickAnswers(ask);
 }
 // The visible screen (no scrolling), parsed; null when it can't be read.
@@ -357,7 +359,7 @@ export default class Herdboard extends View {
     ask.choices = null;
     if (this.moreOpen === ask.key) this.moreOpen = null;
     cx.notify();
-    const stillBlocked = () => { const now = stillOn(a.address, ask.key); return this.asks[a.address] === ask && !!now && mayAnswer(now); };
+    const stillBlocked = () => { const now = stillOn(a.address, ask.key); return this.asks[a.address] === ask && !!now && !!answersFor(now, ask); };
     // App snapshots arrive asynchronously. For the pre-report source, re-read the core's
     // process/lifecycle facts on both sides of the screen read as well as checking the snapshot.
     const sameSource = async () => {
