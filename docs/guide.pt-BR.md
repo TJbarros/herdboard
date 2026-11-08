@@ -60,7 +60,8 @@ Yes / No simples, use **Abrir e responder**.
 
 **Confiança na pasta ao iniciar.** A tela reconhecida do Claude Code com o título
 "Accessing workspace:" também ganha um card, antes mesmo do primeiro status do
-agente, inclusive em terminais estreitos onde a explicação quebra em várias linhas.
+agente, inclusive em terminais estreitos onde a explicação, o caminho da pasta,
+as opções ou o rodapé de confirmação quebram em várias linhas.
 O card mostra a pasta: **Sim** escolhe "Yes, I trust this folder"; **Não**
 escolhe "No, exit". Cada clique move da linha selecionada até a escolha e confirma
 com Enter, sem atalho numérico. A dica mostra a escolha real. Se a pasta, a tela

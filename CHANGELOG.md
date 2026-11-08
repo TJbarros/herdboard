@@ -4,6 +4,10 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+- Workspace-trust options wrapped across terminal lines are reconstructed before
+  checking the footer. At 24 columns, the continuation of "Yes, I trust this folder"
+  was treated as footer text, hiding its card and header count. Cursor selection
+  and the complete raw dialog id remain part of answer validation.
 - Claude Code's recognised workspace-trust screen appears in Needs you before its
   first status report, using a separate terminal/process lifecycle. Yes trusts the
   displayed folder; No exits. Cursor answers send the required arrows and Enter

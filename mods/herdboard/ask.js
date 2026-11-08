@@ -54,17 +54,26 @@ function workspaceTrust(raw, cwd) {
   const questionStart = lines.findIndex((_, i) => i >= 3
     && lines.slice(i, guide).join(" ") === `${question} ${explanation}`);
   const folder = workspaceFolder(lines.slice(2, questionStart), cwd);
-  // The footer wraps in narrow panes too; normalise only recognition, keeping raw below.
   if (lines[1] !== "Accessing workspace:" || questionStart < 3 || !folder
-    || guide < questionStart + 2
-    || lines.slice(guide + 3).join(" ") !== "Enter to confirm · Esc to cancel") return null;
-  const rows = lines.slice(guide + 1, guide + 3);
-  const options = rows.map((line, index) => ({ index, text: line.replace(/^❯ /, "") }));
-  if (rows.filter(l => l.startsWith("❯ ")).length !== 1
-    || options.filter(o => o.text === "No, exit").length !== 1
-    || options.filter(o => o.text === "Yes, I trust this folder").length !== 1) return null;
+    || guide < questionStart + 2) return null;
+  // Options can occupy more than two physical rows. Consume each complete known label before
+  // reading the footer; normalise recognition only, preserving the cursor and raw id below.
+  const labels = ["No, exit", "Yes, I trust this folder"], options = [];
+  let next = guide + 1, selectedIndex = -1;
+  for (let index = 0; index < 2; index++) {
+    let text = lines[next++] ?? "";
+    if (text.startsWith("❯ ")) {
+      if (selectedIndex !== -1) return null;
+      selectedIndex = index;
+      text = text.slice(2);
+    }
+    while (next < lines.length && labels.some(label => label.startsWith(text + " "))) text += " " + lines[next++];
+    if (!labels.includes(text) || options.some(option => option.text === text)) return null;
+    options.push({ index, text });
+  }
+  if (selectedIndex === -1 || lines.slice(next).join(" ") !== "Enter to confirm · Esc to cancel") return null;
   return { mode: "cursor", dialog: "workspace-trust", folder,
-    selectedIndex: rows.findIndex(l => l.startsWith("❯ ")),
+    selectedIndex,
     text: `Accessing workspace:\n${folder}`, question, options,
     id: raw.slice(start, end + 1).join("\n") };
 }

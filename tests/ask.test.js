@@ -12,6 +12,50 @@ const TRUST_WRAPPED_FOLDER = readFileSync(new URL("./fixtures/workspace-trust-wr
 // Native 30-column capture; the temporary directory segment has a same-length replacement.
 const TRUST_WRAPPED_FOOTER = readFileSync(new URL("./fixtures/workspace-trust-wrapped-footer.txt", import.meta.url), "utf8");
 const FOOTER_FOLDER = "/tmp/herdboard-p2-footer-fixture1/workspace";
+// Native Claude Code 2.1.319 at 24 columns; the temporary directory segment has an equal-length replacement.
+const TRUST_WRAPPED_OPTIONS = readFileSync(new URL("./fixtures/workspace-trust-wrapped-options.txt", import.meta.url), "utf8");
+const OPTIONS_FOLDER = "/tmp/herdboard-p2-option-fixture1/workspace";
+test("workspace trust reconstructs wrapped option labels, preserving order, selection and raw identity", () => {
+  const wide = parseAsk(TRUST);
+  for (const [screen, cwd] of [
+    [TRUST_WRAPPED_OPTIONS, OPTIONS_FOLDER],
+    [TRUST.replace("Yes, I trust this folder", "Yes, I trust this\n   folder"), "<folder>"],
+    [TRUST.replace("No, exit", "No,\n   exit").replace("Yes, I trust this folder", "Yes,\n   I trust\n   this folder"), "<folder>"],
+    [TRUST.replace(" ❯ No, exit\n   Yes, I trust this folder", " ❯ Yes, I trust this\n   folder\n   No, exit"), "<folder>"],
+  ]) {
+    for (const selectedIndex of [0, 1]) {
+      const nextLabel = screen.includes(" ❯ No,") ? "Yes," : "No,";
+      const selected = selectedIndex === 0 ? screen : screen.replace(" ❯ ", "   ")
+        .replace(`   ${nextLabel}`, ` ❯ ${nextLabel}`);
+      const ask = parseAsk(selected, cwd);
+      assert.equal(ask.mode, "cursor");
+      assert.equal(ask.folder, cwd);
+      assert.equal(ask.question, wide.question);
+      assert.equal(ask.selectedIndex, selectedIndex);
+      assert.deepEqual(ask.options.map(o => o.index), [0, 1]);
+      assert.deepEqual(ask.options.map(o => o.text), screen.includes(" ❯ No,")
+        ? wide.options.map(o => o.text) : wide.options.map(o => o.text).reverse());
+      assert.equal(pickAnswers(ask).yes.text, "Yes, I trust this folder");
+      assert.equal(pickAnswers(ask).no.text, "No, exit");
+      assert.equal(ask.id, selected.slice(1).trimEnd());
+      assert.notEqual(ask.id, wide.id);
+      assert.notEqual(parseAsk(selected.replace("\n   ", "\n    "), cwd).id, ask.id);
+    }
+  }
+});
+test("wrapped trust options still reject incomplete labels, extra content and ambiguous cursors", () => {
+  for (const screen of [
+    TRUST_WRAPPED_OPTIONS.replace("\n   folder", ""),
+    TRUST_WRAPPED_OPTIONS.replace("\n   folder", "\n   directory"),
+    TRUST_WRAPPED_OPTIONS.replace("\n   folder", "\n   extra\n   folder"),
+    TRUST_WRAPPED_OPTIONS.replace("\n   folder", "\n ❯ folder"),
+    TRUST_WRAPPED_OPTIONS.replace(" ❯ No, exit", "   No, exit"),
+    TRUST_WRAPPED_OPTIONS.replace("   Yes,", " ❯ Yes,"),
+    TRUST_WRAPPED_OPTIONS.replace("\n   folder", "\n   folder\n   No, exit"),
+    TRUST_WRAPPED_OPTIONS.replace("\n to cancel", ""),
+    TRUST_WRAPPED_OPTIONS + "extra content\n",
+  ]) assert.equal(pickAnswers(parseAsk(screen, OPTIONS_FOLDER)), null);
+});
 test("workspace trust recognises its wrapped footer and preserves the complete raw identity", () => {
   const wide = parseAsk(TRUST);
   for (const [screen, cwd] of [

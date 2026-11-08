@@ -57,7 +57,8 @@ other dialogs without a plain Yes / No pair, use **Open and answer**.
 
 **Workspace trust at startup.** The recognised Claude Code screen headed
 "Accessing workspace:" also gets a card, even before Claude reports an agent status.
-This includes narrow terminals where the explanation wraps across lines.
+This includes narrow terminals where the explanation, folder path, options or
+confirmation footer wrap across lines.
 The card shows the folder: **Yes** chooses "Yes, I trust this folder"; **No** chooses
 "No, exit". Each click moves from the selected row to that choice and confirms with
 Enter, without a numbered shortcut. The tooltip names the actual choice. If the
