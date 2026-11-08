@@ -103,6 +103,9 @@ column, top to bottom:
   More… stays in the Yes / No row and adds nothing to `blockedHeight`.
 - A blocked card's waiting time uses the space left beside Open and answer and
   Peek, truncating with its full text in a tooltip when the column is narrow.
+- Board sizing uses each blocked card's native `on_size_change` height after its
+  first layout. The text estimate is only a fallback until that measurement;
+  native word wrapping and font metrics determine the space its controls need.
 - Workspace trust is a separate startup source, approved for issue #3. Only a
   terminal in a registered pane, running a foreground `claude` / `claude.exe` with
   matching executable name, `state: live`, `screen: exact`, `reported: false` and

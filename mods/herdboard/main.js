@@ -218,6 +218,7 @@ const answerTip = (ask, option) => ask.mode === "cursor" ? L.cursorAnswerTip(opt
 export default class Herdboard extends View {
   init(_p, cx) {
     this.observed = {};
+    this.cardHeights = {}; // terminal address -> last native blocked-card height
     this.asks = {};      // address -> { key, text, question, options, id, choices, sent } for blocked agents
     this.recognisedStartups = new Map(); // address -> lifecycle key, independent of invalidatable reads
     this.pending = new Set();
@@ -229,6 +230,7 @@ export default class Herdboard extends View {
     if (!props()?.role) cx.timer.every(30000, (cx) => {
       const live = new Set([...agents(), ...startupCandidates()].map(a => a.address));
       for (const k of Object.keys(this.observed)) if (!live.has(k)) delete this.observed[k];
+      for (const k of Object.keys(this.cardHeights)) if (!live.has(k)) delete this.cardHeights[k];
       if (live.size && !isExpanded()) cx.notify();
     });
     // Startup screens have no status events. Poll only eligible foreground terminals, from
@@ -421,6 +423,12 @@ export default class Herdboard extends View {
     const extras = choices && ask.mode === "numbered" ? ask.options.filter(o => o.n >= 1 && o.n <= 9 && o.n !== choices.yes.n && o.n !== choices.no.n) : [];
     return h_flex().id(`agent-${a.address}`).w_full().flex_none().rounded(7).overflow_hidden().relative()
       .when(!blocked, el => el.h(64))
+      .when(blocked, el => el.on_size_change((size, cx) => {
+        const height = Math.ceil(size.height);
+        if (!Number.isFinite(height) || height <= 0 || this.cardHeights[a.address] === height) return;
+        this.cardHeights[a.address] = height;
+        cx.notify();
+      }))
       .bg(C.card).border(1).border_color(a.focused ? C.accent : hovered ? C.strong : C.line).cursor_pointer()
       .tooltip(`${title || L.noTitle}\n${where}\n${a.program?.name ?? ""} · ${a.address}`)
       .on_hover((h, cx) => {
@@ -666,6 +674,9 @@ export default class Herdboard extends View {
   }
 
   blockedHeight(a) {
+    // Native wrapping can break a path early at a slash, and font metrics vary. Once laid
+    // out, fit the actual card; the character estimate is only for its first frame.
+    if (this.cardHeights[a.address]) return this.cardHeights[a.address];
     const text = this.asks[a.address]?.text;
     // The snippet wraps: estimate its lines from the column width (11px mono ≈ 6.6px a character).
     const inner = Math.max(120, (this.colW || 300) - 3 - 24 - 20 - 14);

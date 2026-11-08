@@ -2,6 +2,76 @@
 
 2026-11-08 · Linux · herdr-app 0.1.13 · hc 0.1.18 · Claude Code 2.1.319.
 
+## Final review and native card sizing / Revisão final e altura nativa do card
+
+The review of `a41ffdd` passed all three mod checks and 256 tests. Independent
+Standards and Spec reviews found no new source/answer defect. The Spec review also
+compared 288 numbered-dialog variations against main and mutated 229 nonblank raw
+lines across the 11 trust fixtures: numbered behavior stayed compatible, and every
+mutation changed the request identity or removed direct answers.
+
+A fresh isolated native run then found a P2 at 1280×820: the long workspace path
+wrapped at `/` before filling its row, and native line metrics also differed from
+the character-count estimate. The 254px board showed only 8px of the 24px Open and
+answer button, clipping Peek and the waiting time too. This was a sizing defect;
+the complete trust dialog had already reached its answerable card before any
+reported status (`live`, `exact`, foreground `claude`, `reported: false`,
+`status: null`, `turn: 0`).
+
+Blocked cards now report their natural height through `on_size_change`. Board
+sizing uses that measurement, retaining the estimate only until the first layout.
+Unchanged measurements do not trigger another render. Polling does not invalidate
+the measured size, and a resize updates it when the card's actual height changes.
+
+The regression was written and observed failing before the fix, and the final
+test was also rerun against pristine `a41ffdd` production code in a disposable
+directory. It drives the real rendered card's layout callback and verifies board
+resizing, stable repeated measurements and switching to the narrow list:
+
+```sh
+node --test --test-name-pattern='wide startup card fits' tests/startup.test.js
+scripts/check.sh
+```
+
+After the fix, all three mod checks and 257/257 Node tests pass, with no skips.
+In the same live native dialog, at the same wide viewport and without scrolling,
+the board changed to 279px and the button's visible span changed from 8px to 24px.
+PT/EN were inspected at 1280×820 and 760×900; all action controls and waiting time
+were visible, with a 232px narrow board. With Yes selected, the first card No
+click exited Claude to bash and cleared the card and counts. The old trust text
+remained without becoming a new card. The app reported no errors. Native Yes
+acceptance was not performed; all four key plans remain covered automatically.
+
+| Native capture / Captura nativa | Result / Resultado |
+| --- | --- |
+| [Before / Antes](images/issue-3-actions-before.png) | 8/24px visible, 254px board |
+| [After / Depois](images/issue-3-actions-after.png) | 24/24px visible, 279px board |
+
+The native harness used a private app home, core session, Claude config and
+authenticated Xvfb display. No personal app/core was used. Temporary captures,
+source hashes and the deterministic screenshot assertion were saved under
+`/tmp/herdboard-pr22-native-current-qrtaxnsf/`. The mock regression proves the
+layout-event behavior; the screenshots and native assertion prove actual wrapping.
+
+A revisão inicial passou nos três checks e nos 256 testes. As revisões independentes
+de padrões e especificação não encontraram defeitos na fonte nem no envio. A
+comparação de 288 variações de menus numerados preservou o comportamento anterior;
+alterações em 229 linhas das 11 fixtures mudaram a identidade ou retiraram os botões.
+
+A execução nativa encontrou um P2 na janela larga: as quebras reais do caminho e
+as métricas da fonte exigiam mais altura que a estimativa. O quadro de 254px cortava
+os controles, exibindo só 8 dos 24px do botão. Agora o dimensionamento usa a altura
+medida do card. O teste falhou antes da correção e passou depois, incluindo novas
+medições ao mudar a largura e ausência de redimensionamentos repetidos.
+
+Os três checks e os 257 testes passaram. No mesmo diálogo real, sem rolagem, o
+quadro passou a 279px e o botão ficou totalmente visível. PT/EN foram inspecionados
+em 1280×820 e 760×900; controles e espera ficaram visíveis. Com Yes selecionado,
+o primeiro clique em Não encerrou o Claude e limpou card e contagens, sem redescobrir
+o texto antigo. O app não reportou erros. A execução usou home, core, configuração
+do Claude e display isolados. A aceitação nativa de Sim continua sem execução;
+os quatro planos de teclas são cobertos pelos testes automatizados.
+
 ## Source and scope / Fonte e escopo
 
 The maintainer explicitly approved restricted startup discovery during implementation.

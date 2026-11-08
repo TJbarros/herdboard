@@ -4,6 +4,9 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+- Blocked cards use their rendered height when sizing the board. Long workspace
+  paths can wrap earlier than a character-count estimate, which clipped Open and
+  answer, Peek and the waiting time on a single card in a wide window.
 - Workspace-trust discovery finds a complete dialog below earlier terminal output,
   recognises a wrapped `Security guide` label at 15 columns, and recovers trailing
   folder whitespace from the process cwd. Answer validation preserves the raw dialog id.

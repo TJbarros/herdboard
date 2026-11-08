@@ -69,6 +69,28 @@ test("a complete trust dialog reaches an answerable card without a reported agen
   assert.deepEqual(herdr.agents, []); assert.equal(herdr.terminals[0].report, null);
   assert.deepEqual(unsettles(), [], "an active tab needs no reactivation");
 });
+test("a wide startup card fits its measured height when the folder wraps early", async () => {
+  const folder = "/tmp/herdboard-pr22-native-current-fixture1/workspace";
+  herdr.terminals[0].foreground.cwd = folder;
+  const b = await showTrust(TRUST.replace("<folder>", folder));
+  b.w = 1236; b.h = 254; render(b);
+  // The native renderer wraps a long path at slashes before filling the row.
+  // Deliver its layout result through the public element callback, not the text estimator.
+  elements.get("agent-t1").props.on_size_change?.[0]({ width: 271, height: 203 }, cx);
+  render(b);
+  assert.equal(herdr.runs.findLast(r => r.command === "layout.resize")?.args.px, 279,
+    "the board must fit the whole measured card plus its column and header spacing");
+  b.h = 279; herdr.runs.length = 0;
+  elements.get("agent-t1").props.on_size_change?.[0]({ width: 271, height: 203 }, cx);
+  render(b);
+  assert.equal(herdr.runs.some(r => r.command === "layout.resize"), false,
+    "an unchanged measurement must not keep resizing the board");
+  b.w = 716;
+  elements.get("agent-t1").props.on_size_change?.[0]({ width: 688, height: 167 }, cx);
+  render(b);
+  assert.equal(herdr.runs.findLast(r => r.command === "layout.resize")?.args.px, 232,
+    "a narrower single-list layout must resize again using its new card measurement");
+});
 for (const [label, screen, cwd] of [
   ["preceding terminal output", "previous output\n" + TRUST, "<folder>"],
   ["a wrapped Security guide", TRUST.replace("Security guide", "Security\n guide"), "<folder>"],
