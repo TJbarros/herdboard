@@ -92,22 +92,23 @@ test("after an install, uninstall removes the layout, the three mods and the key
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(home, "keys.json"), "utf8")), THEIR_KEYS);
 });
 
-// The failing removal is a read-only mods/ folder, which root can still write to.
-test("a real run prints the keys change before removing files, so a removal that fails still shows it",
-  { skip: process.getuid?.() === 0 && "root ignores the read-only folder" }, () => {
+// The failing removal is an `rm` on PATH ahead of the real one that refuses every call, so the
+// first removal fails. Not a read-only folder: Windows ignores the read-only attribute on folders
+// and root ignores the permission bits, so the removal would succeed there.
+test("a real run prints the keys change before removing files, so a removal that fails still shows it", () => {
   const home = homeWithTheirs();
   install(home);
-  const mods = path.join(home, "mods");
-  fs.chmodSync(mods, 0o555);
-  let r;
-  try { r = run(home); } finally { fs.chmodSync(mods, 0o755); }
+  const bin = tmpdir();
+  fs.writeFileSync(path.join(bin, "rm"), '#!/bin/sh\necho "rm: injected failure" >&2\nexit 1\n', { mode: 0o755 });
+  const r = run(home, [], { PATH: [bin, process.env.PATH].join(path.delimiter) });
   assert.notEqual(r.status, 0);
-  assert.ok(r.stdout.startsWith(lines(
+  assert.match(r.stderr, /^rm: injected failure$/m);
+  assert.equal(r.stdout, lines(
     `Uninstalling Herdboard from ${home}`,
     "keys.json: removed 'layout:herdboard' (backup: keys.json.before-herdboard-uninstall)",
-    "  removed    layouts/herdboard.json",
-  )), r.stdout);
+  ));
   assert.ok(fs.existsSync(path.join(home, "keys.json.before-herdboard-uninstall")));
+  assert.ok(fs.existsSync(path.join(home, "layouts/herdboard.json")));
 });
 
 test("when the keys section was all keys.json had, keys.json is deleted and the backup kept", () => {
