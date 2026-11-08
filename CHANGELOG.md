@@ -11,7 +11,9 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
   permissions still send only their digit.
 - A newly recognised startup trust request brings its put-away tab back to the
   board and header count, including when another agent shares the tab. Repeated
-  reads of that request do not undo putting the tab away again.
+  reads of that request do not undo putting the tab away again, even after a
+  failed answer validation invalidates the screen cache. The trust explanation
+  is also recognised when it wraps in a narrow terminal, preserving the raw id.
 - Permission cards with **Yes** / **No** offer the dialog's other options in
   **More…** (*Mais…*), with the agent's full text in each tooltip. Choosing one
   checks the same whole dialog on a fresh screen read and presses only its digit;

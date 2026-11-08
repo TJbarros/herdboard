@@ -8,6 +8,8 @@ const { herdr } = await import("./runtime/herdr.mjs");
 const { clicks, elements } = await import("./runtime/gpui.mjs");
 const { default: Herdboard } = await import("../mods/herdboard/main.js");
 const TRUST = readFileSync(new URL("./fixtures/workspace-trust.txt", import.meta.url), "utf8");
+// Native Claude Code 2.1.319 capture at 48 terminal columns.
+const TRUST_NARROW = readFileSync(new URL("./fixtures/workspace-trust-narrow.txt", import.meta.url), "utf8");
 const flush = async () => { for (let i = 0; i < 5; i++) await new Promise(r => setImmediate(r)); };
 const waits = [], timers = [];
 const cx = { spawn: f => f(cx), notify() {}, stop_propagation() {},
@@ -45,6 +47,15 @@ test("a complete trust dialog reaches an answerable card without a reported agen
   assert.ok(elements.has("answer-t1")); assert.ok(elements.has("peek-b-t1"));
   assert.deepEqual(herdr.agents, []); assert.equal(herdr.terminals[0].report, null);
   assert.deepEqual(unsettles(), [], "an active tab needs no reactivation");
+});
+test("a 48-column trust dialog reaches an answerable card and header count", async () => {
+  const b = board(); render(b);
+  await settle(reads().at(-1), TRUST_NARROW); render(b);
+  assert.ok(elements.has("agent-t1"), "the wrapped trust explanation must not hide the startup card");
+  assert.ok(elements.has("yes-t1")); assert.ok(elements.has("no-t1"));
+  herdr.props = { role: "header" }; const header = board(); render(header);
+  assert.ok(strings(elements.get("space-s1").children).includes("1"), "the recognised startup is counted");
+  assert.deepEqual(keys(), [], "discovery never answers the dialog");
 });
 test("a new trust dialog in a put-away tab returns an answerable card", async () => {
   herdr.spaces[0].tabs[0].settled = true;
@@ -123,6 +134,33 @@ for (const answered of [false, true]) {
     assert.deepEqual(unsettles(), [{ command: "tab.unsettle", args: { id: "tab1" } }]);
   });
 }
+for (const failAt of ["initial metadata", "screen", "final metadata"])
+test(`a failed answer validation preserves Put away for the same startup lifecycle (${failAt})`, async t => {
+  t.mock.timers.enable({ apis: ["Date"], now: 10000 });
+  herdr.agents = [{ address: "t2", pane: "p2", tab: "tab1", space: "s1", status: "working", seq: 1 }];
+  herdr.panes.push({ pane: "p2", terminal: "t2", tab: "tab1" });
+  const b = await showTrust();
+  await click("yes-t1");
+  if (failAt !== "initial metadata") await settle(herdr.calls.at(-1), JSON.stringify(terminal()));
+  if (failAt === "final metadata") await settle(reads().at(-1));
+  const validation = herdr.calls.at(-1);
+  assert.deepEqual(validation.args, failAt === "screen" ? ["read", "t1", "--lines", "0"] : ["get", "t1", "--json"]);
+  elements.get("agent-t2").props.on_hover[0](true, cx); render(b);
+  await click("settle-t2"); render(b);
+  assert.equal(herdr.spaces[0].tabs[0].settled, true);
+  assert.equal(elements.has("agent-t1"), false);
+  await settle(validation, "unavailable", 1);
+  assert.deepEqual(keys(), [], "failed validation cannot send an answer");
+  t.mock.timers.tick(1000); render(b);
+  await settle(reads().at(-1)); render(b);
+  assert.deepEqual(unsettles(), [], "rereading the same request must not undo Put away after a validation failure");
+  assert.equal(herdr.spaces[0].tabs[0].settled, true);
+  assert.equal(elements.has("agent-t1"), false);
+  herdr.terminals[0].foreground.pid = 99;
+  render(b); await settle(reads().at(-1)); render(b);
+  assert.ok(elements.has("yes-t1"), "a new process still brings its own trust request back");
+  assert.deepEqual(unsettles(), [{ command: "tab.unsettle", args: { id: "tab1" } }]);
+});
 test("a stale discovery read cannot reactivate a put-away tab", async () => {
   herdr.spaces[0].tabs[0].settled = true;
   const b = board(); render(b);
@@ -143,8 +181,9 @@ test("discovery reactivates the current tab if the pane moves during its read", 
 });
 for (const [screen, target, expected] of [
   [TRUST, "yes", ["t1", "down", "enter"]], [TRUST, "no", ["t1", "enter"]],
+  [TRUST_NARROW, "yes", ["t1", "down", "enter"]], [TRUST_NARROW, "no", ["t1", "enter"]],
   [moved, "yes", ["t1", "enter"]], [moved, "no", ["t1", "up", "enter"]],
-]) test(`cursor ${screen === TRUST ? "No" : "Yes"}: ${target} sends ${expected.slice(1).join(" ")} once`, async () => {
+]) test(`cursor ${screen === moved ? "Yes" : "No"} (${screen === TRUST_NARROW ? 48 : 200} columns): ${target} sends ${expected.slice(1).join(" ")} once`, async () => {
   const b = await showTrust(screen);
   await click(`${target}-t1`); await finishAnswer(screen); render(b);
   assert.deepEqual(keys(), [expected]);
@@ -176,9 +215,10 @@ test("discovery finds trust even when it appears after the initial retries", asy
 });
 for (const [language, yes, tip] of [["pt", "Sim", 'Confirma no terminal: "Yes, I trust this folder"'],
   ["en", "Yes", 'Confirms in the terminal: "Yes, I trust this folder"']]) {
-  test(`${language} cursor controls describe the actual choice at narrow and wide sizes`, async () => {
+  for (const screen of [TRUST, TRUST_NARROW])
+  test(`${language} cursor controls describe the actual choice at narrow and wide sizes (${screen === TRUST ? 200 : 48} columns)`, async () => {
     herdr.shared["herdboard.lang"] = language;
-    const b = await showTrust();
+    const b = await showTrust(screen);
     for (const width of [760, 1280]) {
       b.w = width; render(b);
       assert.deepEqual(elements.get("yes-t1").children, [yes]);
@@ -196,6 +236,7 @@ for (const [label, screen] of [
   ["label", TRUST.replace("No, exit", "No, return")],
   ["order", TRUST.replace(" ❯ No, exit\n   Yes, I trust this folder", "   Yes, I trust this folder\n ❯ No, exit")],
   ["context", TRUST.replace("Security guide", " Security guide")],
+  ["wrapping", TRUST_NARROW],
   ["incomplete screen", TRUST.replace("Enter to confirm · Esc to cancel", "")],
 ]) test(`a changed ${label} on the fresh screen sends zero keys`, async () => {
   await showTrust(); await click("yes-t1"); await finishAnswer(screen);

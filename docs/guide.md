@@ -57,6 +57,7 @@ other dialogs without a plain Yes / No pair, use **Open and answer**.
 
 **Workspace trust at startup.** The recognised Claude Code screen headed
 "Accessing workspace:" also gets a card, even before Claude reports an agent status.
+This includes narrow terminals where the explanation wraps across lines.
 The card shows the folder: **Yes** chooses "Yes, I trust this folder"; **No** chooses
 "No, exit". Each click moves from the selected row to that choice and confirms with
 Enter, without a numbered shortcut. The tooltip names the actual choice. If the
@@ -65,7 +66,8 @@ Both answers stay disabled after one is sent. Only the complete recognised scree
 in a visible terminal running Claude in the foreground before its first status
 report, qualifies; an unrelated terminal or menu does not get direct answer buttons.
 Recognising a new trust request also brings a put-away tab back to the board and
-the header count. Polling that same request does not undo a later **Put away**.
+the header count. Polling that same request does not undo a later **Put away**,
+including after an answer fails validation.
 
 In a narrow column, hover the shortened waiting time to read it in full.
 

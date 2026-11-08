@@ -109,7 +109,9 @@ column, top to bottom:
   no status/report qualifies for discovery. Its lifecycle key includes address,
   terminal creation time, terminal PID, foreground PID and foreground cwd. The
   screen must match the complete captured Claude Code 2.1.319 trust dialog, and
-  its displayed folder must equal that cwd. No OSC report is invented. The card's
+  its displayed folder must equal that cwd. The question and explanation may wrap
+  across terminal lines; recognition joins them for comparison, while the guarded
+  id keeps those raw lines unchanged. No OSC report is invented. The card's
   `blocked` is a presentation state belonging to this explicit source.
   The board polls eligible terminals about once a second (initial misses retain
   the existing bounded retries); other mod roles never fetch. Unknown screens
@@ -117,7 +119,9 @@ column, top to bottom:
   for its counts and space indicator. An ended source drops its cache.
   First recognition brings its current tab back with `tab.unsettle` if put away,
   without changing focus. Recognition is remembered across polls and temporarily
-  missing screens, so the same lifecycle does not undo a later Put away.
+  missing screens, separately from the read cache that answer validation can
+  invalidate, so the same lifecycle does not undo a later Put away. Recognition
+  is dropped when that lifecycle ends.
   Cursor options carry indices instead of digit shortcuts. Yes maps only to
   `Yes, I trust this folder`, No only to `No, exit`. Its id includes every raw line
   from the opening rule through the confirmation footer, including the selected

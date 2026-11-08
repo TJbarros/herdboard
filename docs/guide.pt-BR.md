@@ -60,7 +60,8 @@ Yes / No simples, use **Abrir e responder**.
 
 **Confiança na pasta ao iniciar.** A tela reconhecida do Claude Code com o título
 "Accessing workspace:" também ganha um card, antes mesmo do primeiro status do
-agente. O card mostra a pasta: **Sim** escolhe "Yes, I trust this folder"; **Não**
+agente, inclusive em terminais estreitos onde a explicação quebra em várias linhas.
+O card mostra a pasta: **Sim** escolhe "Yes, I trust this folder"; **Não**
 escolhe "No, exit". Cada clique move da linha selecionada até a escolha e confirma
 com Enter, sem atalho numérico. A dica mostra a escolha real. Se a pasta, a tela
 completa, o cursor ou o processo Claude mudou, o clique não envia nada. As duas
@@ -68,7 +69,8 @@ respostas ficam desabilitadas depois do primeiro envio. Só a tela completa
 reconhecida, num terminal visível com Claude em primeiro plano e ainda sem status
 reportado, pode ganhar esses botões; outros terminais ou menus não são promovidos.
 Reconhecer um novo pedido de confiança também traz uma aba guardada de volta ao
-quadro e à contagem do cabeçalho. Reler o mesmo pedido não desfaz um novo **Guardar**.
+quadro e à contagem do cabeçalho. Reler o mesmo pedido não desfaz um novo **Guardar**,
+inclusive após uma falha na validação de uma resposta.
 
 Em uma coluna estreita, passe o mouse sobre o tempo de espera cortado para lê-lo
 por completo.

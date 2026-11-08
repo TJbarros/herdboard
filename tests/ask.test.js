@@ -6,6 +6,7 @@ import { parseAsk, pickAnswers } from "../mods/herdboard/ask.js";
 
 // Complete hc read --lines 0 capture, Claude Code 2.1.319 at 200 columns (issue #3).
 const TRUST = readFileSync(new URL("./fixtures/workspace-trust.txt", import.meta.url), "utf8");
+const TRUST_NARROW = readFileSync(new URL("./fixtures/workspace-trust-narrow.txt", import.meta.url), "utf8");
 test("workspace trust keeps its folder, ordered cursor options and complete raw identity", () => {
   const ask = parseAsk(TRUST);
   assert.equal(ask.mode, "cursor");
@@ -17,6 +18,25 @@ test("workspace trust keeps its folder, ordered cursor options and complete raw 
   assert.equal(ask.text, "Accessing workspace:\n<folder>");
   assert.deepEqual(pickAnswers(ask), { yes: ask.options[1], no: ask.options[0] });
   assert.equal(pickAnswers(ask.options), null, "trust labels alone are not a recognised dialog");
+});
+test("workspace trust joins its wrapped explanation while keeping the raw identity", () => {
+  const wide = parseAsk(TRUST);
+  const wrapped = TRUST.replace("Claude Code'll be able to read, edit, and execute files here.",
+    "Claude Code'll be able to read, edit, and\n execute files here.");
+  for (const screen of [TRUST_NARROW, wrapped]) {
+    const ask = parseAsk(screen);
+    assert.equal(ask.mode, "cursor");
+    assert.equal(ask.question, wide.question);
+    assert.deepEqual(ask.options, wide.options);
+    assert.equal(ask.id, screen.slice(1).trimEnd());
+    assert.notEqual(ask.id, wide.id, "wrapping must remain part of the guarded raw identity");
+    assert.notEqual(parseAsk(screen.replace(" execute files here.", "  execute files here.")).id, ask.id);
+    for (const changed of [screen.replace(" execute files here.", ""),
+      screen.replace(" execute files here.", " execute other files here."),
+      screen.replace(" Security guide", " extra context\n Security guide")]) {
+      assert.equal(pickAnswers(parseAsk(changed)), null, "only the complete known explanation is recognised");
+    }
+  }
 });
 test("trust recognition rejects incomplete, ambiguous and unrelated cursor menus", () => {
   for (const screen of [TRUST.replace(" ❯ No, exit", "   No, exit"),

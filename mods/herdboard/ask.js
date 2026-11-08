@@ -46,10 +46,11 @@ function workspaceTrust(raw) {
   if (start < 0 || !/^─{3,}\s*$/.test(raw[start])) return null;
   const lines = raw.slice(start, end + 1).map(l => l.trim()).filter(Boolean);
   const guide = lines.indexOf("Security guide");
+  const question = "Quick safety check: Is this a project you created or one you trust? (Like your own code, a well-known open source project, or work from your team). If not, take a moment to review what's in this folder first.";
+  const explanation = "Claude Code'll be able to read, edit, and execute files here.";
   if (lines[1] !== "Accessing workspace:" || !lines[2] || guide < 5 || lines.length !== guide + 4
     || lines.at(-1) !== "Enter to confirm · Esc to cancel"
-    || lines[guide - 1] !== "Claude Code'll be able to read, edit, and execute files here."
-    || lines.slice(3, guide - 1).join(" ") !== "Quick safety check: Is this a project you created or one you trust? (Like your own code, a well-known open source project, or work from your team). If not, take a moment to review what's in this folder first.") return null;
+    || lines.slice(3, guide).join(" ") !== `${question} ${explanation}`) return null;
   const rows = lines.slice(guide + 1, guide + 3);
   const options = rows.map((line, index) => ({ index, text: line.replace(/^❯ /, "") }));
   if (rows.filter(l => l.startsWith("❯ ")).length !== 1
@@ -57,7 +58,7 @@ function workspaceTrust(raw) {
     || options.filter(o => o.text === "Yes, I trust this folder").length !== 1) return null;
   return { mode: "cursor", dialog: "workspace-trust", folder: lines[2],
     selectedIndex: rows.findIndex(l => l.startsWith("❯ ")),
-    text: `Accessing workspace:\n${lines[2]}`, question: lines.slice(3, guide - 1).join(" "), options,
+    text: `Accessing workspace:\n${lines[2]}`, question, options,
     id: raw.slice(start, end + 1).join("\n") };
 }
 

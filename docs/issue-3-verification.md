@@ -104,6 +104,70 @@ foi validada no runtime simulado; as verificações reais abaixo são anteriores
 esta correção e não validam esse cenário específico.
 Após a correção, `scripts/check.sh` passou nos três mods e em 173/173 testes Node.
 
+### Wrapped explanation and invalidated reads / Explicação quebrada e cache invalidado
+
+Both follow-up P2 findings were reproduced with failing tests before their fixes.
+The native Claude Code 2.1.319 capture at 48 columns is stored in
+`tests/fixtures/workspace-trust-narrow.txt` (captured through tmux, folder redacted).
+Changing only the explanation's line break in the 200-column fixture also made
+recognition fail: the parser compared that explanation to one exact line.
+It now joins the known question and explanation for comparison and retains every
+raw dialog line in the id. Tests verify discovery, header counts, cursor answers,
+PT/EN controls, rejection of altered/incomplete explanations, and rejection of an
+answer when wrapping changes between discovery and validation.
+
+The second reproduction clicks an answer, then Put away on another agent in the
+same split tab while validation is pending. A failed validation deleted the read
+cache, including its recognition flag. The next poll had the identical lifecycle
+key and dialog id but called `tab.unsettle` again. Recognition now lives separately
+from invalidatable reads and is cleared when the source lifecycle ends. Tests
+exercise failures in the initial metadata read, screen read and final metadata
+read; the same request stays put away, sends no keys, and a new process can still
+return its tab to the board.
+
+Repro commands (failed before the respective fix, pass after):
+
+```sh
+node --test --test-name-pattern='wrapped explanation|48-column trust' tests/ask.test.js tests/startup.test.js
+node --test --test-name-pattern='failed answer validation preserves' tests/startup.test.js
+```
+
+After both fixes, `scripts/check.sh` passed all three mod checks and 183/183 tests.
+A fresh isolated Herdr home/core and authenticated Xvfb display were used for the
+real UI check: inspected PT and EN at 760×900 and 1280×820, with two terminal panes.
+The narrow pane was 38 columns; its wrapped explanation produced an answerable
+card and Needs you count. Wide frames also showed the space count. Native screenshots
+are under `/tmp/herdboard-p2-ui-vdb7s1ts/`. A fresh terminal was used for the final
+wide check: resizing the first terminal left an old separator above the dialog,
+which the existing strict complete-screen guard rejects. These checks do not
+establish uninterrupted recognition across such resize residue. The asynchronous
+validation failure/Put away race was verified in the simulated runtime, not by
+injecting a core failure in the real app. Clicking No on the native card exited
+Claude and cleared the card and counts; the app reported no errors.
+
+Os dois P2 seguintes foram reproduzidos com testes falhando antes das correções.
+A captura nativa em 48 colunas foi obtida via tmux e salva com a pasta ocultada.
+Quebrar apenas a linha da explicação na captura larga já fazia o reconhecimento
+falhar, pois ela era comparada com uma única linha exata. A comparação agora junta
+a pergunta e a explicação conhecidas, mantendo todas as linhas brutas no id.
+
+No segundo caso, o teste clica numa resposta e depois em Guardar no outro agente
+da mesma aba dividida, enquanto a validação está pendente. A falha apagava o cache
+e seu reconhecimento; a próxima leitura tinha o mesmo ciclo e id, mas desfazia
+Guardar. O reconhecimento agora fica separado do cache invalidável e termina com
+o ciclo da fonte. Os testes cobrem falhas nas três etapas de leitura: o pedido
+atual continua guardado e sem enviar teclas; um novo processo ainda retorna a aba.
+
+Os três checks de mods e os 183 testes passaram. A interface real foi inspecionada
+num home/core/display isolado, em PT/EN, a 760×900 e 1280×820. O painel estreito
+tinha 38 colunas e mostrou card respondível e contagem mesmo com a explicação
+quebrada. Para a verificação larga final foi usado outro terminal: redimensionar
+o primeiro deixou uma regra antiga acima do diálogo, rejeitada pela validação
+estrita já existente. Portanto, a continuidade do reconhecimento com esses resíduos
+não foi validada. A corrida entre falha assíncrona e Guardar foi validada no runtime
+simulado, sem injetar falha no core real. O clique em Não no card real encerrou o
+Claude e limpou o card e as contagens; o app não reportou erros.
+
 ## Real Herdr run / Execução real no Herdr
 
 Used a private authenticated Xvfb display, a fresh `HERDR_APP_HOME`, an isolated

@@ -217,6 +217,7 @@ export default class Herdboard extends View {
   init(_p, cx) {
     this.observed = {};
     this.asks = {};      // address -> { key, text, question, options, id, choices, sent } for blocked agents
+    this.recognisedStartups = new Map(); // address -> lifecycle key, independent of invalidatable reads
     this.pending = new Set();
     this.moreOpen = null; // address#seq of the card whose permission options are open
     this.hovered = null; // address of the card under the pointer (shows its actions)
@@ -273,6 +274,7 @@ export default class Herdboard extends View {
 
   fetchRequests(blocked, cx) {
     for (const [k, ask] of Object.entries(this.asks)) if (!stillOn(k, ask.key)) delete this.asks[k];
+    for (const [address, key] of this.recognisedStartups) if (!stillOn(address, key)) this.recognisedStartups.delete(address);
     for (const a of blocked) {
       const key = spell(a);
       const cached = this.asks[a.address];
@@ -285,14 +287,14 @@ export default class Herdboard extends View {
         const now = ask && stillOn(a.address, key);
         if (!now || this.asks[a.address] !== cached) return;
         const visible = startup && !!ask.choices;
-        const firstStartup = visible && !cached?.recognised;
+        const firstStartup = visible && this.recognisedStartups.get(a.address) !== key;
+        if (visible) this.recognisedStartups.set(a.address, key);
         // A poll begun before a click can finish after it. Preserve the sent latch, including
         // while hidden by filters or after the screen disappears, until this source ends.
         if (startup && cached?.sent) {
           cached.visible = visible;
           cached.checkedAt = Date.now();
-        } else this.asks[a.address] = { key, ...ask, sent: null, visible,
-          recognised: visible || !!cached?.recognised, checkedAt: Date.now() };
+        } else this.asks[a.address] = { key, ...ask, sent: null, visible, checkedAt: Date.now() };
         // Startup has no OSC report to bring a put-away tab back. Do it once per recognised
         // lifecycle, preserving that fact across polls where the screen temporarily disappears.
         if (firstStartup && spaces().some(s => s.tabs.some(t => t.id === now.tab && t.settled))) {
