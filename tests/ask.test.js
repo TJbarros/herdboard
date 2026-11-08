@@ -22,6 +22,61 @@ const HEADING_FOLDER = "/tmp/herdboard-p2-heading-fixture00001";
 // Native Claude Code 2.1.319 at 24 columns; the temporary directory replacement has equal length.
 const TRUST_FOLDER_GUIDE = readFileSync(new URL("./fixtures/workspace-trust-folder-guide-24.txt", import.meta.url), "utf8");
 const GUIDE_FOLDER = "/tmp/herdboard-guide-fixture1/xxxxxxxxxxxxx/Security guide";
+// Native Claude Code 2.1.319 review captures; temporary directory replacements have equal length.
+const TRUST_WRAPPED_GUIDE = readFileSync(new URL("./fixtures/workspace-trust-wrapped-guide-15.txt", import.meta.url), "utf8");
+const TRUST_TRAILING_SPACE = readFileSync(new URL("./fixtures/workspace-trust-trailing-space-200.txt", import.meta.url), "utf8");
+const REVIEW_FOLDER = "/tmp/herdboard-guide-path-fixture1/workspace";
+test("workspace trust finds the complete dialog below preceding output and guards only its raw identity", () => {
+  const expected = parseAsk(TRUST, "<folder>");
+  for (const prefix of ["previous output\n", "previous prompt\nprevious output\n",
+    "───\nearlier menu\n", TRUST + "previous output\n"]) {
+    const screen = prefix + TRUST;
+    assert.deepEqual(parseAsk(screen, "<folder>"), expected);
+    assert.ok(pickAnswers(parseAsk(screen, "<folder>")));
+    assert.notEqual(parseAsk(prefix + TRUST.replace("\n <folder>", "\n  <folder>"), "<folder>").id, expected.id);
+    for (const changed of [TRUST + "extra content\n",
+      TRUST.replace("Enter to confirm · Esc to cancel", ""),
+      TRUST.replace("Security guide", "Other guide")]) {
+      assert.equal(pickAnswers(parseAsk(prefix + changed, "<folder>")), null);
+    }
+  }
+});
+test("workspace trust consumes the complete wrapped Security guide and preserves raw identity", () => {
+  for (const [screen, cwd] of [
+    [TRUST.replace("Security guide", "Security\n guide"), "<folder>"],
+    [TRUST_WRAPPED_GUIDE, REVIEW_FOLDER],
+    [TRUST_FOLDER_GUIDE.replace("\n Security guide\n\n ❯", "\n Security\n guide\n\n ❯"), GUIDE_FOLDER],
+  ]) {
+    const ask = parseAsk(screen, cwd);
+    assert.equal(ask.dialog, "workspace-trust");
+    assert.equal(ask.folder, cwd);
+    assert.ok(pickAnswers(ask));
+    assert.equal(ask.id, screen.slice(1).trimEnd());
+    assert.notEqual(ask.id, parseAsk(screen.replace("Security\n guide", "Security guide"), cwd).id);
+  }
+  for (const label of ["Security", "guide", "Security\n other guide", "Security\n extra\n guide",
+    "Security\n guide\n guide", "Securityguide"]) {
+    assert.equal(pickAnswers(parseAsk(TRUST.replace("Security guide", label), "<folder>")), null);
+  }
+});
+test("workspace trust accounts for terminal-trimmed trailing cwd whitespace without changing raw identity", () => {
+  for (const [screen, cwd] of [
+    [TRUST.replace("<folder>", "/tmp/workspace"), "/tmp/workspace "],
+    [TRUST.replace("<folder>", "/tmp/work\n space"), "/tmp/workspace  "],
+    [TRUST.replace("<folder>", "/tmp/workspace"), "/tmp/workspace\t"],
+    [TRUST_TRAILING_SPACE, REVIEW_FOLDER + " "],
+  ]) {
+    const ask = parseAsk(screen, cwd);
+    assert.equal(ask.dialog, "workspace-trust");
+    assert.equal(ask.folder, cwd);
+    assert.equal(ask.text, `Accessing workspace:\n${cwd}`);
+    assert.ok(pickAnswers(ask));
+    assert.equal(ask.id, screen.slice(1).trimEnd());
+  }
+  for (const cwd of ["/tmp/workspace/other ", "/tmp/workspaces ", "/tmp/work space "]) {
+    assert.equal(pickAnswers(parseAsk(TRUST.replace("<folder>", "/tmp/workspace"), cwd)), null);
+  }
+});
 test("workspace trust distinguishes a folder named Security guide from the dialog guide", () => {
   for (const [screen, cwd] of [
     [TRUST.replace("<folder>", "/a/\n Security guide"), "/a/Security guide"],

@@ -104,6 +104,68 @@ foi validada no runtime simulado; as verificações reais abaixo são anteriores
 esta correção e não validam esse cenário específico.
 Após a correção, `scripts/check.sh` passou nos três mods e em 173/173 testes Node.
 
+### Preceding output, wrapped guide, trailing path whitespace and hidden waiting time / Conteúdo anterior, guia quebrado, espaço final e espera oculta
+
+All four follow-up P2–P3 findings were reproduced before the fixes through the
+real mod with simulated Herdr/GPUI adapters. The minimal discovery inputs change
+one thing in the wide fixture: prepend a single output row, split `Security guide`
+into two rows, or supply a foreground cwd with a trailing space missing from the
+captured path. Each hid the card and header count and left its tab put away.
+Reverting only that input change restored parser recognition. The deterministic
+clock test recognises a request hidden by the current-space filter at time 10000,
+advances 61 seconds and shows all spaces: it displayed `esperando há <1 min`.
+
+The parser had required its opening rule to be the first nonempty screen row,
+looked up the guide as an exact physical row, and required the path chunks to
+consume every cwd character. It now locates the final opening rule and validates
+the complete dialog through its footer. A private text consumer reconstructs
+known heading, prose and guide text across rows. Only recognition is normalised;
+the dialog's raw rows, cursor and whitespace remain its answer-validation id.
+Terminal-trimmed final path whitespace is recovered only from the known cwd;
+differences inside a path row and non-whitespace suffixes still fail.
+
+The clock was first observed while rendering a card. Successful startup
+recognition now also calls the existing lifecycle observation, so a request starts
+aging even before filtering allows its first render. Polls preserve that clock;
+replacement lifecycles retain their existing reset behaviour.
+
+The review's native Claude Code 2.1.319 captures at 15 and 200 columns are stored in
+`tests/fixtures/workspace-trust-wrapped-guide-15.txt` and
+`tests/fixtures/workspace-trust-trailing-space-200.txt`. Temporary directory names
+were replaced with equal-length text, preserving every captured row's length and
+wrapping; empty rows after the footer were removed. Both original, unmodified
+captures were also replayed successfully against exact cwd, answer recognition and
+raw-identity assertions. The preceding-output cases use fixture transformations.
+
+```sh
+node --test --test-name-pattern='preceding output|preceding terminal output|wrapped Security guide|terminal-trimmed|trailing space in cwd|trailing cwd space|startup waiting time includes' tests/ask.test.js tests/startup.test.js
+```
+
+Tests cover restored cards, header counts and put-away tabs, both cursor answers,
+zero keys after raw dialog changes, malformed labels, extra content and divergent
+paths. `scripts/check.sh` passed all three mod checks and 256/256 Node tests.
+JavaScript typechecking passed with the command above. These fixes were validated
+by capture replay and the simulated runtime; the native Herdr GUI was not rerun.
+Earlier native GUI checks below do not validate these four follow-up findings.
+
+Os quatro achados P2–P3 foram reproduzidos antes das correções. Uma única linha de
+saída anterior, o guia dividido em duas linhas ou um espaço final no cwd ocultavam
+card e contagem e mantinham a aba guardada. O parser agora localiza o diálogo
+completo abaixo do conteúdo anterior, reconstrói os textos conhecidos e recupera
+somente a sobra de espaços finais usando o cwd. A identidade bruta continua
+incluindo as linhas, o cursor e os espaços originais do diálogo; conteúdo extra,
+rótulos incompletos e caminhos divergentes continuam rejeitados.
+
+O relógio era iniciado apenas pela renderização do card. Agora o reconhecimento
+registra a observação do ciclo, incluindo o tempo em que o pedido fica oculto pelo
+filtro antes de ser exibido. O teste com 61 segundos passa a mostrar um minuto;
+releituras preservam a espera e novos ciclos continuam iniciando seu próprio
+relógio. As capturas nativas de 15 e 200 colunas foram preservadas como fixtures e
+as originais também passaram pelo parser. Os três checks dos mods e os 256 testes
+Node passaram, assim como a checagem de tipos JavaScript. A GUI nativa do Herdr não
+foi executada novamente para estes quatro achados; a validação usa as capturas e
+o runtime simulado.
+
 ### Folder named Security guide and startup waiting age / Nome da pasta e idade da espera
 
 Both review findings were reproduced with failing tests before their fixes. P2's

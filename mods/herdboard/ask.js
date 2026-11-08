@@ -16,7 +16,7 @@ const OPTION = /^(\s*(?:[❯>]\s*)?(\d+)\.\s+)(\S.*)$/;
 // - question and options: the last question and the numbered options after it.
 // - id: the whole request, untruncated, to tell two requests apart; "" when the dialog's shape
 //   is in doubt (see requestId).
-// A known cwd disambiguates spaces lost at workspace-path wraps; only that exact path may match.
+// A known cwd disambiguates whitespace lost at workspace-path wraps or the final path row.
 export function parseAsk(screen, cwd = undefined) {
   const raw = String(screen ?? "").split(/\r?\n/);
   const trust = workspaceTrust(raw, cwd);
@@ -38,19 +38,24 @@ export function parseAsk(screen, cwd = undefined) {
   };
 }
 
+// The row after a complete known label, even when it wraps; -1 for missing or altered text.
+function afterWrappedText(lines, start, label) {
+  if (start < 0) return -1;
+  let text = lines[start] ?? "", next = start + 1;
+  while (next < lines.length && label.startsWith(text + " ")) text += " " + lines[next++];
+  return text === label ? next : -1;
+}
+
 // The captured Claude Code 2.1.319 startup dialog, not an arbitrary Yes/No menu. Require the
-// complete screen, including its explanation and confirmation footer. Its raw identity keeps
-// the cursor: unlike a digit shortcut, cursor movement changes what Enter would confirm.
+// complete dialog, including its explanation and confirmation footer, below any earlier output.
+// Its raw identity keeps the cursor: unlike a digit shortcut, movement changes what Enter confirms.
 function workspaceTrust(raw, cwd) {
-  const start = raw.findIndex(l => l.trim());
+  const start = raw.findLastIndex(l => /^─{3,}\s*$/.test(l));
   const end = raw.findLastIndex(l => l.trim());
-  if (start < 0 || !/^─{3,}\s*$/.test(raw[start])) return null;
+  if (start < 0) return null;
   const lines = raw.slice(start, end + 1).map(l => l.trim()).filter(Boolean);
-  // Consume the complete known heading before the folder, even when it wraps.
-  const heading = "Accessing workspace:";
-  let title = lines[1] ?? "", folderStart = 2;
-  while (folderStart < lines.length && heading.startsWith(title + " ")) title += " " + lines[folderStart++];
-  if (title !== heading) return null;
+  const folderStart = afterWrappedText(lines, 1, "Accessing workspace:");
+  if (folderStart < 0) return null;
   const question = "Quick safety check: Is this a project you created or one you trust? (Like your own code, a well-known open source project, or work from your team). If not, take a moment to review what's in this folder first.";
   const explanation = "Claude Code'll be able to read, edit, and execute files here.";
   const prose = `${question} ${explanation}`;
@@ -58,14 +63,15 @@ function workspaceTrust(raw, cwd) {
   // The cwd resolves word wraps versus mid-name breaks. The guarded id still uses raw below.
   const questionStart = lines.findIndex((_, i) => i > folderStart
     && lines.slice(i).join(" ").startsWith(prose + " "));
-  const guide = lines.indexOf("Security guide", questionStart + 1);
   const folder = workspaceFolder(lines.slice(folderStart, questionStart), cwd);
-  if (questionStart <= folderStart || !folder
-    || guide < questionStart + 2 || lines.slice(questionStart, guide).join(" ") !== prose) return null;
+  if (questionStart <= folderStart || !folder) return null;
+  const proseEnd = afterWrappedText(lines, questionStart, prose);
+  const guideEnd = afterWrappedText(lines, proseEnd, "Security guide");
+  if (proseEnd < questionStart + 2 || guideEnd < 0) return null;
   // Options can occupy more than two physical rows. Consume each complete known label before
   // reading the footer; normalise recognition only, preserving the cursor and raw id below.
   const labels = ["No, exit", "Yes, I trust this folder"], options = [];
-  let next = guide + 1, selectedIndex = -1;
+  let next = guideEnd, selectedIndex = -1;
   for (let index = 0; index < 2; index++) {
     let text = lines[next++] ?? "";
     if (text.startsWith("❯ ")) {
@@ -86,6 +92,7 @@ function workspaceTrust(raw, cwd) {
 
 // A wrap can discard spaces between words or split a name without a separator. Match chunks
 // in order against the known cwd, permitting missing spaces only at wraps, never inside a line.
+// The final row can also lose trailing whitespace; recover it from the known cwd only.
 // Without a cwd, retain the historical concatenation for callers that only inspect the screen.
 function workspaceFolder(chunks, cwd) {
   if (cwd === undefined) return chunks.join("");
@@ -95,7 +102,7 @@ function workspaceFolder(chunks, cwd) {
     if (!cwd.startsWith(chunks[i], offset)) return null;
     offset += chunks[i].length;
   }
-  return offset === cwd.length ? cwd : null;
+  return cwd.slice(offset).trim() === "" ? cwd : null;
 }
 
 // The numbered options after the question ("❯ 1. Yes", "4. No"), in order 1, 2, 3…, and the

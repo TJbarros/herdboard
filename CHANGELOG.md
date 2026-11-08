@@ -4,6 +4,11 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+- Workspace-trust discovery finds a complete dialog below earlier terminal output,
+  recognises a wrapped `Security guide` label at 15 columns, and recovers trailing
+  folder whitespace from the process cwd. Answer validation preserves the raw dialog id.
+- Startup waiting time begins when discovery recognises the request, including
+  time hidden by the current-space filter before its card is first rendered.
 - A workspace folder named `Security guide` can wrap onto its own row without
   hiding its trust card, header count or put-away tab. Recognition locates the
   complete known prose before the dialog's guide and preserves the raw id.

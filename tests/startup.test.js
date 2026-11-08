@@ -27,6 +27,10 @@ const HEADING_FOLDER = "/tmp/herdboard-p2-heading-fixture00001";
 // Native Claude Code 2.1.319 at 24 columns; the temporary directory replacement has equal length.
 const TRUST_FOLDER_GUIDE = readFileSync(new URL("./fixtures/workspace-trust-folder-guide-24.txt", import.meta.url), "utf8");
 const GUIDE_FOLDER = "/tmp/herdboard-guide-fixture1/xxxxxxxxxxxxx/Security guide";
+// Native Claude Code 2.1.319 review captures; temporary directory replacements have equal length.
+const TRUST_WRAPPED_GUIDE = readFileSync(new URL("./fixtures/workspace-trust-wrapped-guide-15.txt", import.meta.url), "utf8");
+const TRUST_TRAILING_SPACE = readFileSync(new URL("./fixtures/workspace-trust-trailing-space-200.txt", import.meta.url), "utf8");
+const REVIEW_FOLDER = "/tmp/herdboard-guide-path-fixture1/workspace";
 const flush = async () => { for (let i = 0; i < 5; i++) await new Promise(r => setImmediate(r)); };
 const waits = [], timers = [];
 const cx = { spawn: f => f(cx), notify() {}, stop_propagation() {},
@@ -64,6 +68,26 @@ test("a complete trust dialog reaches an answerable card without a reported agen
   assert.ok(elements.has("answer-t1")); assert.ok(elements.has("peek-b-t1"));
   assert.deepEqual(herdr.agents, []); assert.equal(herdr.terminals[0].report, null);
   assert.deepEqual(unsettles(), [], "an active tab needs no reactivation");
+});
+for (const [label, screen, cwd] of [
+  ["preceding terminal output", "previous output\n" + TRUST, "<folder>"],
+  ["a wrapped Security guide", TRUST.replace("Security guide", "Security\n guide"), "<folder>"],
+  ["a trailing space in cwd", TRUST.replace("<folder>", "/tmp/workspace"), "/tmp/workspace "],
+  ["a native wrapped Security guide at 15 columns", TRUST_WRAPPED_GUIDE, REVIEW_FOLDER],
+  ["a native trailing space in cwd at 200 columns", TRUST_TRAILING_SPACE, REVIEW_FOLDER + " "],
+]) test(`startup discovery restores its card and header count with ${label}`, async () => {
+  herdr.spaces[0].tabs[0].settled = true;
+  herdr.terminals[0].foreground.cwd = cwd;
+  const b = board(); render(b);
+  await settle(reads().at(-1), screen); render(b);
+  const card = elements.has("agent-t1");
+  const answerable = elements.has("yes-t1") && elements.has("no-t1");
+  herdr.props = { role: "header" }; const header = board(); render(header);
+  assert.deepEqual({ card, answerable, counted: strings(elements.get("space-s1").children).includes("1"),
+    settled: herdr.spaces[0].tabs[0].settled },
+  { card: true, answerable: true, counted: true, settled: false });
+  assert.deepEqual(unsettles(), [{ command: "tab.unsettle", args: { id: "tab1" } }]);
+  assert.deepEqual(keys(), [], "discovery never answers the dialog");
 });
 test("a 48-column trust dialog reaches an answerable card and header count", async () => {
   const b = board(); render(b);
@@ -234,6 +258,12 @@ async function finishAnswer(screen = TRUST) {
   assert.fail("answer flow did not finish");
 }
 for (const [label, folder, screen, rewrapped] of [
+  ["preceding terminal output", "<folder>", "previous output\n" + TRUST,
+    "previous output\n" + TRUST.replace("Accessing workspace:", "Accessing\n workspace:")],
+  ["a wrapped Security guide", REVIEW_FOLDER, TRUST_WRAPPED_GUIDE,
+    TRUST_WRAPPED_GUIDE.replace("Security\n guide", "Security guide")],
+  ["a trailing cwd space", REVIEW_FOLDER + " ", TRUST_TRAILING_SPACE,
+    TRUST_TRAILING_SPACE.replace(REVIEW_FOLDER, REVIEW_FOLDER + " ")],
   ["a folder named Security guide", GUIDE_FOLDER, TRUST_FOLDER_GUIDE,
     TRUST_FOLDER_GUIDE.replace("\n Security guide\n\n Quick", "\n  Security guide\n\n Quick")],
   ...TRUST_WRAPPED_HEADINGS.map((screen, i) => [`a wrapped trust heading at ${20 + i} columns`,
@@ -492,6 +522,19 @@ test("startup waiting time survives the normal age timer", async t => {
   const b = await showTrust(); t.mock.timers.tick(61000);
   timers.find(t => t.ms === 30000).f(cx); render(b);
   assert.ok(strings(elements.get("agent-t1").children).includes("esperando há 1 min"));
+});
+test("startup waiting time includes time hidden by the current-space filter", async t => {
+  t.mock.timers.enable({ apis: ["Date"], now: 10000 });
+  herdr.spaces[0].active = false;
+  herdr.spaces.push({ id: "s2", active: true, tabs: [] });
+  herdr.shared["herdboard.filter"] = "here";
+  const b = board(); render(b);
+  await settle(reads().at(-1)); render(b);
+  assert.equal(elements.has("agent-t1"), false);
+  t.mock.timers.tick(61000);
+  herdr.shared["herdboard.filter"] = "all"; render(b);
+  assert.equal(strings(elements.get("agent-t1").children).find(s => s.startsWith("esperando há")), "esperando há 1 min",
+    "waiting starts at recognition even when the request has never been rendered");
 });
 for (const [field, replace] of [
   ["terminal creation", t => { t.created_ms = 2000; }],

@@ -295,7 +295,10 @@ export default class Herdboard extends View {
         if (!now || this.asks[a.address] !== cached) return;
         const visible = startup && !!ask.choices;
         const firstStartup = visible && this.recognisedStartups.get(a.address) !== key;
-        if (visible) this.recognisedStartups.set(a.address, key);
+        if (visible) {
+          this.recognisedStartups.set(a.address, key);
+          this.since(now, null); // Recognition starts the wait even while filters hide the card.
+        }
         // A poll begun before a click can finish after it. Preserve the sent latch, including
         // while hidden by filters or after the screen disappears, until this source ends.
         if (startup && cached?.sent) {
