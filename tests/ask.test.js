@@ -9,6 +9,33 @@ const TRUST = readFileSync(new URL("./fixtures/workspace-trust.txt", import.meta
 const TRUST_NARROW = readFileSync(new URL("./fixtures/workspace-trust-narrow.txt", import.meta.url), "utf8");
 // Native 48-column capture, with a same-length replacement for the temporary folder name.
 const TRUST_WRAPPED_FOLDER = readFileSync(new URL("./fixtures/workspace-trust-wrapped-folder.txt", import.meta.url), "utf8");
+test("workspace trust uses the cwd to distinguish word wraps from breaks inside a name", () => {
+  for (const [wrapped, folder] of [
+    ["/a\n b", "/a b"],
+    ["/a\n b", "/ab"],
+    ["/a\n b", "/a  b"],
+    ["/work/my project/long-na\n me for\n wrapping/project", "/work/my project/long-name for wrapping/project"],
+    ["C:\\work\\a[1].(project)\n repo", "C:\\work\\a[1].(project) repo"],
+  ]) {
+    const screen = TRUST_NARROW.replace("<folder>", wrapped);
+    const ask = parseAsk(screen, folder);
+    assert.equal(ask.mode, "cursor");
+    assert.equal(ask.folder, folder);
+    assert.equal(ask.text, `Accessing workspace:\n${folder}`);
+    assert.equal(ask.id, screen.slice(1).trimEnd());
+    assert.ok(pickAnswers(ask));
+  }
+});
+test("workspace trust permits lost spaces only at path wraps and still requires the exact cwd", () => {
+  for (const [wrapped, cwd] of [
+    ["/a b", "/ab"],
+    ["/ab", "/a b"],
+    ["/a b\n c", "/a  b c"],
+    ["/a\n b", "/a/b"],
+    ["/a\n b", "/other/a b"],
+    ["/a\n b", "/a b/other"],
+  ]) assert.equal(pickAnswers(parseAsk(TRUST_NARROW.replace("<folder>", wrapped), cwd)), null);
+});
 test("workspace trust reconstructs wrapped workspace paths and keeps their raw identity", () => {
   const folder = "/tmp/herdboard-p2-path-fixture1/workspace-with-a-long-name/project";
   const unwrapped = TRUST.replace("<folder>", folder);

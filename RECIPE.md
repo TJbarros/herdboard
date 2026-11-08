@@ -111,8 +111,11 @@ column, top to bottom:
   screen must match the complete captured Claude Code 2.1.319 trust dialog, and
   its displayed folder must equal that cwd. The folder, question and explanation
   may wrap across terminal lines. Recognition locates the complete known prose
-  and joins the preceding folder chunks without adding separators before the cwd
-  comparison. The guarded id keeps all raw lines unchanged. No OSC report is
+  and matches the preceding folder chunks against the known cwd in order. Only
+  at a path wrap may spaces be restored from the cwd; characters and spacing
+  inside each chunk must match exactly. This distinguishes word wraps from
+  mid-name breaks. Discovery and answer validation both supply that cwd to
+  `parseAsk(screen, cwd)`. The guarded id keeps all raw lines unchanged. No OSC report is
   invented. The card's
   `blocked` is a presentation state belonging to this explicit source.
   The board polls eligible terminals about once a second (initial misses retain

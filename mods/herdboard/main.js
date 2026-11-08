@@ -180,9 +180,9 @@ function answersFor(a, ask) {
   return pickAnswers(ask);
 }
 // The visible screen (no scrolling), parsed; null when it can't be read.
-async function readAsk(address) {
-  const r = await hc(["read", address, "--lines", "0"]);
-  return r?.code ? null : parseAsk(r?.stdout);
+async function readAsk(a) {
+  const r = await hc(["read", a.address, "--lines", "0"]);
+  return r?.code ? null : parseAsk(r?.stdout, a.source?.folder);
 }
 // A read misses when it shows no question, or, where the card offers Yes / No (mayAnswer), no
 // buttons: no id (the dialog's shape is in doubt, as a read during a redraw gives) or no exact
@@ -193,8 +193,10 @@ const RETRY_MS = [500, 1500];
 // and after each wait), so no read follows a status or seq change.
 async function readAskWithRetry(address, key, cx) {
   for (let i = 0; ; i++) {
+    const source = stillOn(address, key);
+    if (!source) return null;
     let ask = null;
-    try { ask = await readAsk(address); } catch (_e) { ask = null; }
+    try { ask = await readAsk(source); } catch (_e) { ask = null; }
     ask ??= parseAsk("");  // a failed read: an empty screen, no question
     const now = stillOn(address, key);
     if (!now) return null;
@@ -381,7 +383,7 @@ export default class Herdboard extends View {
       let typed = false;
       try {
         if (stillBlocked() && await sameSource() && stillBlocked()) {
-          const again = await readAsk(a.address);
+          const again = await readAsk(a);
           if (again?.id === ask.id && again.mode === ask.mode && (!cursor || again.selectedIndex === ask.selectedIndex)
             && stillBlocked() && await sameSource() && stillBlocked()) {
             const k = await hc(["keys", a.address, ...plan]);

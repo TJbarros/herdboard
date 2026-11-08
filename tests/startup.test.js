@@ -12,6 +12,8 @@ const TRUST = readFileSync(new URL("./fixtures/workspace-trust.txt", import.meta
 const TRUST_NARROW = readFileSync(new URL("./fixtures/workspace-trust-narrow.txt", import.meta.url), "utf8");
 const TRUST_WRAPPED_FOLDER = readFileSync(new URL("./fixtures/workspace-trust-wrapped-folder.txt", import.meta.url), "utf8");
 const WRAPPED_FOLDER = "/tmp/herdboard-p2-path-fixture1/workspace-with-a-long-name/project";
+const TRUST_WRAPPED_WORDS = readFileSync(new URL("./fixtures/workspace-trust-wrapped-words.txt", import.meta.url), "utf8");
+const WORDS_FOLDER = "/tmp/herdboard-p2-words-fixture1/long workspace name for wrapping/project";
 const flush = async () => { for (let i = 0; i < 5; i++) await new Promise(r => setImmediate(r)); };
 const waits = [], timers = [];
 const cx = { spawn: f => f(cx), notify() {}, stop_propagation() {},
@@ -69,11 +71,30 @@ test("a wrapped workspace path reaches an answerable startup card and header cou
   assert.ok(strings(elements.get("space-s1").children).includes("1"), "the startup is counted");
   assert.deepEqual(keys(), [], "discovery never answers the dialog");
 });
-test("a wrapped workspace path with a different cwd stays hidden and uncounted", async () => {
-  herdr.terminals[0].foreground.cwd = WRAPPED_FOLDER.replace("/project", "/other");
+for (const [label, folder, wrapped] of [
+  ["original", "/tmp/long workspace name for wrapping/project", "/tmp/long workspace name\n for wrapping/project"],
+  ["minimal", "/a b", "/a\n b"],
+  ["native capture", WORDS_FOLDER, null],
+]) test(`a workspace path wrapped between words preserves spaces in its card and header count (${label})`, async () => {
+  const screen = wrapped === null ? TRUST_WRAPPED_WORDS : TRUST_NARROW.replace("<folder>", wrapped);
+  herdr.terminals[0].foreground.cwd = folder;
   const b = board(); render(b);
-  await settle(reads().at(-1), TRUST_WRAPPED_FOLDER);
-  for (let i = 0; i < 2; i++) { waits[i].resolve(); await flush(); await settle(reads().at(-1), TRUST_WRAPPED_FOLDER); }
+  await settle(reads().at(-1), screen); render(b);
+  assert.ok(elements.has("agent-t1"), "the valid cwd with a space at the wrap must expose its card");
+  assert.ok(strings(elements.get("agent-t1").children).some(text => text.includes(folder)));
+  assert.ok(elements.has("yes-t1")); assert.ok(elements.has("no-t1"));
+  herdr.props = { role: "header" }; const header = board(); render(header);
+  assert.ok(strings(elements.get("space-s1").children).includes("1"), "the startup is counted");
+  assert.deepEqual(keys(), [], "discovery never answers the dialog");
+});
+for (const [screen, cwd] of [
+  [TRUST_WRAPPED_FOLDER, WRAPPED_FOLDER.replace("/project", "/other")],
+  [TRUST_WRAPPED_WORDS, WORDS_FOLDER.replace("workspace name", "workspacename")],
+]) test(`a wrapped workspace path with a different cwd stays hidden and uncounted (${cwd})`, async () => {
+  herdr.terminals[0].foreground.cwd = cwd;
+  const b = board(); render(b);
+  await settle(reads().at(-1), screen);
+  for (let i = 0; i < 2; i++) { waits[i].resolve(); await flush(); await settle(reads().at(-1), screen); }
   render(b);
   assert.equal(b.asks.t1.visible, false);
   assert.equal(elements.has("agent-t1"), false);
@@ -136,20 +157,27 @@ async function finishAnswer(screen = TRUST) {
   }
   assert.fail("answer flow did not finish");
 }
-for (const [target, expected] of [["yes", ["t1", "down", "enter"]], ["no", ["t1", "enter"]]]) {
-  test(`a wrapped workspace path validates its complete cwd before answering ${target}`, async () => {
-    herdr.terminals[0].foreground.cwd = WRAPPED_FOLDER;
-    await showTrust(TRUST_WRAPPED_FOLDER); await click(`${target}-t1`);
-    await finishAnswer(TRUST_WRAPPED_FOLDER);
-    assert.deepEqual(keys(), [expected]);
+for (const [label, folder, screen, rewrapped] of [
+  ["a wrapped workspace path", WRAPPED_FOLDER, TRUST_WRAPPED_FOLDER,
+    TRUST_WRAPPED_FOLDER.replace("workspace-with\n -a-long-name", "workspace-\n with-a-long-name")],
+  ["a workspace path wrapped between words", WORDS_FOLDER, TRUST_WRAPPED_WORDS,
+    TRUST_WRAPPED_WORDS.replace("/long\n workspace name", "/long workspace\n name")],
+]) {
+  for (const [target, expected] of [["yes", ["t1", "down", "enter"]], ["no", ["t1", "enter"]]]) {
+    test(`${label} validates its complete cwd before answering ${target}`, async () => {
+      herdr.terminals[0].foreground.cwd = folder;
+      await showTrust(screen); await click(`${target}-t1`);
+      await finishAnswer(screen);
+      assert.deepEqual(keys(), [expected]);
+    });
+  }
+  test(`${label} sends no keys when only its wrapping changes`, async () => {
+    herdr.terminals[0].foreground.cwd = folder;
+    await showTrust(screen); await click("yes-t1");
+    await finishAnswer(rewrapped);
+    assert.deepEqual(keys(), [], "the full cwd still matches, but the guarded raw identity changed");
   });
 }
-test("a wrapped workspace path sends no keys when only its wrapping changes", async () => {
-  herdr.terminals[0].foreground.cwd = WRAPPED_FOLDER;
-  await showTrust(TRUST_WRAPPED_FOLDER); await click("yes-t1");
-  await finishAnswer(TRUST_WRAPPED_FOLDER.replace("workspace-with\n -a-long-name", "workspace-\n with-a-long-name"));
-  assert.deepEqual(keys(), [], "the full cwd still matches, but the guarded raw identity changed");
-});
 for (const answered of [false, true]) {
   test(`polling the same ${answered ? "answered" : "unanswered"} startup does not undo putting its tab away again`, async t => {
     t.mock.timers.enable({ apis: ["Date"], now: 10000 });

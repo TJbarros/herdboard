@@ -113,8 +113,9 @@ complete dialog before the cwd check. A fresh native tmux capture is stored in
 `tests/fixtures/workspace-trust-wrapped-folder.txt`, with a same-length replacement
 for the temporary directory name to preserve its wrapping.
 
-Recognition now locates the complete known question/explanation and reconstructs
-the preceding path chunks without adding separators. The full path must still
+The initial fix located the complete known question/explanation and reconstructed
+the preceding path chunks without adding separators (word wraps are addressed
+below). The full path must still
 match the foreground cwd, and the id retains every original line. Regression
 tests cover multiple path lines, card and header discovery, a different cwd,
 Yes/No answers and zero keys when only the path wrapping changes on a fresh read.
@@ -135,13 +136,56 @@ comparava a continuação junto com a pergunta, rejeitando o diálogo antes de
 comparar o cwd. A nova captura nativa preserva a quebra com uma substituição de
 mesmo comprimento no nome do diretório temporário.
 
-O parser agora localiza a pergunta/explicação completas e junta os trechos do
-caminho sem acrescentar separadores. A pasta inteira ainda precisa corresponder
+A correção inicial localizou a pergunta/explicação completas e juntou os trechos do
+caminho sem acrescentar separadores (quebras entre palavras são tratadas abaixo).
+A pasta inteira ainda precisa corresponder
 ao cwd, e as linhas originais continuam no id. Os testes verificam card, contagem,
 respostas e bloqueio por cwd diferente ou mudança da quebra na leitura seguinte.
 Os três checks de mods e os 190 testes passaram. Card, cabeçalho e respostas foram
 validados no runtime simulado; a interface real do Herdr não foi revalidada neste
 acompanhamento.
+
+### Spaces at path wraps / Espaços nas quebras do caminho
+
+The next P2 reproduced a distinct case: trimming each path line and joining with
+`""` turned `name` + `for` into `namefor`, so the cwd check hid a valid card and
+its header count. The regression failed before the fix both for the reported
+path pattern and the minimal `/a` + `b` screen with cwd `/a b`.
+A fresh native Claude Code 2.1.319 tmux capture at 48 columns also failed through
+the simulated mod runtime. It is saved in
+`tests/fixtures/workspace-trust-wrapped-words.txt`, with a same-length replacement
+for the temporary directory name.
+
+The screen alone cannot distinguish `/ab` from `/a b` at that wrap. Discovery and
+fresh answer reads now supply the known foreground cwd to `parseAsk`. It matches
+each path chunk exactly, restoring spaces from the cwd only between chunks, and
+keeps the full raw screen as the guarded id. Tests cover mixed word/mid-name
+breaks, multiple spaces at a wrap, Windows path characters, divergent cwds, card
+text, header counts, Yes/No, and zero keys when only wrapping changes.
+
+```sh
+node --test --test-name-pattern='uses the cwd|workspace path wrapped between words' tests/ask.test.js tests/startup.test.js
+```
+
+`scripts/check.sh` passed all three mod checks and 199/199 Node tests. The native
+capture was replayed through the real mod with the simulated Herdr/GPUI runtime;
+the real Herdr UI was not rerun for this correction.
+
+O P2 seguinte reproduziu outro caso: aplicar `trim()` em cada linha e juntá-las
+com `""` transformava `name` + `for` em `namefor`. A comparação com o cwd ocultava
+um card válido e sua contagem. Os testes falharam antes da correção no padrão
+relatado, no caso mínimo `/a` + `b` com cwd `/a b` e com uma nova captura nativa do
+Claude Code 2.1.319 em 48 colunas. A fixture mantém as quebras da captura com uma
+substituição de mesmo comprimento no nome da pasta temporária.
+
+A captura sozinha não distingue `/ab` de `/a b` nessa quebra. A descoberta e a
+releitura antes da resposta agora passam o cwd conhecido ao parser. Cada trecho
+deve coincidir exatamente; só nas quebras são recuperados os espaços do cwd.
+O id preserva a tela bruta. Os testes verificam quebras dos dois tipos, espaços
+múltiplos, caminhos Windows, cwd divergente, texto do card, contagem, respostas e
+bloqueio quando apenas a quebra muda. Os três checks dos mods e os 199 testes
+passaram. A captura nativa foi reproduzida no runtime simulado do mod; a interface
+real do Herdr não foi revalidada nesta correção.
 
 ### Wrapped explanation and invalidated reads / Explicação quebrada e cache invalidado
 

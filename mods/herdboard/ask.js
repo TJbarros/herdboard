@@ -16,9 +16,10 @@ const OPTION = /^(\s*(?:[❯>]\s*)?(\d+)\.\s+)(\S.*)$/;
 // - question and options: the last question and the numbered options after it.
 // - id: the whole request, untruncated, to tell two requests apart; "" when the dialog's shape
 //   is in doubt (see requestId).
-export function parseAsk(screen) {
+// A known cwd disambiguates spaces lost at workspace-path wraps; only that exact path may match.
+export function parseAsk(screen, cwd = undefined) {
   const raw = String(screen ?? "").split(/\r?\n/);
-  const trust = workspaceTrust(raw);
+  const trust = workspaceTrust(raw, cwd);
   if (trust) return trust;
   const all = raw.map(clean);
   let q = -1;
@@ -40,7 +41,7 @@ export function parseAsk(screen) {
 // The captured Claude Code 2.1.319 startup dialog, not an arbitrary Yes/No menu. Require the
 // complete screen, including its explanation and confirmation footer. Its raw identity keeps
 // the cursor: unlike a digit shortcut, cursor movement changes what Enter would confirm.
-function workspaceTrust(raw) {
+function workspaceTrust(raw, cwd) {
   const start = raw.findIndex(l => l.trim());
   const end = raw.findLastIndex(l => l.trim());
   if (start < 0 || !/^─{3,}\s*$/.test(raw[start])) return null;
@@ -48,11 +49,11 @@ function workspaceTrust(raw) {
   const guide = lines.indexOf("Security guide");
   const question = "Quick safety check: Is this a project you created or one you trust? (Like your own code, a well-known open source project, or work from your team). If not, take a moment to review what's in this folder first.";
   const explanation = "Claude Code'll be able to read, edit, and execute files here.";
-  // Locate the complete known prose before joining the folder's wrapped chunks. Path wraps
-  // add no separator; question/explanation wraps do. The guarded id still uses raw below.
+  // Locate the complete known prose before reconstructing the folder's wrapped chunks.
+  // The cwd resolves word wraps versus mid-name breaks. The guarded id still uses raw below.
   const questionStart = lines.findIndex((_, i) => i >= 3
     && lines.slice(i, guide).join(" ") === `${question} ${explanation}`);
-  const folder = lines.slice(2, questionStart).join("");
+  const folder = workspaceFolder(lines.slice(2, questionStart), cwd);
   if (lines[1] !== "Accessing workspace:" || questionStart < 3 || !folder
     || guide < questionStart + 2 || lines.length !== guide + 4
     || lines.at(-1) !== "Enter to confirm · Esc to cancel") return null;
@@ -65,6 +66,20 @@ function workspaceTrust(raw) {
     selectedIndex: rows.findIndex(l => l.startsWith("❯ ")),
     text: `Accessing workspace:\n${folder}`, question, options,
     id: raw.slice(start, end + 1).join("\n") };
+}
+
+// A wrap can discard spaces between words or split a name without a separator. Match chunks
+// in order against the known cwd, permitting missing spaces only at wraps, never inside a line.
+// Without a cwd, retain the historical concatenation for callers that only inspect the screen.
+function workspaceFolder(chunks, cwd) {
+  if (cwd === undefined) return chunks.join("");
+  let offset = 0;
+  for (let i = 0; i < chunks.length; i++) {
+    if (i > 0) while (cwd[offset] === " ") offset++;
+    if (!cwd.startsWith(chunks[i], offset)) return null;
+    offset += chunks[i].length;
+  }
+  return offset === cwd.length ? cwd : null;
 }
 
 // The numbered options after the question ("❯ 1. Yes", "4. No"), in order 1, 2, 3…, and the

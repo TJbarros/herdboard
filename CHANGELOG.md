@@ -16,7 +16,9 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
   is also recognised when it wraps in a narrow terminal, preserving the raw id.
 - Workspace-trust paths split across terminal lines are reconstructed before
   matching the process cwd, so narrow terminals still show the card and header
-  count. The dialog id retains the original path lines for answer validation.
+  count. The known cwd preserves spaces when the path wraps between words and
+  distinguishes breaks inside a name. The dialog id retains the original path
+  lines for answer validation.
 - Permission cards with **Yes** / **No** offer the dialog's other options in
   **More…** (*Mais…*), with the agent's full text in each tooltip. Choosing one
   checks the same whole dialog on a fresh screen read and presses only its digit;
