@@ -15,6 +15,9 @@ const INSTALL = path.join(REPO, "scripts", "install.sh");
 // that isn't under the system temp folder.
 const run = (home, args = [], opts) => sh(home, [INSTALL, ...args], opts);
 
+// A line Python prints is matched up to its "\n", not with $: under the m flag $ also
+// matches before a "\r", so it would pass a CRLF line from a Windows python3.
+
 test("an unknown option prints a usage line, exits non-zero and leaves the home unchanged", () => {
   const home = tmpdir();
   const r = run(home, ["--dryrun"]);
@@ -43,7 +46,7 @@ test("a dry run on an empty home plans every file as new and keys.json as create
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, new RegExp(`^Herdr home: ${escapeRegExp(home)}$`, "m"));
   assert.deepEqual(plan(r.stdout), every("new"));
-  assert.match(r.stdout, /^keys\.json: would be created with layout:herdboard$/m);
+  assert.match(r.stdout, /^keys\.json: would be created with layout:herdboard\n/m);
   assert.deepEqual(snapshot(home), {});
 });
 
@@ -54,7 +57,7 @@ test("after a real install a dry run plans every file as unchanged and keeps the
   const r = run(home, ["--dry-run"]);
   assert.equal(r.status, 0, r.stderr);
   assert.deepEqual(plan(r.stdout), every("unchanged"));
-  assert.match(r.stdout, /^keys\.json: 'layout:herdboard' already there, left as it is$/m);
+  assert.match(r.stdout, /^keys\.json: 'layout:herdboard' already there, left as it is\n/m);
   assert.deepEqual(snapshot(home), before);
 });
 
@@ -75,7 +78,7 @@ test("with a keys.json lacking the section, a dry run plans adding it with a bac
   const before = snapshot(home);
   const r = run(home, ["--dry-run"]);
   assert.equal(r.status, 0, r.stderr);
-  assert.match(r.stdout, /^keys\.json: would add layout:herdboard \(backup: keys\.json\.before-herdboard\)$/m);
+  assert.match(r.stdout, /^keys\.json: would add layout:herdboard \(backup: keys\.json\.before-herdboard\)\n/m);
   assert.deepEqual(snapshot(home), before);
 });
 

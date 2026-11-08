@@ -14,6 +14,9 @@ const UNINSTALL = path.join(REPO, "scripts", "uninstall.sh");
 // Every spawn goes through sh() from tests/runtime/sandbox.mjs, which refuses a HERDR_APP_HOME
 // that isn't under the system temp folder.
 const run = (home, args = [], opts) => sh(home, [UNINSTALL, ...args], opts);
+
+// A line Python prints is matched up to its "\n", not with $: under the m flag $ also
+// matches before a "\r", so it would pass a CRLF line from a Windows python3.
 const install = home => {
   const r = sh(home, [INSTALL]);
   assert.equal(r.status, 0, r.stderr);
@@ -118,7 +121,7 @@ test("when the keys section was all keys.json had, keys.json is deleted and the 
   const r = run(home);
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout,
-    /^keys\.json: deleted, 'layout:herdboard' was all it had \(backup: keys\.json\.before-herdboard-uninstall\)$/m);
+    /^keys\.json: deleted, 'layout:herdboard' was all it had \(backup: keys\.json\.before-herdboard-uninstall\)\n/m);
   assert.deepEqual(snapshot(home), { "layouts/": "dir", "mods/": "dir",
     "keys.json.before-herdboard-uninstall": createHash("sha256").update(keysBefore).digest("hex") });
 });
@@ -130,7 +133,7 @@ test("without the keys section, keys.json is left byte for byte and no backup is
   fs.writeFileSync(path.join(home, "keys.json"), mine);
   const r = run(home);
   assert.equal(r.status, 0, r.stderr);
-  assert.match(r.stdout, /^keys\.json: no 'layout:herdboard' section, left as it is$/m);
+  assert.match(r.stdout, /^keys\.json: no 'layout:herdboard' section, left as it is\n/m);
   assert.equal(fs.readFileSync(path.join(home, "keys.json"), "utf8"), mine);
   assert.equal(fs.existsSync(path.join(home, "keys.json.before-herdboard-uninstall")), false);
 });
@@ -208,7 +211,7 @@ test("a dry run says keys.json would be deleted when the section is all it has",
   const r = run(home, ["--dry-run"]);
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout,
-    /^keys\.json: would be deleted, 'layout:herdboard' is all it has \(backup: keys\.json\.before-herdboard-uninstall\)$/m);
+    /^keys\.json: would be deleted, 'layout:herdboard' is all it has \(backup: keys\.json\.before-herdboard-uninstall\)\n/m);
   assert.deepEqual(snapshot(home), before);
 });
 
@@ -220,7 +223,7 @@ test("a dry run after an uninstall reports every part as missing", () => {
   const r = run(home, ["--dry-run"]);
   assert.equal(r.status, 0, r.stderr);
   assert.equal((r.stdout.match(/^ {2}missing {4}\S+ \(skipped\)$/gm) || []).length, 4);
-  assert.match(r.stdout, /^keys\.json: not there, skipped$/m);
+  assert.match(r.stdout, /^keys\.json: not there, skipped\n/m);
   assert.deepEqual(snapshot(home), before);
 });
 
