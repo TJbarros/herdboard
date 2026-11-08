@@ -1,17 +1,18 @@
 // Run with: node --test
 // scripts/check.sh, spawned under the PATH's sh against a throwaway copy of the repository in a
 // temp directory: its own mods, its own tests, and a PATH holding only stand-ins (a herdr-app
-// that fails a mod with a FAIL file in it, the real node, dirname). It never touches the real
-// repo's tests (that would run this file again) and never installs anything.
+// that fails a mod with a FAIL file in it, the real node, dirname; on Windows, also the shell's
+// folder). It never touches the real repo's tests (that would run this file again) and never
+// installs anything.
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, copyFileSync, symlinkSync, readFileSync,
+import { mkdtempSync, mkdirSync, writeFileSync, copyFileSync, readFileSync,
   existsSync, rmSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SH, EXE, which } from "./runtime/which.mjs";
+import { SH, EXE, which, linkTool, standInPath, shellPwd } from "./runtime/which.mjs";
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), "..", "scripts", "check.sh");
 const temps = [];
@@ -52,9 +53,9 @@ function makeBin(tools = ["herdr-app", "node"]) {
       `echo "check passed: $2"\n`);
     chmodSync(join(bin, "herdr-app"), 0o755);
   }
-  if (tools.includes("node")) symlinkSync(process.execPath, join(bin, `node${EXE}`));
-  symlinkSync(which("dirname"), join(bin, `dirname${EXE}`));
-  return { bin, log };
+  if (tools.includes("node")) linkTool(process.execPath, join(bin, `node${EXE}`));
+  linkTool(which("dirname"), join(bin, `dirname${EXE}`));
+  return { bin: standInPath(bin), log };
 }
 
 // Runs the repo's check.sh from an unrelated working directory with an explicit environment.
@@ -71,6 +72,12 @@ function check(root, bin) {
 
 const checked = (log) => existsSync(log) ? readFileSync(log, "utf8").trim().split("\n") : [];
 
+// The mods' paths as check.sh hands them to herdr-app: "$ROOT/mods/<name>", ROOT from its pwd.
+const modPaths = (root, names) => {
+  const sroot = shellPwd(root);
+  return names.map((m) => `${sroot}/mods/${m}`);
+};
+
 // The step names listed in the final summary after "Failed steps:" (none if it isn't there).
 const failedSteps = (out) => {
   const at = out.lastIndexOf("Failed steps:");
@@ -85,7 +92,7 @@ test("checks every mod and runs the tests, exit 0 when all pass", () => {
   const { code, out } = check(root, bin);
   assert.equal(code, 0, out);
   assert.deepEqual(checked(log).sort(),
-    ["alpha", "beta", "gamma"].map((m) => join(root, "mods", m)));
+    modPaths(root, ["alpha", "beta", "gamma"]));
   assert.match(out, /node --test/);
   assert.match(out, /all checks passed/i);
 });
@@ -96,7 +103,7 @@ test("a broken mod fails its step, the other mods and the tests still run", () =
   const { code, out } = check(root, bin);
   assert.notEqual(code, 0, out);
   assert.deepEqual(checked(log).sort(),
-    ["alpha", "beta", "gamma"].map((m) => join(root, "mods", m)));
+    modPaths(root, ["alpha", "beta", "gamma"]));
   // The sample test's own trace and check.sh's verdict, not the node --test reporter's summary:
   // Node 22 prints it as TAP ("# pass 1") when stdout isn't a terminal, Node 24 as "ℹ pass 1".
   assert.ok(existsSync(join(root, "ran")), "node --test ran after the failing mod");

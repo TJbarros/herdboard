@@ -9,7 +9,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { SH, which } from "./which.mjs";
+import { SH, which, linkTool, standInPath } from "./which.mjs";
 
 export const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 export const TMP = fs.realpathSync(os.tmpdir());
@@ -49,12 +49,13 @@ export const MODS = (() => {
   return r.stdout.split(" ");
 })();
 
-// Every folder and every file's sha256 under `dir`, to tell whether anything changed.
+// Every folder and every file's sha256 under `dir`, to tell whether anything changed. Keys are
+// relative paths with "/" on every platform (path.join would give mods\herdboard on Windows).
 export function snapshot(dir) {
   const out = {};
   const walk = rel => {
     for (const e of fs.readdirSync(path.join(dir, rel), { withFileTypes: true })) {
-      const r = path.join(rel, e.name);
+      const r = rel === "" ? e.name : `${rel}/${e.name}`;
       if (e.isDirectory()) { out[r + "/"] = "dir"; walk(r); }
       else out[r] = createHash("sha256").update(fs.readFileSync(path.join(dir, r))).digest("hex");
     }
@@ -63,12 +64,22 @@ export function snapshot(dir) {
   return out;
 }
 
-// A PATH folder with every tool the scripts use except python3.
+// A PATH with every tool the scripts use except python3.
 export function pathWithoutPython() {
   const bin = tmpdir();
   for (const tool of ["dirname", "basename", "cp", "mkdir", "cmp", "grep", "tr", "cat", "rm"]) {
     const found = which(tool);
-    if (found) fs.symlinkSync(found, path.join(bin, path.basename(found)));
+    if (found) linkTool(found, path.join(bin, path.basename(found)));
   }
-  return bin;
+  return standInPath(bin);
 }
+
+// `s` as a RegExp source matching it literally (RegExp.escape is Node 24+): temp paths can hold
+// parentheses, and Windows ones backslashes.
+export const escapeRegExp = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Whether this process may create symlinks: Windows without Developer Mode may not.
+export const canSymlink = (() => {
+  const d = tmpdir("herdboard-symlink-probe-");
+  try { fs.symlinkSync(d, path.join(d, "link")); return true; } catch { return false; }
+})();

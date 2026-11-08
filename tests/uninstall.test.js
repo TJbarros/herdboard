@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { REPO, MODS, tmpdir, sh, snapshot, pathWithoutPython } from "./runtime/sandbox.mjs";
+import { REPO, MODS, tmpdir, sh, snapshot, pathWithoutPython, escapeRegExp, canSymlink } from "./runtime/sandbox.mjs";
 
 const INSTALL = path.join(REPO, "scripts", "install.sh");
 const UNINSTALL = path.join(REPO, "scripts", "uninstall.sh");
@@ -173,7 +173,7 @@ test("a keys.json that isn't a JSON object stops it before anything is removed, 
     for (const args of [[], ["--dry-run"]]) {
       const r = run(home, args);
       assert.notEqual(r.status, 0, `${broken} ${args}`);
-      assert.match(r.stderr, new RegExp(`^keys\\.json is not a JSON object .*: fix or remove ${home}/keys\\.json, then run this again; nothing was removed\\n$`));
+      assert.match(r.stderr, new RegExp(`^keys\\.json is not a JSON object .*: fix or remove ${escapeRegExp(`${home}/keys.json`)}, then run this again; nothing was removed\\n$`));
       assert.equal(r.stdout, "");
       assert.deepEqual(snapshot(home), before);
     }
@@ -241,7 +241,8 @@ test("without python3 it removes the files and says to remove the keys section b
   assert.equal(fs.existsSync(path.join(home, "keys.json.before-herdboard-uninstall")), false);
 });
 
-test("a mod folder that is a symlink is unlinked, not emptied", () => {
+test("a mod folder that is a symlink is unlinked, not emptied",
+  { skip: !canSymlink && "this process may not create symlinks (Windows without Developer Mode)" }, () => {
   const home = tmpdir();
   install(home);
   const elsewhere = tmpdir();

@@ -6,7 +6,8 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { REPO, COMMON, MODS, tmpdir, sh, snapshot, pathWithoutPython } from "./runtime/sandbox.mjs";
+import { shellPwd } from "./runtime/which.mjs";
+import { REPO, COMMON, MODS, tmpdir, sh, snapshot, pathWithoutPython, escapeRegExp } from "./runtime/sandbox.mjs";
 
 const INSTALL = path.join(REPO, "scripts", "install.sh");
 
@@ -40,7 +41,7 @@ test("a dry run on an empty home plans every file as new and keys.json as create
   const home = tmpdir();
   const r = run(home, ["--dry-run"]);
   assert.equal(r.status, 0, r.stderr);
-  assert.match(r.stdout, new RegExp(`^Herdr home: ${home}$`, "m"));
+  assert.match(r.stdout, new RegExp(`^Herdr home: ${escapeRegExp(home)}$`, "m"));
   assert.deepEqual(plan(r.stdout), every("new"));
   assert.match(r.stdout, /^keys\.json: would be created with layout:herdboard$/m);
   assert.deepEqual(snapshot(home), {});
@@ -114,10 +115,11 @@ test("a plain install copies every file, merges the keys section with a backup a
 test("without python3 a dry run says to add the keys section by hand, as a real install does", () => {
   const home = tmpdir();
   const PATH = pathWithoutPython();
-  const byHand = `python3 not found: add the section in keys.json from ${REPO}/keys.json by hand`;
+  // The script prints its ROOT as its shell sees it (/tmp/... under Git Bash), not as Node does.
+  const byHand = `python3 not found: add the section in keys.json from ${shellPwd(REPO)}/keys.json by hand`;
   const dry = run(home, ["--dry-run"], { PATH });
   assert.equal(dry.status, 0, dry.stderr);
-  assert.match(dry.stdout, new RegExp(`^${byHand.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "m"));
+  assert.match(dry.stdout, new RegExp(`^${escapeRegExp(byHand)}$`, "m"));
   assert.deepEqual(snapshot(home), {});
   const real = run(home, [], { PATH });
   assert.equal(real.status, 0, real.stderr);
