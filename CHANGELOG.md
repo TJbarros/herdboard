@@ -4,6 +4,11 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+- `scripts/install.sh` and `scripts/uninstall.sh` write `keys.json` with LF line
+  endings only and print LF-only lines on every platform. Under Git Bash with a
+  Windows Python they wrote every line of `keys.json` and their own messages with
+  CRLF. The `keys.json` step now needs Python 3.7 or later.
+
 ## [1.2.0] - 2026-11-07
 
 - A blocked card's question shows the command a Claude Code permission dialog asks

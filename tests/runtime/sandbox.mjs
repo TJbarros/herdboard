@@ -3,6 +3,7 @@
 // through. Never the real Herdr home: without HERDR_APP_HOME (or with it empty) the scripts
 // resolve the real one and install into it, update it or remove Herdboard from it.
 import { after } from "node:test";
+import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
@@ -83,3 +84,12 @@ export const canSymlink = (() => {
   const d = tmpdir("herdboard-symlink-probe-");
   try { fs.symlinkSync(d, path.join(d, "link")); return true; } catch { return false; }
 })();
+
+// `file`'s text, after checking it uses LF only and ends with exactly one "\n". JSON.parse treats
+// "\r" as whitespace, so it alone can't tell a keys.json the scripts rewrote with CRLF.
+export function readLf(file) {
+  const text = fs.readFileSync(file, "utf8");
+  assert.doesNotMatch(text, /\r/, `${file} has a CR`);
+  assert.match(text, /[^\n]\n$/, `${file} doesn't end with exactly one newline`);
+  return text;
+}

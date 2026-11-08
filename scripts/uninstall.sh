@@ -26,6 +26,9 @@ KEYS="${DEST:?}/keys.json"
 if command -v python3 >/dev/null 2>&1; then
   KEYS_DONE=$(python3 - "$KEYS" "$DRY_RUN" "layout:${HERDBOARD_LAYOUT:?}" <<'PY'
 import json, shutil, sys, os
+# LF only on every platform: Windows Python's text mode would write and print "\r\n".
+sys.stdout.reconfigure(newline="\n")
+sys.stderr.reconfigure(newline="\n")
 keys, dry_run, section = sys.argv[1], sys.argv[2] == "1", sys.argv[3]
 backup = keys + ".before-herdboard-uninstall"
 shown = f"(backup: {os.path.basename(backup)})"
@@ -51,8 +54,9 @@ if dry_run:
     sys.exit(0)
 shutil.copy(keys, backup)
 if mine:
-    json.dump(mine, open(keys, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    open(keys, "a", encoding="utf-8").write("\n")
+    with open(keys, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(mine, f, ensure_ascii=False, indent=2)
+        f.write("\n")
     print(f"keys.json: removed '{section}' {shown}")
 else:
     os.remove(keys)

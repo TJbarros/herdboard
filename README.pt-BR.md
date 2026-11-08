@@ -43,9 +43,10 @@ O `scripts/install.sh` copia o Herdboard para a pasta do Herdr: rodando no WSL, 
 do Windows (`C:\Users\<você>\.config\herdr-app`); rodando em qualquer outro lugar,
 para `~/.config/herdr-app`, a pasta padrão do Herdr. Defina `HERDR_APP_HOME` para usar
 outra pasta. Ele só copia arquivos e adiciona a seção `layout:herdboard` ao
-`keys.json` (com backup) quando ela ainda não existe; essa etapa precisa do Python 3,
-e sem ele o script avisa para você adicionar a seção manualmente. É um script de
-shell POSIX (`sh`); no Windows, foi testado pelo WSL e pelo Git Bash.
+`keys.json` (com backup) quando ela ainda não existe; essa etapa precisa do Python
+3.7 ou mais recente, e sem ele o script avisa para você adicionar a seção
+manualmente. É um script de shell POSIX (`sh`); no Windows, foi testado pelo WSL e
+pelo Git Bash.
 
 Para ver antes o que ele faria, rode `scripts/install.sh --dry-run`: ele mostra a pasta
 do Herdr que encontrou, cada arquivo que copiaria (**new**, novo; **overwrite**,

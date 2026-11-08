@@ -42,9 +42,9 @@ scripts/install.sh
 Windows one (`C:\Users\<you>\.config\herdr-app`); run anywhere else, into
 `~/.config/herdr-app`, Herdr's default home. Set `HERDR_APP_HOME` to use another
 folder. It only copies files, and adds the `layout:herdboard` section to `keys.json`
-(with a backup) when it isn't there; that step needs Python 3, and without it the
-script tells you to add the section by hand. It is a POSIX shell script (`sh`); on
-Windows it was tested from WSL and from Git Bash.
+(with a backup) when it isn't there; that step needs Python 3.7 or later, and
+without it the script tells you to add the section by hand. It is a POSIX shell
+script (`sh`); on Windows it was tested from WSL and from Git Bash.
 
 To see first what it would do, run `scripts/install.sh --dry-run`: it prints the Herdr
 home it found, every file it would copy (**new**, **overwrite** or **unchanged**) and
