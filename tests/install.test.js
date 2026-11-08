@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { shellPwd } from "./runtime/which.mjs";
-import { REPO, COMMON, MODS, tmpdir, sh, snapshot, pathWithoutPython, escapeRegExp } from "./runtime/sandbox.mjs";
+import { REPO, COMMON, MODS, tmpdir, sh, snapshot, pathWithoutPython, escapeRegExp, readLf } from "./runtime/sandbox.mjs";
 
 const INSTALL = path.join(REPO, "scripts", "install.sh");
 
@@ -108,7 +108,7 @@ test("a plain install copies every file, merges the keys section with a backup a
   assert.deepEqual(files, [...INSTALLED, "keys.json", "keys.json.before-herdboard"].sort());
   for (const f of INSTALLED) assert.equal(sha(path.join(home, f)), sha(path.join(REPO, f)), f);
   assert.equal(fs.readFileSync(path.join(home, "keys.json.before-herdboard"), "utf8"), mine);
-  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(home, "keys.json"), "utf8")),
+  assert.deepEqual(JSON.parse(readLf(path.join(home, "keys.json"))),
     { global: {}, ...JSON.parse(fs.readFileSync(path.join(REPO, "keys.json"), "utf8")) });
 });
 

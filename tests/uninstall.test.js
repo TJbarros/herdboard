@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { REPO, MODS, tmpdir, sh, snapshot, pathWithoutPython, escapeRegExp, canSymlink } from "./runtime/sandbox.mjs";
+import { REPO, MODS, tmpdir, sh, snapshot, pathWithoutPython, escapeRegExp, canSymlink, readLf } from "./runtime/sandbox.mjs";
 
 const INSTALL = path.join(REPO, "scripts", "install.sh");
 const UNINSTALL = path.join(REPO, "scripts", "uninstall.sh");
@@ -89,7 +89,7 @@ test("after an install, uninstall removes the layout, the three mods and the key
   assert.deepEqual(rest, kept);
   assert.ok(keys && backup);
   assert.deepEqual(fs.readFileSync(path.join(home, "keys.json.before-herdboard-uninstall")), keysBefore);
-  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(home, "keys.json"), "utf8")), THEIR_KEYS);
+  assert.deepEqual(JSON.parse(readLf(path.join(home, "keys.json"))), THEIR_KEYS);
 });
 
 // The failing removal is an `rm` on PATH ahead of the real one that refuses every call, so the

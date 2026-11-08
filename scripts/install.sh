@@ -50,6 +50,9 @@ KEYS="$DEST/keys.json"
 if command -v python3 >/dev/null 2>&1; then
   python3 - "$ROOT/keys.json" "$KEYS" "$DRY_RUN" "$HERDBOARD_LAYOUT" <<'PY'
 import json, shutil, sys, os
+# LF only on every platform: Windows Python's text mode would write and print "\r\n".
+sys.stdout.reconfigure(newline="\n")
+sys.stderr.reconfigure(newline="\n")
 src, dest, dry_run, layout = sys.argv[1], sys.argv[2], sys.argv[3] == "1", sys.argv[4]
 ours = json.load(open(src, encoding="utf-8"))
 mine = json.load(open(dest, encoding="utf-8")) if os.path.exists(dest) else {}
@@ -68,8 +71,9 @@ if os.path.exists(dest):
     shutil.copy(dest, backup)
 for k in added:
     mine[k] = ours[k]
-json.dump(mine, open(dest, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-open(dest, "a", encoding="utf-8").write("\n")
+with open(dest, "w", encoding="utf-8", newline="\n") as f:
+    json.dump(mine, f, ensure_ascii=False, indent=2)
+    f.write("\n")
 print("keys.json: added " + ", ".join(added) + " (backup: " + os.path.basename(backup) + ")")
 PY
 else
