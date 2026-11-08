@@ -10,6 +10,8 @@ const { default: Herdboard } = await import("../mods/herdboard/main.js");
 const TRUST = readFileSync(new URL("./fixtures/workspace-trust.txt", import.meta.url), "utf8");
 // Native Claude Code 2.1.319 capture at 48 terminal columns.
 const TRUST_NARROW = readFileSync(new URL("./fixtures/workspace-trust-narrow.txt", import.meta.url), "utf8");
+const TRUST_WRAPPED_FOLDER = readFileSync(new URL("./fixtures/workspace-trust-wrapped-folder.txt", import.meta.url), "utf8");
+const WRAPPED_FOLDER = "/tmp/herdboard-p2-path-fixture1/workspace-with-a-long-name/project";
 const flush = async () => { for (let i = 0; i < 5; i++) await new Promise(r => setImmediate(r)); };
 const waits = [], timers = [];
 const cx = { spawn: f => f(cx), notify() {}, stop_propagation() {},
@@ -56,6 +58,28 @@ test("a 48-column trust dialog reaches an answerable card and header count", asy
   herdr.props = { role: "header" }; const header = board(); render(header);
   assert.ok(strings(elements.get("space-s1").children).includes("1"), "the recognised startup is counted");
   assert.deepEqual(keys(), [], "discovery never answers the dialog");
+});
+test("a wrapped workspace path reaches an answerable startup card and header count", async () => {
+  herdr.terminals[0].foreground.cwd = WRAPPED_FOLDER;
+  const b = board(); render(b);
+  await settle(reads().at(-1), TRUST_WRAPPED_FOLDER); render(b);
+  assert.ok(elements.has("agent-t1"), "a wrapped cwd must still expose the startup card");
+  assert.ok(elements.has("yes-t1")); assert.ok(elements.has("no-t1"));
+  herdr.props = { role: "header" }; const header = board(); render(header);
+  assert.ok(strings(elements.get("space-s1").children).includes("1"), "the startup is counted");
+  assert.deepEqual(keys(), [], "discovery never answers the dialog");
+});
+test("a wrapped workspace path with a different cwd stays hidden and uncounted", async () => {
+  herdr.terminals[0].foreground.cwd = WRAPPED_FOLDER.replace("/project", "/other");
+  const b = board(); render(b);
+  await settle(reads().at(-1), TRUST_WRAPPED_FOLDER);
+  for (let i = 0; i < 2; i++) { waits[i].resolve(); await flush(); await settle(reads().at(-1), TRUST_WRAPPED_FOLDER); }
+  render(b);
+  assert.equal(b.asks.t1.visible, false);
+  assert.equal(elements.has("agent-t1"), false);
+  herdr.props = { role: "header" }; const header = board(); render(header);
+  assert.equal(strings(elements.get("space-s1").children).includes("1"), false);
+  assert.deepEqual(keys(), []);
 });
 test("a new trust dialog in a put-away tab returns an answerable card", async () => {
   herdr.spaces[0].tabs[0].settled = true;
@@ -112,6 +136,20 @@ async function finishAnswer(screen = TRUST) {
   }
   assert.fail("answer flow did not finish");
 }
+for (const [target, expected] of [["yes", ["t1", "down", "enter"]], ["no", ["t1", "enter"]]]) {
+  test(`a wrapped workspace path validates its complete cwd before answering ${target}`, async () => {
+    herdr.terminals[0].foreground.cwd = WRAPPED_FOLDER;
+    await showTrust(TRUST_WRAPPED_FOLDER); await click(`${target}-t1`);
+    await finishAnswer(TRUST_WRAPPED_FOLDER);
+    assert.deepEqual(keys(), [expected]);
+  });
+}
+test("a wrapped workspace path sends no keys when only its wrapping changes", async () => {
+  herdr.terminals[0].foreground.cwd = WRAPPED_FOLDER;
+  await showTrust(TRUST_WRAPPED_FOLDER); await click("yes-t1");
+  await finishAnswer(TRUST_WRAPPED_FOLDER.replace("workspace-with\n -a-long-name", "workspace-\n with-a-long-name"));
+  assert.deepEqual(keys(), [], "the full cwd still matches, but the guarded raw identity changed");
+});
 for (const answered of [false, true]) {
   test(`polling the same ${answered ? "answered" : "unanswered"} startup does not undo putting its tab away again`, async t => {
     t.mock.timers.enable({ apis: ["Date"], now: 10000 });

@@ -104,6 +104,45 @@ foi validada no runtime simulado; as verificações reais abaixo são anteriores
 esta correção e não validam esse cenário específico.
 Após a correção, `scripts/check.sh` passou nos três mods e em 173/173 testes Node.
 
+### Wrapped workspace path / Caminho da pasta quebrado
+
+A further P2 was reproduced before the fix: at 48 columns, Claude Code 2.1.319
+also wraps a long workspace path. The parser treated only its first line as the
+folder and compared the continuation as part of the question, rejecting the
+complete dialog before the cwd check. A fresh native tmux capture is stored in
+`tests/fixtures/workspace-trust-wrapped-folder.txt`, with a same-length replacement
+for the temporary directory name to preserve its wrapping.
+
+Recognition now locates the complete known question/explanation and reconstructs
+the preceding path chunks without adding separators. The full path must still
+match the foreground cwd, and the id retains every original line. Regression
+tests cover multiple path lines, card and header discovery, a different cwd,
+Yes/No answers and zero keys when only the path wrapping changes on a fresh read.
+
+```sh
+node --test --test-name-pattern='wrapped workspace path|wrapped workspace paths' tests/ask.test.js tests/startup.test.js
+```
+
+The focused tests failed before the fix and passed after it. The original native
+capture and minimal `/a` + `b` reproduction now pass as well. `scripts/check.sh`
+passed all three mod checks and 190/190 Node tests. Card, header and answer behavior
+were verified in the simulated mod runtime; the real Herdr UI was not rerun for
+this follow-up.
+
+Outro P2 foi reproduzido antes da correção: em 48 colunas, o Claude Code 2.1.319
+também quebra caminhos longos. O parser tratava só a primeira linha como pasta e
+comparava a continuação junto com a pergunta, rejeitando o diálogo antes de
+comparar o cwd. A nova captura nativa preserva a quebra com uma substituição de
+mesmo comprimento no nome do diretório temporário.
+
+O parser agora localiza a pergunta/explicação completas e junta os trechos do
+caminho sem acrescentar separadores. A pasta inteira ainda precisa corresponder
+ao cwd, e as linhas originais continuam no id. Os testes verificam card, contagem,
+respostas e bloqueio por cwd diferente ou mudança da quebra na leitura seguinte.
+Os três checks de mods e os 190 testes passaram. Card, cabeçalho e respostas foram
+validados no runtime simulado; a interface real do Herdr não foi revalidada neste
+acompanhamento.
+
 ### Wrapped explanation and invalidated reads / Explicação quebrada e cache invalidado
 
 Both follow-up P2 findings were reproduced with failing tests before their fixes.

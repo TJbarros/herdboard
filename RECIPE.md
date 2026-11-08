@@ -109,9 +109,11 @@ column, top to bottom:
   no status/report qualifies for discovery. Its lifecycle key includes address,
   terminal creation time, terminal PID, foreground PID and foreground cwd. The
   screen must match the complete captured Claude Code 2.1.319 trust dialog, and
-  its displayed folder must equal that cwd. The question and explanation may wrap
-  across terminal lines; recognition joins them for comparison, while the guarded
-  id keeps those raw lines unchanged. No OSC report is invented. The card's
+  its displayed folder must equal that cwd. The folder, question and explanation
+  may wrap across terminal lines. Recognition locates the complete known prose
+  and joins the preceding folder chunks without adding separators before the cwd
+  comparison. The guarded id keeps all raw lines unchanged. No OSC report is
+  invented. The card's
   `blocked` is a presentation state belonging to this explicit source.
   The board polls eligible terminals about once a second (initial misses retain
   the existing bounded retries); other mod roles never fetch. Unknown screens

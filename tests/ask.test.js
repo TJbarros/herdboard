@@ -7,6 +7,39 @@ import { parseAsk, pickAnswers } from "../mods/herdboard/ask.js";
 // Complete hc read --lines 0 capture, Claude Code 2.1.319 at 200 columns (issue #3).
 const TRUST = readFileSync(new URL("./fixtures/workspace-trust.txt", import.meta.url), "utf8");
 const TRUST_NARROW = readFileSync(new URL("./fixtures/workspace-trust-narrow.txt", import.meta.url), "utf8");
+// Native 48-column capture, with a same-length replacement for the temporary folder name.
+const TRUST_WRAPPED_FOLDER = readFileSync(new URL("./fixtures/workspace-trust-wrapped-folder.txt", import.meta.url), "utf8");
+test("workspace trust reconstructs wrapped workspace paths and keeps their raw identity", () => {
+  const folder = "/tmp/herdboard-p2-path-fixture1/workspace-with-a-long-name/project";
+  const unwrapped = TRUST.replace("<folder>", folder);
+  for (const [screen, expected] of [
+    [TRUST_WRAPPED_FOLDER, folder],
+    [TRUST.replace("<folder>", "/a\n b"), "/ab"],
+    [TRUST.replace("<folder>", "/a/\n b/\n c"), "/a/b/c"],
+    [TRUST.replace("<folder>", "C:\\work\\long-\n project\\repo"), "C:\\work\\long-project\\repo"],
+    [TRUST.replace("<folder>", "/work/my project/\n repo"), "/work/my project/repo"],
+  ]) {
+    const ask = parseAsk(screen);
+    assert.equal(ask.mode, "cursor");
+    assert.equal(ask.folder, expected);
+    assert.equal(ask.text, `Accessing workspace:\n${expected}`);
+    assert.equal(ask.question, parseAsk(TRUST).question);
+    assert.deepEqual(ask.options, parseAsk(TRUST).options);
+    assert.ok(pickAnswers(ask));
+    assert.equal(ask.id, screen.slice(1).trimEnd());
+  }
+  assert.notEqual(parseAsk(TRUST_WRAPPED_FOLDER).id, parseAsk(unwrapped).id);
+  assert.notEqual(parseAsk(TRUST_WRAPPED_FOLDER.replace(" -a-long-name", "  -a-long-name")).id,
+    parseAsk(TRUST_WRAPPED_FOLDER).id, "raw continuation whitespace remains guarded");
+});
+test("wrapped workspace paths still require the complete known trust question and explanation", () => {
+  for (const screen of [
+    TRUST_WRAPPED_FOLDER.replace(" Quick safety check: Is this a project you\n", ""),
+    TRUST_WRAPPED_FOLDER.replace(" review what's in this folder first.", " review something else first."),
+    TRUST_WRAPPED_FOLDER.replace(" execute files here.", ""),
+    TRUST_WRAPPED_FOLDER.replace(" Security guide", " extra context\n Security guide"),
+  ]) assert.equal(pickAnswers(parseAsk(screen)), null);
+});
 test("workspace trust keeps its folder, ordered cursor options and complete raw identity", () => {
   const ask = parseAsk(TRUST);
   assert.equal(ask.mode, "cursor");

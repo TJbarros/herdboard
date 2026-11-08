@@ -48,17 +48,22 @@ function workspaceTrust(raw) {
   const guide = lines.indexOf("Security guide");
   const question = "Quick safety check: Is this a project you created or one you trust? (Like your own code, a well-known open source project, or work from your team). If not, take a moment to review what's in this folder first.";
   const explanation = "Claude Code'll be able to read, edit, and execute files here.";
-  if (lines[1] !== "Accessing workspace:" || !lines[2] || guide < 5 || lines.length !== guide + 4
-    || lines.at(-1) !== "Enter to confirm · Esc to cancel"
-    || lines.slice(3, guide).join(" ") !== `${question} ${explanation}`) return null;
+  // Locate the complete known prose before joining the folder's wrapped chunks. Path wraps
+  // add no separator; question/explanation wraps do. The guarded id still uses raw below.
+  const questionStart = lines.findIndex((_, i) => i >= 3
+    && lines.slice(i, guide).join(" ") === `${question} ${explanation}`);
+  const folder = lines.slice(2, questionStart).join("");
+  if (lines[1] !== "Accessing workspace:" || questionStart < 3 || !folder
+    || guide < questionStart + 2 || lines.length !== guide + 4
+    || lines.at(-1) !== "Enter to confirm · Esc to cancel") return null;
   const rows = lines.slice(guide + 1, guide + 3);
   const options = rows.map((line, index) => ({ index, text: line.replace(/^❯ /, "") }));
   if (rows.filter(l => l.startsWith("❯ ")).length !== 1
     || options.filter(o => o.text === "No, exit").length !== 1
     || options.filter(o => o.text === "Yes, I trust this folder").length !== 1) return null;
-  return { mode: "cursor", dialog: "workspace-trust", folder: lines[2],
+  return { mode: "cursor", dialog: "workspace-trust", folder,
     selectedIndex: rows.findIndex(l => l.startsWith("❯ ")),
-    text: `Accessing workspace:\n${lines[2]}`, question, options,
+    text: `Accessing workspace:\n${folder}`, question, options,
     id: raw.slice(start, end + 1).join("\n") };
 }
 
