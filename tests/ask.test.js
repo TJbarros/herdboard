@@ -19,6 +19,33 @@ const OPTIONS_FOLDER = "/tmp/herdboard-p2-option-fixture1/workspace";
 const TRUST_WRAPPED_HEADINGS = [20, 21].map(columns => readFileSync(
   new URL(`./fixtures/workspace-trust-wrapped-heading-${columns}.txt`, import.meta.url), "utf8"));
 const HEADING_FOLDER = "/tmp/herdboard-p2-heading-fixture00001";
+// Native Claude Code 2.1.319 at 24 columns; the temporary directory replacement has equal length.
+const TRUST_FOLDER_GUIDE = readFileSync(new URL("./fixtures/workspace-trust-folder-guide-24.txt", import.meta.url), "utf8");
+const GUIDE_FOLDER = "/tmp/herdboard-guide-fixture1/xxxxxxxxxxxxx/Security guide";
+test("workspace trust distinguishes a folder named Security guide from the dialog guide", () => {
+  for (const [screen, cwd] of [
+    [TRUST.replace("<folder>", "/a/\n Security guide"), "/a/Security guide"],
+    [TRUST_FOLDER_GUIDE, GUIDE_FOLDER],
+  ]) {
+    const ask = parseAsk(screen, cwd);
+    assert.equal(ask.mode, "cursor");
+    assert.equal(ask.folder, cwd);
+    assert.equal(ask.text, `Accessing workspace:\n${cwd}`);
+    assert.deepEqual(ask.options, parseAsk(TRUST).options);
+    assert.ok(pickAnswers(ask));
+    assert.equal(ask.id, screen.slice(1).trimEnd());
+  }
+});
+test("a folder named Security guide cannot replace missing or altered trust structure", () => {
+  for (const screen of [
+    TRUST_FOLDER_GUIDE.replace("\n Security guide\n\n ❯", "\n\n ❯"),
+    TRUST_FOLDER_GUIDE.replace("\n Security guide\n\n ❯", "\n Other guide\n\n ❯"),
+    TRUST_FOLDER_GUIDE.replace("\n Security guide\n\n ❯", "\n extra\n Security guide\n\n ❯"),
+    TRUST_FOLDER_GUIDE.replace("\n Security guide\n\n ❯", "\n Security guide\n Security guide\n\n ❯"),
+    TRUST_FOLDER_GUIDE.replace(" execute files here.", " execute other files here."),
+  ]) assert.equal(pickAnswers(parseAsk(screen, GUIDE_FOLDER)), null);
+  assert.equal(pickAnswers(parseAsk(TRUST_FOLDER_GUIDE, GUIDE_FOLDER + "/other")), null);
+});
 test("workspace trust consumes its complete wrapped heading and preserves raw identity", () => {
   const wide = parseAsk(TRUST);
   for (const [screen, cwd] of [

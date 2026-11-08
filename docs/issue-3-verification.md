@@ -104,6 +104,79 @@ foi validada no runtime simulado; as verificações reais abaixo são anteriores
 esta correção e não validam esse cenário específico.
 Após a correção, `scripts/check.sh` passou nos três mods e em 173/173 testes Node.
 
+### Folder named Security guide and startup waiting age / Nome da pasta e idade da espera
+
+Both review findings were reproduced with failing tests before their fixes. P2's
+minimal input replaces only the wide fixture's folder with `/a/` followed by a
+`Security guide` row. The real mod then showed no card or header count and left
+the tab put away. Replacing only that name with `Security other` restored parser
+recognition. A fresh native Claude Code 2.1.319 capture at 24 columns reproduced
+the same failure, with two separate `Security guide` rows. It is stored in
+`tests/fixtures/workspace-trust-folder-guide-24.txt`; the temporary directory was
+replaced with equal-length text, preserving every row's length and wrapping.
+
+The cause was selecting the first guide marker before locating the prose/folder
+split. `parseAsk(screen, cwd)` now locates the complete known question and
+explanation before selecting their following guide. Tests require the exact cwd,
+complete structure and unchanged raw identity, restore the put-away tab and
+header count, exercise both cursor answers, and reject a changed raw screen
+before sending keys. The original unmodified native capture also passes cwd,
+answer recognition and raw-identity assertions.
+
+P3's deterministic reproduction recognises a startup at time 10000, advances the
+clock to 71000, and replaces the foreground PID in the same terminal without an
+intervening absence/age cleanup. The newly recognised request displayed the old
+one-minute wait. Inspection confirmed that the request key changed while the
+observation timestamp stayed at 10000; the tab had no timestamp in this minimal
+case. The observation now includes the explicit source lifecycle key, so a new
+terminal creation time, terminal PID, foreground PID or cwd starts its own wait.
+The same lifecycle retains its age through polling and the normal age timer.
+
+An additional failing test demonstrated why startup age must also ignore an
+older tab `changed_at`. The [official Herdr declarations](https://github.com/herdrdev/herdr-app/blob/7fe7ac34fef8a3ee76cb5d2f17bc8d6331e50bd8/defaults/herdr.d.ts)
+define that field as the tab's last state change, not a startup-dialog timestamp.
+Startup now uses its local lifecycle observation; reported agents retain the
+existing Herdr timestamp path. Installed `hc schema --json` (0.1.18) confirmed
+the terminal and foreground identity fields and the meaning of `reported` and
+`status`. The [official Claude hook documentation](https://code.claude.com/docs/en/hooks#workspace-trust)
+confirms that interactive workspace trust precedes settings-file hooks. It does
+not promise stable visual wording or wrapping: the exact 24-column screen is
+native capture evidence, not a documented rendering contract.
+
+```sh
+node --test --test-name-pattern='folder named Security guide|replacement startup lifecycle|waiting time belongs|startup waiting time' tests/ask.test.js tests/startup.test.js
+```
+
+All 13 focused tests pass. Discovery, card/header rendering, tab reactivation and
+answer validation run through the real mod with simulated Herdr/GPUI adapters.
+`scripts/check.sh` passed all three mod checks and 238/238 Node tests.
+The native Claude capture was rerun; the native Herdr UI was not rerun for these
+two findings. Earlier native UI checks below do not establish their UI validation.
+
+Os dois achados foram reproduzidos com testes falhando antes das correções. No P2,
+a linha `Security guide` da pasta era escolhida como estrutura do diálogo antes
+da localização da prosa, escondendo card e contagem e mantendo a aba guardada.
+O caso mínimo e uma captura nova do Claude 2.1.319 em 24 colunas reproduziram o
+defeito. Agora a pergunta e a explicação completas são localizadas primeiro. A
+pasta exata, a estrutura completa e a identidade bruta continuam obrigatórias;
+os testes verificam Sim/Não e nenhuma tecla quando a tela muda antes da resposta.
+
+No P3, o novo PID foi reconhecido no mesmo terminal, mas a observação preservou
+o horário do processo anterior. A idade agora acompanha a identidade explícita
+do ciclo e reinicia quando ela muda, preservando a espera entre releituras do
+mesmo ciclo. Um teste adicional falhou com `changed_at` antigo da aba: conforme
+o contrato oficial do Herdr, esse horário pertence ao estado da aba. Por isso,
+o diálogo inicial usa sua observação local; agentes reportados mantêm o caminho
+de horários do Herdr. O schema do hc e a documentação oficial do Claude foram
+conferidos, sem tratar a aparência capturada como contrato visual estável.
+
+Os 13 testes focados passaram, assim como as verificações de pasta e identidade
+na captura nativa original. `scripts/check.sh` passou nos três mods e nos 238
+testes Node. A execução de card, cabeçalho, aba e respostas usa o
+mod real com adapters Herdr/GPUI simulados. A interface nativa do Herdr não foi
+reexecutada para estes dois achados; as verificações anteriores abaixo não
+validam esses cenários na interface nativa.
+
 ### Wrapped startup heading / Título inicial quebrado
 
 The heading P2 was reproduced with a one-change fixture (`Accessing` followed by

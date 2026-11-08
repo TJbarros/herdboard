@@ -24,6 +24,9 @@ const OPTIONS_FOLDER = "/tmp/herdboard-p2-option-fixture1/workspace";
 const TRUST_WRAPPED_HEADINGS = [20, 21].map(columns => readFileSync(
   new URL(`./fixtures/workspace-trust-wrapped-heading-${columns}.txt`, import.meta.url), "utf8"));
 const HEADING_FOLDER = "/tmp/herdboard-p2-heading-fixture00001";
+// Native Claude Code 2.1.319 at 24 columns; the temporary directory replacement has equal length.
+const TRUST_FOLDER_GUIDE = readFileSync(new URL("./fixtures/workspace-trust-folder-guide-24.txt", import.meta.url), "utf8");
+const GUIDE_FOLDER = "/tmp/herdboard-guide-fixture1/xxxxxxxxxxxxx/Security guide";
 const flush = async () => { for (let i = 0; i < 5; i++) await new Promise(r => setImmediate(r)); };
 const waits = [], timers = [];
 const cx = { spawn: f => f(cx), notify() {}, stop_propagation() {},
@@ -69,6 +72,23 @@ test("a 48-column trust dialog reaches an answerable card and header count", asy
   assert.ok(elements.has("yes-t1")); assert.ok(elements.has("no-t1"));
   herdr.props = { role: "header" }; const header = board(); render(header);
   assert.ok(strings(elements.get("space-s1").children).includes("1"), "the recognised startup is counted");
+  assert.deepEqual(keys(), [], "discovery never answers the dialog");
+});
+for (const [label, screen, folder] of [
+  ["minimal", TRUST.replace("<folder>", "/a/\n Security guide"), "/a/Security guide"],
+  ["native 24 columns", TRUST_FOLDER_GUIDE, GUIDE_FOLDER],
+]) test(`a folder named Security guide restores its put-away card and header count (${label})`, async () => {
+  herdr.spaces[0].tabs[0].settled = true;
+  herdr.terminals[0].foreground.cwd = folder;
+  const b = board(); render(b);
+  await settle(reads().at(-1), screen); render(b);
+  const card = elements.has("agent-t1");
+  const answerable = elements.has("yes-t1") && elements.has("no-t1");
+  herdr.props = { role: "header" }; const header = board(); render(header);
+  assert.deepEqual({ card, answerable, counted: strings(elements.get("space-s1").children).includes("1"),
+    settled: herdr.spaces[0].tabs[0].settled },
+  { card: true, answerable: true, counted: true, settled: false });
+  assert.deepEqual(unsettles(), [{ command: "tab.unsettle", args: { id: "tab1" } }]);
   assert.deepEqual(keys(), [], "discovery never answers the dialog");
 });
 for (const [label, screen, folder] of [
@@ -214,6 +234,8 @@ async function finishAnswer(screen = TRUST) {
   assert.fail("answer flow did not finish");
 }
 for (const [label, folder, screen, rewrapped] of [
+  ["a folder named Security guide", GUIDE_FOLDER, TRUST_FOLDER_GUIDE,
+    TRUST_FOLDER_GUIDE.replace("\n Security guide\n\n Quick", "\n  Security guide\n\n Quick")],
   ...TRUST_WRAPPED_HEADINGS.map((screen, i) => [`a wrapped trust heading at ${20 + i} columns`,
     HEADING_FOLDER, screen, screen.replace("Accessing\n workspace:", "Accessing workspace:")]),
   ["a wrapped workspace path", WRAPPED_FOLDER, TRUST_WRAPPED_FOLDER,
@@ -470,4 +492,31 @@ test("startup waiting time survives the normal age timer", async t => {
   const b = await showTrust(); t.mock.timers.tick(61000);
   timers.find(t => t.ms === 30000).f(cx); render(b);
   assert.ok(strings(elements.get("agent-t1").children).includes("esperando há 1 min"));
+});
+for (const [field, replace] of [
+  ["terminal creation", t => { t.created_ms = 2000; }],
+  ["terminal process", t => { t.pid = 99; }],
+  ["foreground process", t => { t.foreground.pid = 99; }],
+  ["foreground folder", t => { t.foreground.cwd = "/other"; }],
+]) test(`a replacement startup lifecycle starts its own waiting clock (${field})`, async t => {
+  t.mock.timers.enable({ apis: ["Date"], now: 10000 });
+  const b = await showTrust();
+  t.mock.timers.tick(61000); render(b);
+  assert.ok(strings(elements.get("agent-t1").children).includes("esperando há 1 min"));
+  replace(herdr.terminals[0]);
+  const screen = TRUST.replace("<folder>", herdr.terminals[0].foreground.cwd);
+  render(b); await settle(reads().at(-1), screen); render(b);
+  assert.ok(strings(elements.get("agent-t1").children).includes("esperando há <1 min"),
+    "the replacement process must not inherit the previous startup's minute of waiting");
+});
+test("startup waiting time belongs to its source rather than the tab's earlier state change", async t => {
+  t.mock.timers.enable({ apis: ["Date"], now: 71000 });
+  herdr.spaces[0].tabs[0].changed_at = 10000;
+  const b = await showTrust();
+  assert.ok(strings(elements.get("agent-t1").children).includes("esperando há <1 min"),
+    "the tab's previous state change is not the new trust dialog's waiting time");
+  t.mock.timers.tick(61000); render(b);
+  await settle(reads().at(-1)); render(b);
+  assert.ok(strings(elements.get("agent-t1").children).includes("esperando há 1 min"),
+    "polling the same startup must preserve its waiting clock");
 });

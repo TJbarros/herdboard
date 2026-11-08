@@ -4,6 +4,12 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+- A workspace folder named `Security guide` can wrap onto its own row without
+  hiding its trust card, header count or put-away tab. Recognition locates the
+  complete known prose before the dialog's guide and preserves the raw id.
+- Startup waiting time starts again when the terminal/process/folder lifecycle
+  changes, even if the old source never disappears between polls. It uses that
+  source's own clock rather than the tab's earlier state-change timestamp.
 - Workspace-trust headings wrapped at 20–21 terminal columns are recognised before
   locating the folder, restoring the card, header count and put-away tab. Answer
   validation still requires the complete raw dialog, including heading wrapping.

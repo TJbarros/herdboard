@@ -114,8 +114,9 @@ column, top to bottom:
   Recognition consumes the complete known heading before locating the folder.
   Only the footer lines after
   the two options are joined for comparison with the complete known footer.
-  Recognition locates the complete known prose
-  and matches the preceding folder chunks against the known cwd in order. Only
+  Recognition locates the complete known prose before selecting the following
+  `Security guide` marker; that same text can be a wrapped folder chunk. It
+  matches the preceding folder chunks against the known cwd in order. Only
   at a path wrap may spaces be restored from the cwd; characters and spacing
   inside each chunk must match exactly. This distinguishes word wraps from
   mid-name breaks. Discovery and answer validation both supply that cwd to
@@ -126,6 +127,9 @@ column, top to bottom:
   the existing bounded retries); other mod roles never fetch. Unknown screens
   stay off the board. Only recognised lifecycle keys are shared with the header
   for its counts and space indicator. An ended source drops its cache.
+  Waiting time is observed per startup lifecycle, independent of the tab's
+  earlier state-change timestamp; a new lifecycle starts a new clock even when
+  the terminal address and presentation status stay the same between polls.
   First recognition brings its current tab back with `tab.unsettle` if put away,
   without changing focus. Recognition is remembered across polls and temporarily
   missing screens, separately from the read cache that answer validation can

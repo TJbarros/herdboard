@@ -51,16 +51,17 @@ function workspaceTrust(raw, cwd) {
   let title = lines[1] ?? "", folderStart = 2;
   while (folderStart < lines.length && heading.startsWith(title + " ")) title += " " + lines[folderStart++];
   if (title !== heading) return null;
-  const guide = lines.indexOf("Security guide");
   const question = "Quick safety check: Is this a project you created or one you trust? (Like your own code, a well-known open source project, or work from your team). If not, take a moment to review what's in this folder first.";
   const explanation = "Claude Code'll be able to read, edit, and execute files here.";
-  // Locate the complete known prose before reconstructing the folder's wrapped chunks.
+  const prose = `${question} ${explanation}`;
+  // Locate the complete known prose before the guide: a folder chunk can also be "Security guide".
   // The cwd resolves word wraps versus mid-name breaks. The guarded id still uses raw below.
   const questionStart = lines.findIndex((_, i) => i > folderStart
-    && lines.slice(i, guide).join(" ") === `${question} ${explanation}`);
+    && lines.slice(i).join(" ").startsWith(prose + " "));
+  const guide = lines.indexOf("Security guide", questionStart + 1);
   const folder = workspaceFolder(lines.slice(folderStart, questionStart), cwd);
   if (questionStart <= folderStart || !folder
-    || guide < questionStart + 2) return null;
+    || guide < questionStart + 2 || lines.slice(questionStart, guide).join(" ") !== prose) return null;
   // Options can occupy more than two physical rows. Consume each complete known label before
   // reading the footer; normalise recognition only, preserving the cursor and raw id below.
   const labels = ["No, exit", "Yes, I trust this folder"], options = [];

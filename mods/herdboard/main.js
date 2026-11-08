@@ -249,11 +249,16 @@ export default class Herdboard extends View {
   }
   below(px) { return this.w > 0 && this.w < px; }
 
-  // How long the agent has been in its status. Herdr's own times (per tab) survive restarts;
-  // before anything changes since the app started, fall back to when this board first saw it.
+  // How long the agent has been in its status. Reported agents use Herdr's per-tab times;
+  // otherwise observe locally, with startup waits belonging to their process lifecycle.
   since(a, tab) {
     const old = this.observed[a.address];
-    if (!old || old.status !== a.status) this.observed[a.address] = { status: a.status, at: Date.now() };
+    const source = a.source?.key;
+    if (!old || old.status !== a.status || old.source !== source) {
+      this.observed[a.address] = { status: a.status, source, at: Date.now() };
+    }
+    // Startup has no reported status clock: its wait belongs to this lifecycle, not the tab.
+    if (source) return this.observed[a.address].at;
     // Herdr keeps times per tab: trust them only when this agent is the tab's only one.
     if (tab && this.perTab?.get(a.tab) > 1) return this.observed[a.address].at;
     const herdr = a.status === "working" ? (tab?.working_since ?? tab?.changed_at) : tab?.changed_at;
