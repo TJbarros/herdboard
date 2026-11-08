@@ -18,20 +18,47 @@ const OPTION = /^(\s*(?:[❯>]\s*)?(\d+)\.\s+)(\S.*)$/;
 //   is in doubt (see requestId).
 export function parseAsk(screen) {
   const raw = String(screen ?? "").split(/\r?\n/);
+  const trust = workspaceTrust(raw);
+  if (trust) return trust;
   const all = raw.map(clean);
   let q = -1;
   for (let i = all.length - 1; i >= 0; i--) if (isQuestion(all[i])) { q = i; break; }
-  if (q < 0) return { text: "", question: "", options: [], id: "" };
+  if (q < 0) return { mode: "numbered", text: "", question: "", options: [], id: "" };
   const before = all.slice(0, q).filter(l => l && !isRule(l) && !/^[❯>]\s*$/.test(l));
   // Keep the end: the question itself matters more than the lines leading to it.
   const text = [...before.slice(-2), all[q]].join("\n");
   const { options, end, optionLines } = optionsAfter(raw, q);
   return {
+    mode: "numbered",
     text: text.length > 180 ? "…" + text.slice(-179) : text,
     question: all[q],
     options,
     id: requestId(raw, all, q, end, optionLines),
   };
+}
+
+// The captured Claude Code 2.1.319 startup dialog, not an arbitrary Yes/No menu. Require the
+// complete screen, including its explanation and confirmation footer. Its raw identity keeps
+// the cursor: unlike a digit shortcut, cursor movement changes what Enter would confirm.
+function workspaceTrust(raw) {
+  const start = raw.findIndex(l => l.trim());
+  const end = raw.findLastIndex(l => l.trim());
+  if (start < 0 || !/^─{3,}\s*$/.test(raw[start])) return null;
+  const lines = raw.slice(start, end + 1).map(l => l.trim()).filter(Boolean);
+  const guide = lines.indexOf("Security guide");
+  if (lines[1] !== "Accessing workspace:" || !lines[2] || guide < 5 || lines.length !== guide + 4
+    || lines.at(-1) !== "Enter to confirm · Esc to cancel"
+    || lines[guide - 1] !== "Claude Code'll be able to read, edit, and execute files here."
+    || lines.slice(3, guide - 1).join(" ") !== "Quick safety check: Is this a project you created or one you trust? (Like your own code, a well-known open source project, or work from your team). If not, take a moment to review what's in this folder first.") return null;
+  const rows = lines.slice(guide + 1, guide + 3);
+  const options = rows.map((line, index) => ({ index, text: line.replace(/^❯ /, "") }));
+  if (rows.filter(l => l.startsWith("❯ ")).length !== 1
+    || options.filter(o => o.text === "No, exit").length !== 1
+    || options.filter(o => o.text === "Yes, I trust this folder").length !== 1) return null;
+  return { mode: "cursor", dialog: "workspace-trust", folder: lines[2],
+    selectedIndex: rows.findIndex(l => l.startsWith("❯ ")),
+    text: `Accessing workspace:\n${lines[2]}`, question: lines.slice(3, guide - 1).join(" "), options,
+    id: raw.slice(start, end + 1).join("\n") };
 }
 
 // The numbered options after the question ("❯ 1. Yes", "4. No"), in order 1, 2, 3…, and the
@@ -87,7 +114,14 @@ function requestId(raw, all, q, end, optionLines) {
 
 // The options a Yes / No button answers: the ones whose text is exactly "Yes" and "No".
 // Null unless both are there, once each, with a one-key digit (hc keys presses one key).
-export function pickAnswers(options) {
+export function pickAnswers(ask) {
+  const options = Array.isArray(ask) ? ask : ask?.options;
+  if (ask?.mode === "cursor") {
+    if (ask.dialog !== "workspace-trust" || !ask.id || ![0, 1].includes(ask.selectedIndex) || options?.length !== 2) return null;
+    const yes = options.find(o => o.text === "Yes, I trust this folder");
+    const no = options.find(o => o.text === "No, exit");
+    return yes && no ? { yes, no } : null;
+  }
   const only = (label) => {
     const found = (options ?? []).filter(o => o.text === label);
     return found.length === 1 && found[0].n >= 1 && found[0].n <= 9 ? found[0] : null;

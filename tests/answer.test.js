@@ -104,6 +104,13 @@ beforeEach(() => {
   herdr.terminals = [{ address: "t1", report: { kind: "permission" } }];
 });
 
+test("More stays open across a full board render while startup discovery runs", async () => {
+  const b = board(); herdr.agents = [blocked(1)];
+  b.render(cx); await settle(reads().at(-1), screen("touch /tmp/a")); b.render(cx);
+  clicks.get("more-trigger-t1")({}, cx); await flush(); b.render(cx);
+  assert.equal(popovers.get("more-t1").props.open[0], true);
+});
+
 test("Yes types the Yes digit once the fresh read shows the same dialog", async () => {
   const b = board();
   herdr.agents = [blocked(1)];

@@ -55,8 +55,18 @@ uma opção faz a mesma conferência e aperta só o dígito dela. O menu fecha d
 escolha, com Escape, ao clicar fora ou quando o card sai de Precisa de você ou recebe
 um novo pedido. Depois de qualquer resposta, os três controles ficam apagados até o
 status ou o pedido do agente mudar, então um segundo clique não digita nada. Mais…
-só aparece quando há outras opções além de Sim / Não. Para pedidos sem um par
+só aparece quando há outras opções além de Sim / Não. Para outros pedidos sem um par
 Yes / No simples, use **Abrir e responder**.
+
+**Confiança na pasta ao iniciar.** A tela reconhecida do Claude Code com o título
+"Accessing workspace:" também ganha um card, antes mesmo do primeiro status do
+agente. O card mostra a pasta: **Sim** escolhe "Yes, I trust this folder"; **Não**
+escolhe "No, exit". Cada clique move da linha selecionada até a escolha e confirma
+com Enter, sem atalho numérico. A dica mostra a escolha real. Se a pasta, a tela
+completa, o cursor ou o processo Claude mudou, o clique não envia nada. As duas
+respostas ficam desabilitadas depois do primeiro envio. Só a tela completa
+reconhecida, num terminal visível com Claude em primeiro plano e ainda sem status
+reportado, pode ganhar esses botões; outros terminais ou menus não são promovidos.
 
 Em uma coluna estreita, passe o mouse sobre o tempo de espera cortado para lê-lo
 por completo.
@@ -137,7 +147,10 @@ Layout** lista todos.
   depois e, de novo, 1,5 s depois disso, só enquanto o agente continuar bloqueado.
   Lê de novo quando você clica em Sim / Não ou escolhe uma opção de Mais…, e então executa `hc keys <terminal>
   <dígito>`; a busca executa `hc machine ls`, como a busca original do Herdr; o menu de
-  nova aba pergunta ao Herdr quais agentes estão instalados. Nenhum mod baixa nada
+  nova aba pergunta ao Herdr quais agentes estão instalados. A descoberta inicial
+  também lê os terminais Claude elegíveis aproximadamente a cada segundo enquanto
+  o quadro está visível; uma resposta inicial consulta `hc get` antes e depois da
+  leitura da tela e envia as setas e o Enter juntos. Nenhum mod baixa nada
   da internet nem lê seus arquivos.
 - A janela do Espiar e a barra lateral são do próprio Herdr e ficam em inglês.
 - O Herdr não permite mudar a pasta registrada de um espaço depois de criado; o

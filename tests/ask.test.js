@@ -1,7 +1,45 @@
 // Run with: node --test
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { parseAsk, pickAnswers } from "../mods/herdboard/ask.js";
+
+// Complete hc read --lines 0 capture, Claude Code 2.1.319 at 200 columns (issue #3).
+const TRUST = readFileSync(new URL("./fixtures/workspace-trust.txt", import.meta.url), "utf8");
+test("workspace trust keeps its folder, ordered cursor options and complete raw identity", () => {
+  const ask = parseAsk(TRUST);
+  assert.equal(ask.mode, "cursor");
+  assert.equal(ask.dialog, "workspace-trust");
+  assert.equal(ask.folder, "<folder>");
+  assert.equal(ask.selectedIndex, 0);
+  assert.deepEqual(ask.options, [{ index: 0, text: "No, exit" }, { index: 1, text: "Yes, I trust this folder" }]);
+  assert.equal(ask.id, TRUST.slice(1).trimEnd());
+  assert.equal(ask.text, "Accessing workspace:\n<folder>");
+  assert.deepEqual(pickAnswers(ask), { yes: ask.options[1], no: ask.options[0] });
+  assert.equal(pickAnswers(ask.options), null, "trust labels alone are not a recognised dialog");
+});
+test("trust recognition rejects incomplete, ambiguous and unrelated cursor menus", () => {
+  for (const screen of [TRUST.replace(" ❯ No, exit", "   No, exit"),
+    TRUST.replace("   Yes, I trust this folder", " ❯ Yes, I trust this folder"),
+    TRUST.replace("   Yes, I trust this folder\n", ""),
+    TRUST.replace("Enter to confirm · Esc to cancel", ""),
+    TRUST.replace("─".repeat(200), ""),
+    TRUST.replace("Accessing workspace:", "Something else:"),
+    TRUST.replace("Yes, I trust this folder", "Yes, allow everything"),
+    TRUST + "More unrelated content\n", "❯ No, exit\n  Yes, I trust this folder\n"]) {
+    const ask = parseAsk(screen);
+    assert.equal(pickAnswers(ask), null);
+    assert.notEqual(ask.mode, "cursor");
+  }
+});
+test("trust identity includes raw folder context, whitespace, options, footer and cursor", () => {
+  const id = parseAsk(TRUST).id;
+  for (const screen of [TRUST.replace("<folder>", "<other folder>"),
+    TRUST.replace("<folder>", "<folder> "),
+    TRUST.replace(" ❯ No, exit\n   Yes, I trust this folder", "   No, exit\n ❯ Yes, I trust this folder"),
+    TRUST.replace(" ❯ No, exit\n   Yes, I trust this folder", "   Yes, I trust this folder\n ❯ No, exit"),
+    TRUST.replace("Security guide", " Security guide")]) assert.notEqual(parseAsk(screen).id, id);
+});
 
 // Claude Code v2.1.319 permission dialog, from `hc read <t> --lines 0` (issue #1).
 const FIXTURE = [

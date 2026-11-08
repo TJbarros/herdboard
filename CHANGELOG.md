@@ -4,6 +4,11 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+- Claude Code's recognised workspace-trust screen appears in Needs you before its
+  first status report, using a separate terminal/process lifecycle. Yes trusts the
+  displayed folder; No exits. Cursor answers send the required arrows and Enter
+  together after rechecking the complete screen, cursor and source. Numbered
+  permissions still send only their digit.
 - Permission cards with **Yes** / **No** offer the dialog's other options in
   **More…** (*Mais…*), with the agent's full text in each tooltip. Choosing one
   checks the same whole dialog on a fresh screen read and presses only its digit;
