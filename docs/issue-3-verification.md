@@ -187,6 +187,52 @@ bloqueio quando apenas a quebra muda. Os três checks dos mods e os 199 testes
 passaram. A captura nativa foi reproduzida no runtime simulado do mod; a interface
 real do Herdr não foi revalidada nesta correção.
 
+### Wrapped confirmation footer / Rodapé de confirmação quebrado
+
+The footer P2 was reproduced before the fix with both a minimal change to the
+200-column fixture and a fresh native Claude Code 2.1.319 tmux capture at 30 columns.
+The footer becomes `Enter to confirm · Esc to` followed by `cancel`. Recognition
+required one footer line and an exact total line count, hiding the card and its
+header count. Joining only the footer restored recognition with the same cwd.
+The capture is saved as `tests/fixtures/workspace-trust-wrapped-footer.txt`, with
+a same-length replacement for the temporary directory segment.
+
+The official [Claude workspace-trust documentation](https://code.claude.com/docs/en/hooks#workspace-trust)
+confirms that settings-file hooks wait for trust in interactive sessions. The
+[Herdr read reference](https://github.com/herdrdev/herdr-core/blob/master/docs/commands.md#hc-read)
+defines `--lines 0` as the visible screen without extra history. These contracts
+support this separate startup source; they do not specify a stable visual footer
+format. The exact 30-column wrapping is capture evidence, not a documented API.
+
+Recognition now joins only the lines after the two cursor options and requires
+the complete known footer. The id retains every raw line. Seven new tests cover
+recognition, card/header discovery, Yes/No, rejection of incomplete or extra text,
+and zero keys if footer wrapping changes before the fresh answer read.
+`scripts/check.sh` passed all three mod checks and 206/206 Node tests.
+
+The real Herdr 0.1.13 UI was rerun in an isolated home/core/display. `hc get`
+confirmed 30 columns; swapping only the installed parser between the pre-fix version
+and the fix hid and restored the card and header count for the same live dialog. PT/EN controls
+were inspected at 640×1050 and 1280×1050. With Yes selected in the terminal, clicking
+No on the card exited Claude to bash and cleared the card/counts. No trust was
+accepted; the Yes path remains covered by the simulated runtime tests.
+
+O P2 foi reproduzido antes da correção no caso mínimo e em uma nova captura nativa
+em 30 colunas. O parser exigia uma única linha de rodapé e uma quantidade fixa de
+linhas; por isso ocultava card e contagem. Juntar somente o rodapé recuperou o
+reconhecimento com o mesmo cwd. A fixture preserva as quebras nativas e usa uma
+substituição de mesmo comprimento no nome temporário da pasta.
+
+A documentação oficial confirma a espera por confiança antes dos hooks de settings
+em sessões interativas e o contrato de leitura da tela pelo Herdr. Ela não define
+o formato visual exato do rodapé: a quebra em 30 colunas foi verificada na captura.
+A correção exige o texto completo conhecido, mantém as linhas brutas no id e
+bloqueia a resposta quando a quebra muda na releitura. Os três checks dos mods e
+206 testes passaram. A interface real isolada confirmou a falha e a correção no
+mesmo diálogo de 30 colunas, controles PT/EN nas duas larguras e retorno ao bash
+ao clicar Não com Yes selecionado. A pasta não foi aceita como confiável; o envio
+de Sim foi validado no runtime simulado.
+
 ### Wrapped explanation and invalidated reads / Explicação quebrada e cache invalidado
 
 Both follow-up P2 findings were reproduced with failing tests before their fixes.

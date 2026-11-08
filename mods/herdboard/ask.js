@@ -54,9 +54,10 @@ function workspaceTrust(raw, cwd) {
   const questionStart = lines.findIndex((_, i) => i >= 3
     && lines.slice(i, guide).join(" ") === `${question} ${explanation}`);
   const folder = workspaceFolder(lines.slice(2, questionStart), cwd);
+  // The footer wraps in narrow panes too; normalise only recognition, keeping raw below.
   if (lines[1] !== "Accessing workspace:" || questionStart < 3 || !folder
-    || guide < questionStart + 2 || lines.length !== guide + 4
-    || lines.at(-1) !== "Enter to confirm · Esc to cancel") return null;
+    || guide < questionStart + 2
+    || lines.slice(guide + 3).join(" ") !== "Enter to confirm · Esc to cancel") return null;
   const rows = lines.slice(guide + 1, guide + 3);
   const options = rows.map((line, index) => ({ index, text: line.replace(/^❯ /, "") }));
   if (rows.filter(l => l.startsWith("❯ ")).length !== 1

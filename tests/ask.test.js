@@ -9,6 +9,39 @@ const TRUST = readFileSync(new URL("./fixtures/workspace-trust.txt", import.meta
 const TRUST_NARROW = readFileSync(new URL("./fixtures/workspace-trust-narrow.txt", import.meta.url), "utf8");
 // Native 48-column capture, with a same-length replacement for the temporary folder name.
 const TRUST_WRAPPED_FOLDER = readFileSync(new URL("./fixtures/workspace-trust-wrapped-folder.txt", import.meta.url), "utf8");
+// Native 30-column capture; the temporary directory segment has a same-length replacement.
+const TRUST_WRAPPED_FOOTER = readFileSync(new URL("./fixtures/workspace-trust-wrapped-footer.txt", import.meta.url), "utf8");
+const FOOTER_FOLDER = "/tmp/herdboard-p2-footer-fixture1/workspace";
+test("workspace trust recognises its wrapped footer and preserves the complete raw identity", () => {
+  const wide = parseAsk(TRUST);
+  for (const [screen, cwd] of [
+    [TRUST_WRAPPED_FOOTER, FOOTER_FOLDER],
+    [TRUST.replace("Enter to confirm · Esc to cancel", "Enter to confirm · Esc to\n cancel"), "<folder>"],
+    [TRUST.replace("Enter to confirm · Esc to cancel", "Enter to confirm ·\n Esc to cancel"), "<folder>"],
+    [TRUST.replace("Enter to confirm · Esc to cancel", "Enter\n to confirm\n · Esc to\n cancel"), "<folder>"],
+  ]) {
+    const ask = parseAsk(screen, cwd);
+    assert.equal(ask.mode, "cursor");
+    assert.equal(ask.folder, cwd);
+    assert.equal(ask.question, wide.question);
+    assert.deepEqual(ask.options, wide.options);
+    assert.ok(pickAnswers(ask));
+    assert.equal(ask.id, screen.slice(1).trimEnd());
+    assert.notEqual(ask.id, wide.id);
+    assert.notEqual(parseAsk(screen.replace(" Enter", "  Enter"), cwd).id, ask.id);
+  }
+});
+test("a wrapped trust footer still requires the complete known text and no extra content", () => {
+  for (const screen of [
+    TRUST_WRAPPED_FOOTER.replace("\n cancel", ""),
+    TRUST_WRAPPED_FOOTER.replace("\n cancel", "\n continue"),
+    TRUST_WRAPPED_FOOTER.replace("Enter to confirm", "Enter to approve"),
+    TRUST_WRAPPED_FOOTER.replace("\n cancel", "\n extra\n cancel"),
+    TRUST_WRAPPED_FOOTER + "extra content\n",
+    TRUST_WRAPPED_FOOTER + "Enter to confirm · Esc to cancel\n",
+    TRUST_WRAPPED_FOOTER.replace("Enter to confirm · Esc to", "Enter to confirm · Esc to cancel"),
+  ]) assert.equal(pickAnswers(parseAsk(screen, FOOTER_FOLDER)), null);
+});
 test("workspace trust uses the cwd to distinguish word wraps from breaks inside a name", () => {
   for (const [wrapped, folder] of [
     ["/a\n b", "/a b"],
