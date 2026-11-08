@@ -4,6 +4,8 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-07
+
 - A blocked card's question shows the command a Claude Code permission dialog asks
   about, not the dashed separator rows around it: lines made only of horizontal
   line glyphs (`─`, `╌`, `┄` …) are left out.
@@ -61,6 +63,7 @@ First public release.
 - `scripts/install.sh` (tested on Windows from WSL and Git Bash), README and guide in
   both languages.
 
-[Unreleased]: https://github.com/TJbarros/herdboard/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/TJbarros/herdboard/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/TJbarros/herdboard/releases/tag/v1.2.0
 [1.1.0]: https://github.com/TJbarros/herdboard/releases/tag/v1.1.0
 [1.0.0]: https://github.com/TJbarros/herdboard/releases/tag/v1.0.0
