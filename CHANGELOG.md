@@ -4,6 +4,8 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-08
+
 - Blocked cards use their rendered height when sizing the board. Long workspace
   paths can wrap earlier than a character-count estimate, which clipped Open and
   answer, Peek and the waiting time on a single card in a wide window.
@@ -115,7 +117,8 @@ First public release.
 - `scripts/install.sh` (tested on Windows from WSL and Git Bash), README and guide in
   both languages.
 
-[Unreleased]: https://github.com/TJbarros/herdboard/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/TJbarros/herdboard/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/TJbarros/herdboard/releases/tag/v1.3.0
 [1.2.1]: https://github.com/TJbarros/herdboard/releases/tag/v1.2.1
 [1.2.0]: https://github.com/TJbarros/herdboard/releases/tag/v1.2.0
 [1.1.0]: https://github.com/TJbarros/herdboard/releases/tag/v1.1.0
