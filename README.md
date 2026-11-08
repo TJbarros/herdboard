@@ -46,6 +46,10 @@ folder. It only copies files, and adds the `layout:herdboard` section to `keys.j
 script tells you to add the section by hand. It is a POSIX shell script (`sh`); on
 Windows it was tested from WSL and from Git Bash.
 
+To see first what it would do, run `scripts/install.sh --dry-run`: it prints the Herdr
+home it found, every file it would copy (**new**, **overwrite** or **unchanged**) and
+what would happen to `keys.json`, and changes nothing.
+
 Then in Herdr: **Settings › Look › Layout › herdboard**, or
 `herdr-app do layout.switch --name herdboard`.
 

@@ -160,16 +160,44 @@ de `mods/herdboard/main.js`; depois rode `scripts/install.sh` de novo.
 ## Atualizar
 
 ```sh
-cd herdboard
-git pull
-scripts/install.sh
+herdboard/scripts/update.sh
 ```
 
-O Herdr recarrega o layout e os mods sozinho; não precisa reiniciar.
+Ele avança o seu clone (`git pull --ff-only`) e roda `scripts/install.sh` de novo.
+O Herdr recarrega o layout e os mods sozinho; não precisa reiniciar. Para ver quais
+arquivos uma instalação sobrescreveria, rode `scripts/install.sh --dry-run`: ele lista
+cada arquivo como **new** (novo), **overwrite** (sobrescreve) ou **unchanged** (igual),
+diz o que aconteceria com o `keys.json` e não muda nada.
+
+Se você editou algum arquivo do clone (o `STUCK_MIN`, por exemplo), a atualização
+para antes do pull e lista o que você mudou. Para manter as suas edições, rode
+dentro do clone:
+
+```sh
+git stash && scripts/update.sh && git stash pop && scripts/install.sh
+```
+
+Se parar no meio, as suas edições continuam guardadas no stash; `git stash pop` as
+traz de volta. Se preferir fazer commit delas, a atualização não consegue avançar
+direto quando o Herdboard também tiver commits novos: rode
+`git pull --rebase && scripts/install.sh` no lugar dela. A atualização também para,
+sem instalar, sempre que o seu branch não pode avançar direto (há commits seus e
+commits novos do Herdboard, ou ele não acompanha nenhum branch remoto), e avisa.
 
 ## Desinstalar
 
-Troque para outro layout e apague `layouts/herdboard.json` e as pastas
-`mods/herdboard`, `mods/herdboard-picker` e `mods/herdboard-new-menu` da pasta do
-Herdr (`~/.config/herdr-app`); depois remova a seção `"layout:herdboard"` do
-`keys.json` dela. Seus outros layouts e atalhos não mudam.
+```sh
+herdboard/scripts/uninstall.sh
+```
+
+Ele encontra a pasta do Herdr do mesmo jeito que a instalação e remove
+`layouts/herdboard.json`, as pastas `mods/herdboard`, `mods/herdboard-picker` e
+`mods/herdboard-new-menu` e a seção `"layout:herdboard"` do `keys.json`, fazendo antes
+um backup do `keys.json` em `keys.json.before-herdboard-uninstall` (se essa seção era
+tudo o que ele tinha, o `keys.json` é apagado). Seus outros layouts, mods e atalhos não
+mudam. O que já não existe é pulado, então rodar duas vezes não faz mal. Se o Herdboard
+era o seu layout ativo, troque para outro no Herdr (**Settings › Look › Layout**) ou
+com `Ctrl+Shift+L`.
+
+Para ver antes o que seria removido, rode `scripts/uninstall.sh --dry-run`: ele lista
+cada arquivo, pasta e mudança no `keys.json`, e não muda nada.

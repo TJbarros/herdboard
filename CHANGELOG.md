@@ -12,6 +12,27 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
   yet), the board reads it up to two more times, after 0.5 s and then 1.5 s more,
   while the agent stays blocked, so the card gets the question (and, for a
   permission dialog, its Yes / No) without a status change.
+- `scripts/check.sh` runs every local check before a commit: `herdr-app check` on
+  each mod in `mods/` (every folder with a `mod.json`), then `node --test` from the
+  repository root, from any directory. Every step runs even after one fails; it
+  exits non-zero and names the failed steps, or the missing `herdr-app` / `node`.
+- `scripts/install.sh --dry-run` shows what an install would do without changing
+  anything: the Herdr home it found, every file it would copy (new, overwrite or
+  unchanged) and what would happen to `keys.json`. Any other option is now an error
+  with a usage line (before, options were ignored and the install ran). The Herdr
+  home and the names of what Herdboard installs live in `scripts/common.sh`.
+- `scripts/update.sh` updates in one step: `git pull --ff-only` in the clone, then
+  `scripts/install.sh`, from any directory. It stops before pulling if a tracked
+  file has local edits (listing them, with `git stash` / commit as the way to keep
+  them), and before installing if the pull can't fast-forward. It takes no options:
+  any argument, `--dry-run` included, is an error with a usage line. The guide's
+  "Update" section now uses it.
+- `scripts/uninstall.sh` removes Herdboard in one step: the layout file, its three
+  mod folders and the `"layout:herdboard"` section of `keys.json` (backup first:
+  `keys.json.before-herdboard-uninstall`; `keys.json` is deleted if that section was
+  all it had), nothing else. Parts already gone are skipped; a `keys.json` that isn't
+  valid JSON stops it before anything is removed. `--dry-run` lists every change and
+  makes none. The guide's "Uninstall" section now uses it.
 
 ## [1.1.0] - 2026-11-07
 

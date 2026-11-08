@@ -150,16 +150,41 @@ than one agent, Herdboard counts from when it first saw each one's status instea
 ## Update
 
 ```sh
-cd herdboard
-git pull
-scripts/install.sh
+herdboard/scripts/update.sh
 ```
 
-Herdr reloads the layout and mods by itself; no restart needed.
+It fast-forwards your clone (`git pull --ff-only`) and runs `scripts/install.sh`
+again. Herdr reloads the layout and mods by itself; no restart needed. To see which
+files an install would overwrite, run `scripts/install.sh --dry-run`: it lists each file
+as **new**, **overwrite** or **unchanged**, says what would happen to `keys.json`, and
+changes nothing.
+
+If you edited a file in the clone (`STUCK_MIN`, say), the update stops before
+pulling and lists what you changed. To keep your edits, run this inside the clone:
+
+```sh
+git stash && scripts/update.sh && git stash pop && scripts/install.sh
+```
+
+If it stops partway, your edits stay stashed; `git stash pop` brings them back. If
+you'd rather commit your edits, the update can't fast-forward once Herdboard has new
+commits too: run `git pull --rebase && scripts/install.sh` instead. The update also
+stops, without installing, whenever your branch can't fast-forward (your commits and
+new Herdboard commits both, or it isn't tracking a remote branch), and says so.
 
 ## Uninstall
 
-Switch to another layout, then delete `layouts/herdboard.json` and the
-`mods/herdboard`, `mods/herdboard-picker` and `mods/herdboard-new-menu` folders from
-your Herdr home (`~/.config/herdr-app`), and remove the `"layout:herdboard"` section
-from its `keys.json`. Your other layouts and keys are untouched.
+```sh
+herdboard/scripts/uninstall.sh
+```
+
+It finds your Herdr home the way the install does and removes `layouts/herdboard.json`,
+the `mods/herdboard`, `mods/herdboard-picker` and `mods/herdboard-new-menu` folders,
+and the `"layout:herdboard"` section of `keys.json`, backing `keys.json` up first to
+`keys.json.before-herdboard-uninstall` (if that section was all it had, `keys.json` is
+deleted). Your other layouts, mods and keys are untouched. Parts already gone are
+skipped, so running it twice is safe. If Herdboard was your active layout, switch to
+another one in Herdr (**Settings › Look › Layout**) or with `Ctrl+Shift+L`.
+
+To see first what it would remove, run `scripts/uninstall.sh --dry-run`: it lists each
+file, folder and `keys.json` change, and changes nothing.
