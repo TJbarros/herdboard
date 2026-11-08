@@ -104,6 +104,53 @@ foi validada no runtime simulado; as verificações reais abaixo são anteriores
 esta correção e não validam esse cenário específico.
 Após a correção, `scripts/check.sh` passou nos três mods e em 173/173 testes Node.
 
+### Wrapped startup heading / Título inicial quebrado
+
+The heading P2 was reproduced with a one-change fixture (`Accessing` followed by
+`workspace:`) and the review's native Claude Code 2.1.319 captures at 20 and 21
+columns. All three simulated-runtime cases failed before the fix: no answerable
+card, no header count, and the tab stayed put away. Unwrapping only the heading
+restored recognition. Removing only the single-line guard was insufficient: the
+fixed folder offset included `workspace:` in the path, failing the cwd check.
+
+The parser now consumes the complete known heading before locating the folder.
+The native fixtures in `tests/fixtures/workspace-trust-wrapped-heading-{20,21}.txt`
+use an equal-length replacement for the temporary directory. Tests cover card and
+header discovery, tab reactivation, exact wording, raw identity, Yes/No answers,
+and zero keys if heading wrapping changes before the fresh answer read.
+
+```sh
+node --test --test-name-pattern='wrapped trust heading|complete wrapped heading' tests/ask.test.js tests/startup.test.js
+```
+
+All 11 focused tests pass. The original unmodified native captures also pass cwd
+and raw-identity assertions. `scripts/check.sh` passed all three mod checks and
+226/226 Node tests.
+
+An isolated native Herdr 0.1.13 home/core/display confirmed the same 21-column
+dialog before and after swapping only the installed parser: the fix restored
+the card, header count and put-away tab. PT/EN frames were inspected at 640×1200
+and 1280×1200. With Yes selected, clicking No exited Claude to bash and cleared
+the card/counts, with no app errors. Trust was not accepted; Yes is covered by
+the simulated-runtime tests. The 20-column case was replayed, not rerun in the
+native app. Screenshots are under `/tmp/herdboard-heading-ui-mha32zyg/`.
+
+O P2 do título foi reproduzido no caso mínimo e nas capturas nativas da revisão
+em 20 e 21 colunas: card e contagem ausentes, com a aba ainda guardada. O parser
+exigia uma linha de título e iniciava a pasta numa posição fixa; remover só a
+primeira restrição ainda incluía `workspace:` no caminho. Agora ele consome o
+título conhecido completo antes de localizar a pasta, preservando a tela bruta
+no id. Os 11 testes focados e os três checks de mods passaram, assim como os
+226 testes Node. As capturas originais também passaram nas verificações de cwd
+e identidade bruta.
+
+A interface nativa isolada confirmou o mesmo diálogo em 21 colunas antes/depois
+de trocar só o parser instalado: card, contagem e aba guardada foram restaurados.
+Foram inspecionados PT/EN em 640×1200 e 1280×1200. Com Yes selecionado, clicar
+Não voltou ao bash e limpou card e contagens, sem erros no app. A confiança não
+foi aceita; Sim foi validado nos testes simulados. Em 20 colunas foi reproduzida
+a captura, sem nova execução na interface nativa.
+
 ### Wrapped workspace path / Caminho da pasta quebrado
 
 A further P2 was reproduced before the fix: at 48 columns, Claude Code 2.1.319

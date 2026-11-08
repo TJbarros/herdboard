@@ -109,8 +109,10 @@ column, top to bottom:
   no status/report qualifies for discovery. Its lifecycle key includes address,
   terminal creation time, terminal PID, foreground PID and foreground cwd. The
   screen must match the complete captured Claude Code 2.1.319 trust dialog, and
-  its displayed folder must equal that cwd. The folder, question, explanation and
-  confirmation footer may wrap across terminal lines. Only the footer lines after
+  its displayed folder must equal that cwd. The heading, folder, question,
+  explanation, options and confirmation footer may wrap across terminal lines.
+  Recognition consumes the complete known heading before locating the folder.
+  Only the footer lines after
   the two options are joined for comparison with the complete known footer.
   Recognition locates the complete known prose
   and matches the preceding folder chunks against the known cwd in order. Only

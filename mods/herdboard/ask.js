@@ -46,15 +46,20 @@ function workspaceTrust(raw, cwd) {
   const end = raw.findLastIndex(l => l.trim());
   if (start < 0 || !/^─{3,}\s*$/.test(raw[start])) return null;
   const lines = raw.slice(start, end + 1).map(l => l.trim()).filter(Boolean);
+  // Consume the complete known heading before the folder, even when it wraps.
+  const heading = "Accessing workspace:";
+  let title = lines[1] ?? "", folderStart = 2;
+  while (folderStart < lines.length && heading.startsWith(title + " ")) title += " " + lines[folderStart++];
+  if (title !== heading) return null;
   const guide = lines.indexOf("Security guide");
   const question = "Quick safety check: Is this a project you created or one you trust? (Like your own code, a well-known open source project, or work from your team). If not, take a moment to review what's in this folder first.";
   const explanation = "Claude Code'll be able to read, edit, and execute files here.";
   // Locate the complete known prose before reconstructing the folder's wrapped chunks.
   // The cwd resolves word wraps versus mid-name breaks. The guarded id still uses raw below.
-  const questionStart = lines.findIndex((_, i) => i >= 3
+  const questionStart = lines.findIndex((_, i) => i > folderStart
     && lines.slice(i, guide).join(" ") === `${question} ${explanation}`);
-  const folder = workspaceFolder(lines.slice(2, questionStart), cwd);
-  if (lines[1] !== "Accessing workspace:" || questionStart < 3 || !folder
+  const folder = workspaceFolder(lines.slice(folderStart, questionStart), cwd);
+  if (questionStart <= folderStart || !folder
     || guide < questionStart + 2) return null;
   // Options can occupy more than two physical rows. Consume each complete known label before
   // reading the footer; normalise recognition only, preserving the cursor and raw id below.

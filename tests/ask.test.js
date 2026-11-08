@@ -15,6 +15,36 @@ const FOOTER_FOLDER = "/tmp/herdboard-p2-footer-fixture1/workspace";
 // Native Claude Code 2.1.319 at 24 columns; the temporary directory segment has an equal-length replacement.
 const TRUST_WRAPPED_OPTIONS = readFileSync(new URL("./fixtures/workspace-trust-wrapped-options.txt", import.meta.url), "utf8");
 const OPTIONS_FOLDER = "/tmp/herdboard-p2-option-fixture1/workspace";
+// Native Claude Code 2.1.319 captures; the temporary directory replacement has equal length.
+const TRUST_WRAPPED_HEADINGS = [20, 21].map(columns => readFileSync(
+  new URL(`./fixtures/workspace-trust-wrapped-heading-${columns}.txt`, import.meta.url), "utf8"));
+const HEADING_FOLDER = "/tmp/herdboard-p2-heading-fixture00001";
+test("workspace trust consumes its complete wrapped heading and preserves raw identity", () => {
+  const wide = parseAsk(TRUST);
+  for (const [screen, cwd] of [
+    [TRUST.replace("Accessing workspace:", "Accessing\n workspace:"), "<folder>"],
+    ...TRUST_WRAPPED_HEADINGS.map(screen => [screen, HEADING_FOLDER]),
+  ]) {
+    const ask = parseAsk(screen, cwd);
+    assert.equal(ask.mode, "cursor");
+    assert.equal(ask.folder, cwd);
+    assert.equal(ask.text, `Accessing workspace:\n${cwd}`);
+    assert.equal(ask.question, wide.question);
+    assert.deepEqual(ask.options, wide.options);
+    assert.ok(pickAnswers(ask));
+    assert.equal(ask.id, screen.slice(1).trimEnd());
+    assert.notEqual(ask.id, parseAsk(screen.replace("Accessing\n workspace:", "Accessing workspace:"), cwd).id);
+    assert.notEqual(ask.id, parseAsk(screen.replace("\n workspace:", "\n  workspace:"), cwd).id);
+  }
+});
+test("wrapped trust headings reject missing words, changed text and extra content", () => {
+  for (const heading of ["Accessing", "workspace:", "Accessing\n directory:",
+    "Accessing\n extra\n workspace:", "Accessing workspace:\n extra", "Accessingworkspace:",
+    "Accessing\n workspace", "Accessing\n workspace: extra"]) {
+    const screen = TRUST.replace("Accessing workspace:", heading);
+    assert.equal(pickAnswers(parseAsk(screen, "<folder>")), null);
+  }
+});
 test("workspace trust reconstructs wrapped option labels, preserving order, selection and raw identity", () => {
   const wide = parseAsk(TRUST);
   for (const [screen, cwd] of [

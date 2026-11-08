@@ -4,6 +4,9 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+- Workspace-trust headings wrapped at 20–21 terminal columns are recognised before
+  locating the folder, restoring the card, header count and put-away tab. Answer
+  validation still requires the complete raw dialog, including heading wrapping.
 - Workspace-trust options wrapped across terminal lines are reconstructed before
   checking the footer. At 24 columns, the continuation of "Yes, I trust this folder"
   was treated as footer text, hiding its card and header count. Cursor selection

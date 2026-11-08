@@ -20,6 +20,10 @@ const FOOTER_FOLDER = "/tmp/herdboard-p2-footer-fixture1/workspace";
 // Native Claude Code 2.1.319 at 24 columns, with an equal-length temporary directory replacement.
 const TRUST_WRAPPED_OPTIONS = readFileSync(new URL("./fixtures/workspace-trust-wrapped-options.txt", import.meta.url), "utf8");
 const OPTIONS_FOLDER = "/tmp/herdboard-p2-option-fixture1/workspace";
+// Native Claude Code 2.1.319 captures, with an equal-length temporary directory replacement.
+const TRUST_WRAPPED_HEADINGS = [20, 21].map(columns => readFileSync(
+  new URL(`./fixtures/workspace-trust-wrapped-heading-${columns}.txt`, import.meta.url), "utf8"));
+const HEADING_FOLDER = "/tmp/herdboard-p2-heading-fixture00001";
 const flush = async () => { for (let i = 0; i < 5; i++) await new Promise(r => setImmediate(r)); };
 const waits = [], timers = [];
 const cx = { spawn: f => f(cx), notify() {}, stop_propagation() {},
@@ -65,6 +69,23 @@ test("a 48-column trust dialog reaches an answerable card and header count", asy
   assert.ok(elements.has("yes-t1")); assert.ok(elements.has("no-t1"));
   herdr.props = { role: "header" }; const header = board(); render(header);
   assert.ok(strings(elements.get("space-s1").children).includes("1"), "the recognised startup is counted");
+  assert.deepEqual(keys(), [], "discovery never answers the dialog");
+});
+for (const [label, screen, folder] of [
+  ["minimal", TRUST.replace("Accessing workspace:", "Accessing\n workspace:"), "<folder>"],
+  ...TRUST_WRAPPED_HEADINGS.map((screen, i) => [`native ${20 + i} columns`, screen, HEADING_FOLDER]),
+]) test(`a wrapped trust heading restores its put-away card and header count (${label})`, async () => {
+  herdr.spaces[0].tabs[0].settled = true;
+  herdr.terminals[0].foreground.cwd = folder;
+  const b = board(); render(b);
+  await settle(reads().at(-1), screen); render(b);
+  const card = elements.has("agent-t1");
+  const answerable = elements.has("yes-t1") && elements.has("no-t1");
+  herdr.props = { role: "header" }; const header = board(); render(header);
+  assert.deepEqual({ card, answerable, counted: strings(elements.get("space-s1").children).includes("1"),
+    settled: herdr.spaces[0].tabs[0].settled },
+  { card: true, answerable: true, counted: true, settled: false });
+  assert.deepEqual(unsettles(), [{ command: "tab.unsettle", args: { id: "tab1" } }]);
   assert.deepEqual(keys(), [], "discovery never answers the dialog");
 });
 for (const [label, screen, folder] of [
@@ -193,6 +214,8 @@ async function finishAnswer(screen = TRUST) {
   assert.fail("answer flow did not finish");
 }
 for (const [label, folder, screen, rewrapped] of [
+  ...TRUST_WRAPPED_HEADINGS.map((screen, i) => [`a wrapped trust heading at ${20 + i} columns`,
+    HEADING_FOLDER, screen, screen.replace("Accessing\n workspace:", "Accessing workspace:")]),
   ["a wrapped workspace path", WRAPPED_FOLDER, TRUST_WRAPPED_FOLDER,
     TRUST_WRAPPED_FOLDER.replace("workspace-with\n -a-long-name", "workspace-\n with-a-long-name")],
   ["a workspace path wrapped between words", WORDS_FOLDER, TRUST_WRAPPED_WORDS,
