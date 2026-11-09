@@ -27,10 +27,11 @@ Somente a máquina local descartável estava presente nesse snapshot inicial
 (`name: null`, `layout: ready`). Esse snapshot não comprova comportamento remoto.
 A demonstração nativa simultânea local/remota, desconexão/reassociação remota,
 tooltips completos de nomes longos e layout/ações com máquinas mistas nas larguras
-de janela 1280, 1024 e 760 px são validados separadamente pelo coordenador. O
-resultado final agregado pode ser registrado aqui sem publicar nomes de máquinas,
-endereços, identificadores, caminhos, configurações ou screenshots privados. Dados
-remotos reais ficam fora do repositório. As larguras simuladas abaixo não comprovam
+de janela 1280, 1024 e 760 px estão registrados na
+[verificação integrada final](agent-card-context-verification.pt-BR.md), incluindo
+os limites dos testes de desconexão. Esse registro contém resultados agregados;
+nomes de máquinas, endereços, identificadores, caminhos, configurações e screenshots
+privados ficam fora do repositório. As larguras simuladas abaixo não comprovam
 quebra de texto nem ausência de clipping nativo.
 
 ## Testes simulados com o main.js real
@@ -58,6 +59,6 @@ suportado na base, passando sem alterar a identidade. Os logs externos estão em
 portável de evidência nativa.
 
 Execute `scripts/check.sh` para verificar todos os mods e a suíte Node completa.
-Essas verificações não fazem o layout nativo de cards mistos. O coordenador registra
-separadamente o resultado final integrado e a verificação de larguras com agentes
-locais reais.
+Essas verificações não fazem o layout nativo de cards mistos. O
+[registro integrado](agent-card-context-verification.pt-BR.md) documenta separadamente
+o resultado final da suíte e a verificação nativa das larguras.

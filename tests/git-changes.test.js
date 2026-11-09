@@ -4,7 +4,59 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { GIT_STATUS_ARGS, countGitChanges } from "../mods/herdboard/git-changes.js";
+import { GIT_STATUS_ARGS, countGitChanges, WorktreeChanges } from "../mods/herdboard/git-changes.js";
+
+for (const kind of ["discovery", "status"]) test(`deferred ${kind} discards removed demand and releases both reservations without a retry delay`, async t => {
+  let now = 100000;
+  t.mock.method(Date, "now", () => now);
+  const attempts = [], jobs = [];
+  const changes = new WorktreeChanges(async (command, args, options) => {
+    attempts.push({ command, args, options });
+    return { code: 0, stdout: args[0] === "rev-parse" ? `${options.cwd}/.git\n` : " M one\0", stderr: "" };
+  });
+  const contexts = ["/one", "/two"].map((cwd, i) => ({ address: `t${i}`, key: `terminal-${i}`, cwd, on: null, directory: JSON.stringify([null, cwd]) }));
+  const launch = task => jobs.push(task), notify = () => {};
+  changes.sync(contexts, launch, notify);
+  if (kind === "status") {
+    await Promise.all(jobs.splice(0).map(task => task()));
+    now += 10000;
+    changes.sync(contexts, launch, notify);
+  }
+  const before = attempts.length;
+  assert.equal(jobs.length, 2, "both physical slots are reserved");
+  changes.sync([], launch, notify);
+  changes.sync(contexts, launch, notify);
+  await Promise.all(jobs.splice(0).map(task => task()));
+  assert.equal(attempts.length, before, "every attempt is counted; stale cache jobs execute nothing");
+  changes.sync(contexts, launch, notify);
+  assert.equal(jobs.length, 2, "cancelled reservations release both slots without penalizing new consumers");
+  await Promise.all(jobs.splice(0).map(task => task()));
+  assert.equal(attempts.length, before + 2);
+});
+
+test("a delayed physical dispatch starts its ten-second cooldown when execution begins", async t => {
+  let now = 100000;
+  t.mock.method(Date, "now", () => now);
+  const attempts = [], jobs = [];
+  const changes = new WorktreeChanges(async (...args) => {
+    attempts.push(args);
+    return { code: 1, stdout: "", stderr: "unavailable" };
+  });
+  const contexts = [{ address: "t1", key: "terminal-1", cwd: "/repo", on: null, directory: '[null,"/repo"]' }];
+  const launch = task => jobs.push(task);
+  changes.sync(contexts, launch);
+  now += 20000;
+  await jobs.shift()();
+  assert.equal(attempts.length, 1);
+  changes.sync(contexts, launch);
+  assert.equal(jobs.length, 0, "time spent reserved is not physical polling cooldown");
+  now += 9999; changes.sync(contexts, launch);
+  assert.equal(jobs.length, 0);
+  now++; changes.sync(contexts, launch);
+  assert.equal(jobs.length, 1);
+  await jobs.shift()();
+  assert.equal(attempts.length, 2, "all failed command attempts count toward the limit");
+});
 
 function repository(t) {
   const dir = mkdtempSync(join(tmpdir(), "herdboard-git-"));

@@ -1,5 +1,7 @@
 # Issue #25 verification
 
+[Português (Brasil)](issue-25-verification.pt-BR.md)
+
 2026-11-09 · isolated Linux native app / core · herdr-app 0.1.14 · hc 0.1.19 ·
 Node 24.22.1. The primary app home and installed official mods were not modified.
 Connection data and mixed-machine screenshots remain private, outside the repository.
@@ -81,7 +83,9 @@ immediately before `hc`, with completion time/code afterwards. Measurement artif
 were kept outside the repository. These are actual native API reads, not a shell-only
 latency probe. Workload: one then four disposable local Codex sessions performing
 harmless sleeps, same scratch worktree, board visible, current-space filter, Idle
-open; 1280×1000 window / 1236px board. The four-agent column scrolled normally.
+open; 1280×1000 window. The actual board width was not recorded during this load
+measurement. The four-agent column scrolled normally; the final integrated matrix
+below records measured board dimensions separately.
 
 | Native workload | Observation | Attempts / completed | Rate | Latency min / median / p95 / max | Peak physical concurrency | Minimum completion cooldown |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -108,8 +112,9 @@ full-text tooltip with long original activity. These simulated checks do not est
 native remote performance or rendered font metrics.
 
 `scripts/check.sh` passed after merging integration commit `0933647`: all three mod
-checks and **455 tests** passed. The integration coordinator records the final native
-PT/EN viewport matrix at 1280, 1024 and 760px. Native
-activity-only viewing at 1280 confirmed the third line, retained status age and scrolling;
-combined Git/machine sizing and hover checks belong to that final matrix. Older usage
-images predate this extra line. No private mixed-machine screenshot is committed.
+checks and **455 tests** passed. The [final integrated verification](agent-card-context-verification.md)
+records native PT/EN viewport checks at 1280, 1024 and 760px, with measured board widths
+of 1231, 975 and 711px. Native activity-only viewing at 1280 confirmed the third line,
+retained status age and scrolling; combined Git/machine sizing and hover checks are
+recorded in that final matrix. Older usage images predate this extra line. No private
+mixed-machine screenshot is committed.

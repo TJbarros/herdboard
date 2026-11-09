@@ -395,15 +395,25 @@ export default class Herdboard extends View {
       key: JSON.stringify([a.address, a.pane, a.tab, a.space, terminal.created_ms, terminal.pid, directory]) };
   }
 
-  refreshGit(cx, list = null) {
-    if (props()?.role) return;
+  gitContexts(list = null) {
+    if (props()?.role) return [];
     list ??= [...agents(), ...startupCandidates().filter(a => this.asks[a.address]?.key === spell(a) && this.asks[a.address]?.visible)];
-    const shown = !isExpanded() && this.h > 0;
+    const shown = boardVisible() && this.h > 0;
     const ctx = this.groups(list);
     const idleShown = shared(IDLE_KEY) !== false || this.below(800);
     const eligible = shown ? ["blocked", "working", "done", ...(idleShown ? ["idle"] : [])].flatMap(k => ctx.by[k]) : [];
-    this.gitChanges.sync(eligible.map(a => this.gitContext(a)).filter(Boolean),
-      task => cx.spawn(async () => task()), () => cx.notify());
+    return eligible.map(a => this.gitContext(a)).filter(Boolean);
+  }
+
+  refreshGit(cx, list = null) {
+    if (props()?.role) return;
+    this.gitChanges.sync(this.gitContexts(list),
+      task => cx.spawn(async (cx) => {
+        // The view may change before spawn dispatches, without another render or tick.
+        this.gitChanges.sync(this.gitContexts());
+        await task();
+        cx.notify();
+      }));
   }
 
   gitLabel(a) {

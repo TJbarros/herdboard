@@ -22,7 +22,10 @@ substituição do terminal no mesmo milissegundo, respostas antigas, ausência d
 fallback local, zero versus indisponível, limite físico de dois comandos mesmo
 com lentidão, intervalo de retentativa ao ocultar/mostrar, filtros, Guardar,
 Ociosos recolhidos, instâncias auxiliares, altura zero e a lista compacta. São
-testes simulados do runtime; não comprovam a interface nativa.
+testes simulados do runtime; não comprovam a interface nativa. As regressões da
+revisão também cobrem altura positiva preservada sob ancestrais ocultos/layouts
+removidos, mudanças de demanda antes do despacho sem renderização intermediária,
+reservas de cache obsoletas, intervalo após despacho adiado e contexto novo do callback.
 
 Os pontos de teste autorizados foram a interpretação do resultado Git com
 repositórios reais e o harness do `main.js`. Foram registrados ciclos de falha e
@@ -30,8 +33,8 @@ sucesso antes do helper, proteção contra truncamento, consulta do card, revis�
 do terminal, intervalo ao ocultar, mudanças de tipo e exigência de altura visível.
 Os logs completos ficam no pacote temporário de evidências da sessão. Após integrar
 a identificação de máquina, `scripts/check.sh` passou nas três verificações de mod
-e em **429 testes Node**. O coordenador registra a validação final ao integrar as
-demais mudanças dos cards.
+e em **429 testes Node**. O [registro integrado](agent-card-context-verification.pt-BR.md)
+documenta a validação final após as demais mudanças dos cards e correções da revisão.
 
 ## API de execução nativa
 
@@ -78,8 +81,7 @@ não cria duplicação.
 
 ## Limite da validação visual nativa
 
-O coordenador executa a matriz visual local/remota final em 1280, 1024 e 760 px
-após integrar atividade e identificação de máquina. As medições de exec deste
-ticket não comprovam a geometria final dos cards, carga com muitos agentes reais,
-apresentação remota ou a interface combinada. Esses resultados são registrados
-separadamente.
+A [verificação integrada final](agent-card-context-verification.pt-BR.md) registra
+a matriz nativa local/remota nos dois idiomas em 1280, 1024 e 760 px, incluindo as
+dimensões reais do quadro, tooltips e ações. As medições de exec deste ticket
+permanecem separadas dessa evidência visual e da carga de atividade com agentes reais.

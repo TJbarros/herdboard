@@ -24,7 +24,7 @@ async function settle(call, stdout = "", code = 0) { call.resolve({ code, stdout
 beforeEach(t => {
   now = 100000; timers = [];
   t.mock.method(Date, "now", () => now);
-  Object.assign(herdr, { agents: [], terminals: [], panes: [], spaces: [], props: {}, calls: [], execCalls: [], runs: [], shared: { "herdboard.lang": "en" }, layout: {} });
+  Object.assign(herdr, { agents: [], terminals: [], panes: [], spaces: [], props: {}, calls: [], execCalls: [], runs: [], shared: { "herdboard.lang": "en" }, layout: { id: "herdboard-cards" } });
 });
 
 test("the card queries its own live directory and shows a successful worktree total", async () => {
@@ -74,6 +74,22 @@ test("a board with no visible native height does not query before layout or whil
   agent("t1", "/repo"); const b = board(); b.h = 0; draw(b);
   for (const timer of timers) timer.f(cx);
   assert.equal(herdr.execCalls.length, 0);
+});
+
+for (const [name, layout] of [
+  ["a hidden ancestor", { id: "container", hidden: true, children: [{ id: "herdboard-cards" }] }],
+  ["a replacement layout without the board", { id: "another-layout" }],
+]) test(`Git refresh stops under ${name} after a positive native layout`, async () => {
+  agent("t1", "/repo"); const b = board(); draw(b);
+  await settle(herdr.execCalls[0], "/repo/.git\n"); draw(b);
+  await settle(herdr.execCalls[1], " M one\0"); draw(b);
+  assert.equal(herdr.execCalls.length, 2);
+  herdr.layout = layout;
+  now += 10000;
+  timers.find(t => t.ms === 1000).f(cx);
+  draw(b);
+  assert.equal(b.h, 200, "hidden copies can retain the last native height");
+  assert.equal(herdr.execCalls.length, 2, "every attempted command is counted, including obsolete demand");
 });
 
 test("many agents share discovery and subdirectories share one canonical status query", async () => {
@@ -164,6 +180,50 @@ test("a visible compact Idle entry consumes Git results and shows Portuguese wor
   await settle(herdr.execCalls[1], "?? one\0"); draw(b);
   assert.equal(label(a), "Worktree: 1 arquivo");
   assert.match(elements.get(`git-${a.address}`).props.tooltip[0], /qualquer pessoa/);
+});
+
+for (const [name, change] of [
+  ["hidden board", () => { herdr.layout.hidden = true; }],
+  ["hidden ancestor", () => { herdr.layout = { hidden: true, children: [herdr.layout] }; }],
+  ["replacement layout", () => { herdr.layout = { id: "another-layout" }; }],
+  ["filter", () => { herdr.shared["herdboard.filter"] = "here"; herdr.spaces[0].active = false; }],
+  ["Put away", () => { herdr.spaces[0].tabs[0].settled = true; }],
+  ["folded Idle", () => { herdr.agents[0].status = "idle"; herdr.shared["herdboard.idleOpen"] = false; }],
+  ["removed agent", () => { herdr.agents = []; }],
+  ["disconnected terminal", () => { herdr.terminals[0].state = "disconnected"; }],
+  ["directory change", () => { herdr.panes[0].cwd = "/new"; }],
+  ["machine change", () => { herdr.spaces[0].machine = "second"; }],
+]) test(`deferred Git dispatch rechecks ${name} without an intermediate render`, async () => {
+  agent("remote/t1", "/old", "remote");
+  const jobs = [], deferred = { ...cx, spawn: task => jobs.push(task) };
+  const b = new Herdboard(); b.init(null, deferred); b.w = 1280; b.h = 200;
+  b.render(deferred);
+  assert.equal(herdr.execCalls.length, 0);
+  assert.equal(jobs.length, 1);
+  change();
+  const dispatched = jobs.shift()(deferred);
+  await flush();
+  const attempts = herdr.execCalls.length;
+  for (const call of herdr.execCalls) if (!call.settled) await settle(call, "", 1);
+  await dispatched;
+  assert.equal(attempts, 0, "the obsolete reservation must not reach exec");
+});
+
+test("deferred Git completion notifies through the fresh spawn context", async () => {
+  agent("t1", "/repo");
+  let originalActive = true, notifications = 0;
+  const jobs = [], original = { ...cx, spawn: task => jobs.push(task), notify() {
+    assert.ok(originalActive, "the originating view context is unavailable after dispatch");
+  } };
+  const b = new Herdboard(); b.init(null, original); b.w = 1280; b.h = 200;
+  b.render(original);
+  originalActive = false;
+  const fresh = { ...cx, notify() { notifications++; } };
+  const dispatched = jobs.shift()(fresh);
+  assert.equal(herdr.execCalls.length, 1);
+  await settle(herdr.execCalls[0], "", 1);
+  await dispatched;
+  assert.equal(notifications, 1);
 });
 
 for (const invalidate of [

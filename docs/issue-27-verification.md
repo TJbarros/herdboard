@@ -27,11 +27,12 @@ Only the scratch-local machine was present in this initial snapshot (`name: null
 `layout: ready`). This snapshot establishes no remote behavior. Native
 simultaneous local/remote demonstration, remote disconnection/reassociation,
 full long-name tooltips and mixed-machine layout/actions at window widths
-1280, 1024 and 760 px are validated separately by the coordinator. Their final
-aggregate outcomes may be recorded here without publishing private machine names,
-addresses, identifiers, paths, configuration or screenshots. Actual remote data
-stays outside the repository. The simulated viewport inputs below do not
-establish native wrapping or clipping.
+1280, 1024 and 760 px are recorded in the
+[final integrated verification](agent-card-context-verification.md), including
+the limits of the disconnection checks. That record contains aggregate outcomes;
+private machine names, addresses, identifiers, paths, configuration and screenshots
+stay outside the repository. The simulated viewport inputs below do not establish
+native wrapping or clipping.
 
 ## Simulated real-main.js runtime tests
 
@@ -57,5 +58,6 @@ logs are under `/tmp/herdboard-issues-25-27/evidence-27/`; they are session arti
 not a portable native evidence bundle.
 
 Run `scripts/check.sh` for all mod checks and the full Node suite. Those checks do
-not lay out mixed-machine cards in a native app. The coordinator records final
-integrated suite results and native local viewport checks separately.
+not lay out mixed-machine cards in a native app. The
+[integrated record](agent-card-context-verification.md) documents final suite results
+and native viewport checks separately.
