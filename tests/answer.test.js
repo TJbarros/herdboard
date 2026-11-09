@@ -86,7 +86,7 @@ function draw(b, a) {
   clicks.clear();
   elements.clear();
   popovers.clear();
-  b.card(a, { color: "#000000" }, { tabs: new Map(), paneInfo: new Map() });
+  b.card(a, { color: "#000000" }, { tabs: new Map(), paneInfo: new Map(), spaces: new Map() });
   const handler = (id) => clicks.get(`${id}-${a.address}`) ?? null;
   const click = (h) => h && (async () => { h({}, cx); await flush(); });
   const menu = popovers.get(`more-${a.address}`);

@@ -9,6 +9,13 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
   results show zero; failed or missing context stays visibly unavailable. Counts
   include staged/unstaged, conflicts, renames and individual untracked files,
   exclude ignored files and share bounded queries by machine and worktree.
+- Cards, compact entries and visible Idle rows identify each agent's own machine
+  when remote spaces are present, with Local and Unknown machine labels in English
+  and Portuguese and full-name tooltips. All / This space preserves mixed-machine
+  context and complete action identities without another machine query. Real
+  scratch-local association and simulated mixed-machine tests are recorded.
+  Native mixed-machine validation is recorded separately without publishing
+  private remote connection details.
 
 ## [1.4.0] - 2026-11-09
 

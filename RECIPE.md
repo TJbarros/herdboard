@@ -29,7 +29,11 @@ column, top to bottom:
    buttons, their own row), then *Open and
    answer* (solid `blocked`) and *Peek*. Every card also shows a worktree-file total.
    Idle agents are 60px rows (icon, task over where and worktree total,
-   age). Empty columns: a 40px outlined "None".
+   age). In a context with remote spaces, bounded machine chips share the metadata
+   line (blocked cards: title line), including visible Idle rows and compact cards;
+   known local cards say Local. Full machine names are available in localized
+   tooltips. Unknown ownership is labeled even without a known remote space.
+   Empty columns: a 40px outlined "None".
 3. **Workspace**, the rest, padding 12/24: a 36px `chrome` rail (tabs as 26px chips
    with status dot, × on the active/hovered one, a + after them; on the right the
    shown program's icon, name and status dot, and Expand), then the active tab's
@@ -50,6 +54,14 @@ column, top to bottom:
 - Task title: the terminal title without spinner glyphs (program names and bare
   addresses like `t2` don't count); the last one seen is kept in shared
   `herdboard.titles` and shown as "Last: …" when the agent has none.
+- Machine: join the full `AgentInfo.space` to `SpaceInfo.id`; only an existing
+  space with `machine === null` establishes local ownership. Detect remote presence
+  from all live spaces before applying All / This space. Missing, invalid or
+  removed associations show Unknown machine, without caching another card's origin.
+  Full terminal, space, tab and pane IDs remain unchanged. This consumes existing
+  reactive `spaces()` data and adds no timer, machine-discovery query or process.
+  Real local association and native remote validation limits are recorded in
+  [issue #27 verification](docs/issue-27-verification.md).
 - Age: Herdr's per-tab `working_since` / `changed_at` when the agent is alone in
   its tab, else the time the board first saw the status; refreshed every 30s.
 - Worktree total: resolve the card's own terminal/pane/tab/space and live `cwd`,

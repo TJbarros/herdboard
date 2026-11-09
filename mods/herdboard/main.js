@@ -47,6 +47,8 @@ const TEXT = {
     verb: { blocked: "esperando há", working: "há", done: "concluiu há", idle: "há" },
     stuck: "travado?", stuckTip: `Trabalhando há mais de ${STUCK_MIN} min. Pode estar travado: vale conferir.`,
     noTitle: "Sem título da tarefa", tab: "aba", none: "Nenhum",
+    localMachine: "Local", localMachineTip: "Roda nesta máquina", remoteMachineTip: name => `Roda em ${name}`,
+    unknownMachine: "Máquina desconhecida", unknownMachineTip: "A máquina do espaço do agente está indisponível",
     current: (n) => `${n} (espaço atual)`, goTo: (n) => `Ir para ${n}`,
     all: "Todos", here: "Este espaço", filterTip: "Mostrar os agentes de todos os espaços ou só do espaço atual",
     search: "Buscar", searchTip: "Buscar espaço ou aba (Ctrl+Shift+K)",
@@ -74,6 +76,8 @@ const TEXT = {
     verb: { blocked: "waiting", working: "for", done: "finished", idle: "for" }, ago: { blocked: false, done: true },
     stuck: "stuck?", stuckTip: `Working for over ${STUCK_MIN} min. It may be stuck: worth a look.`,
     noTitle: "No task title", tab: "tab", none: "None",
+    localMachine: "Local", localMachineTip: "Runs on this machine", remoteMachineTip: name => `Runs on ${name}`,
+    unknownMachine: "Unknown machine", unknownMachineTip: "The agent's owning machine is unavailable",
     current: (n) => `${n} (current space)`, goTo: (n) => `Go to ${n}`,
     all: "All", here: "This space", filterTip: "Show agents from every space or only the current one",
     search: "Search", searchTip: "Find a space or tab (Ctrl+Shift+K)",
@@ -485,6 +489,17 @@ export default class Herdboard extends View {
     });
   }
 
+  // Full space IDs establish ownership; a missing association never implies local.
+  machineBadge(a, ctx) {
+    const machine = ctx.spaces.get(a.space)?.machine;
+    const local = machine === null;
+    const remote = typeof machine === "string" && machine.trim().length > 0;
+    return div().id(`machine-${a.address}`).max_w(96).min_w(0).flex_shrink(1).px(4).py(1).rounded(3)
+      .bg(C.bar).text_size(10).text_color(C.muted).truncate()
+      .tooltip(local ? L.localMachineTip : remote ? L.remoteMachineTip(machine) : L.unknownMachineTip)
+      .child(local ? L.localMachine : remote ? machine : L.unknownMachine);
+  }
+
   // Card: two lines (task, then where · age). Blocked cards also show what the agent asks.
   card(a, state, ctx, showState = false) {
     const tab = ctx.tabs.get(a.tab);
@@ -520,6 +535,7 @@ export default class Herdboard extends View {
           .child(icon(a.program, 14))
           .when(shown.last, el => el.child(div().flex_none().text_size(10).text_color(C.dim).child(L.lastTask)))
           .child(div().flex_1().min_w(0).text_size(13).font_semibold().text_color(title ? C.ink : C.muted).truncate().child(title || L.noTitle))
+          .when(blocked && (ctx.hasRemote || ctx.spaces.get(a.space)?.machine !== null), r => r.child(this.machineBadge(a, ctx)))
           .when(a.pinned, el => el.child(svg("mods/workspace-chrome/pin.svg").size(11).text_color(C.dim).flex_none())))
         .when(blocked, el => el
           .child(div().w_full().px(10).py(7).rounded(6).bg(wash(state.color, "14")).border(1).border_color(wash(state.color, "40"))
@@ -537,6 +553,7 @@ export default class Herdboard extends View {
               .tooltip(ageText).child(ageText))))
         .when(!blocked, el => el.child(h_flex().items_center().gap(8).text_size(11).text_color(C.muted)
           .when(showState, r => r.child(dot(state.color, 6)).child(div().flex_none().font_semibold().text_color(state.color).child(state.label)))
+          .when(ctx.hasRemote || ctx.spaces.get(a.space)?.machine !== null, r => r.child(this.machineBadge(a, ctx)))
           .child(div().flex_1().min_w(0).truncate().child(where))
           .child(stuck
             ? h_flex().flex_none().gap(4).items_center().px(6).py(1).rounded(4).bg(wash(C.t.working, "26")).text_color(C.t.working)
@@ -596,7 +613,9 @@ export default class Herdboard extends View {
         .child(h_flex().gap(6).items_center().min_w(0)
           .when(t.last, el => el.child(div().flex_none().text_size(10).text_color(C.dim).child(L.lastTask)))
           .child(div().min_w(0).text_size(12).text_color(t.text ? C.ink : C.muted).truncate().child(t.text || L.noTitle)))
-        .child(div().text_size(10).text_color(C.dim).truncate().child(where))
+        .child(h_flex().min_w(0).items_center().gap(4)
+          .when(ctx.hasRemote || ctx.spaces.get(a.space)?.machine !== null, r => r.child(this.machineBadge(a, ctx)))
+          .child(div().flex_1().min_w(0).text_size(10).text_color(C.dim).truncate().child(where)))
         .child(this.gitLabel(a)))
       .when(a.pinned, el => el.child(svg("mods/workspace-chrome/pin.svg").size(10).text_color(C.dim).flex_none()))
       .child(div().flex_none().text_size(10).text_color(C.dim).child(duration(mins)));
@@ -750,7 +769,9 @@ export default class Herdboard extends View {
     this.perTab = new Map();
     for (const a of list) this.perTab.set(a.tab, (this.perTab.get(a.tab) ?? 0) + 1);
     for (const k in by) by[k].sort((x, y) => (y.pinned ? 1 : 0) - (x.pinned ? 1 : 0));
-    return { by, tabs, paneInfo: new Map(panes().map(p => [p.pane, p])) };
+    return { by, tabs, spaces: new Map(all.map(s => [s.id, s])),
+      hasRemote: all.some(s => typeof s.machine === "string" && s.machine.trim().length > 0),
+      paneInfo: new Map(panes().map(p => [p.pane, p])) };
   }
 
   blockedHeight(a) {

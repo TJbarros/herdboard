@@ -137,6 +137,12 @@ the rail while expanded.
 - **Title**: what the agent named its task. After `/clear` the card shows
   **Last: …**, the last title Herdboard saw for that terminal.
 - **Age**: how long it has been in this status (*waiting*, *for*, *finished … ago*).
+- **Machine**: when Herdr has remote spaces, cards show the owning machine's name
+  and identify agents on this computer as **Local**, even with **This space**
+  selected. This also appears in compact entries and visible Idle rows. A board
+  with only known local agents keeps its usual presentation. **Unknown machine**
+  means the agent's owning space or machine information is unavailable; it does
+  not mean Local. Hover the label to read the full machine name.
 - Hover the card for the full title, place, program and terminal address.
 - **Worktree**: the total pending Git files in this terminal's current worktree,
   including changes made by anyone. Staged and unstaged changes, conflicts and each
@@ -146,6 +152,12 @@ the rail while expanded.
   **0 files** means a successful clean query. **Unavailable** means the directory,
   machine or Git query could not be verified; it never means zero. Idle rows and
   the compact board show the same total. Hover the number for its meaning.
+
+Machine ownership comes from each agent's own space, so identically named spaces
+on different machines remain separate. It follows Herdr's existing live updates
+without another machine query. [Verification](issue-27-verification.md) separates
+the real scratch-local association, simulated mixed-machine coverage and private
+native validation. Real remote connection details are not published.
 
 ### Back to your usual layout
 
