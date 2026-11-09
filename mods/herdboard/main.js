@@ -1,7 +1,8 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex, v_flex, Popover } from "gpui-base";
-import { agents, terminals, spaces, panes, props, run, setAgentOrder, theme, notify, layout, shared, setShared, hc, openOverlay, closeOverlay } from "herdr";
+import { agents, terminals, spaces, panes, props, run, setAgentOrder, theme, notify, layout, shared, setShared, hc, exec, openOverlay, closeOverlay } from "herdr";
 import { parseAsk, pickAnswers } from "./ask.js";
+import { WorktreeChanges } from "./git-changes.js";
 
 // ---- Layout state ---------------------------------------------------------------------------
 
@@ -32,7 +33,7 @@ const FILTER_KEY = "herdboard.filter";    // "all" | "here"
 const IDLE_KEY = "herdboard.idleOpen";    // false: the Idle column is folded
 const TITLES_KEY = "herdboard.titles";    // address -> { title, at }: the last task title seen
 const STARTUP_KEY = "herdboard.startup";  // recognised lifecycle keys only, for the header copy
-const IDLE_ROW = 44;                  // height of an Idle row (task + where)
+const IDLE_ROW = 60;                  // task, where and worktree total
 
 
 // A working agent past this many minutes gets a "stuck?" hint on its card.
@@ -64,6 +65,9 @@ const TEXT = {
     shortcutAnswerTip: (key, text) => `Envia ${key} no terminal: "${text}"`,
     cancelAnswerTip: text => `Cancela o pedido e interrompe o turno (Esc): "${text}"`,
     fold: "recolher", unfold: "mostrar", lastTask: "Última:", hereShort: "Este",
+    worktree: n => `Worktree: ${n} ${n === 1 ? "arquivo" : "arquivos"}`,
+    worktreeUnavailable: "Worktree: indisponível",
+    worktreeTip: "Total de arquivos alterados no worktree da pasta atual deste terminal; inclui alterações feitas por qualquer pessoa.",
   },
   en: {
     blocked: "Needs you", working: "Working", done: "Done", idle: "Idle",
@@ -88,6 +92,9 @@ const TEXT = {
     shortcutAnswerTip: (key, text) => `Sends ${key} in the terminal: "${text}"`,
     cancelAnswerTip: text => `Cancels the request and interrupts the turn (Esc): "${text}"`,
     fold: "fold", unfold: "show", lastTask: "Last:", hereShort: "Here",
+    worktree: n => `Worktree: ${n} ${n === 1 ? "file" : "files"}`,
+    worktreeUnavailable: "Worktree: unavailable",
+    worktreeTip: "Total changed files in this terminal's current worktree; includes changes made by anyone.",
   },
 };
 let L = TEXT.pt;
@@ -257,6 +264,7 @@ export default class Herdboard extends View {
     this.hovered = null; // address of the card under the pointer (shows its actions)
     this.w = 0;          // this copy's size, from on_size_change; 0 until the first layout (treated as wide)
     this.h = 0;
+    this.gitChanges = new WorktreeChanges(exec);
     // Ages tick every 30 s, only on the cards copy, when there's something to age and the board shows.
     if (!props()?.role) cx.timer.every(30000, (cx) => {
       const live = new Set([...agents(), ...startupCandidates()].map(a => a.address));
@@ -268,6 +276,7 @@ export default class Herdboard extends View {
     // the board copy, until the source ends; unknown screens never become cards.
     if (!props()?.role) cx.timer.every(1000, (cx) => {
       if (!isExpanded() && startupCandidates().length) cx.notify();
+      this.refreshGit(cx);
     });
   }
 
@@ -281,6 +290,39 @@ export default class Herdboard extends View {
     });
   }
   below(px) { return this.w > 0 && this.w < px; }
+
+  // Resolve the card's own association. An explicit null machine means local; an
+  // absent space/machine/cwd never falls back to the focused terminal or local host.
+  gitContext(a) {
+    const space = spaces().find(s => s.id === a.space);
+    const pane = panes().find(p => p.pane === a.pane && p.terminal === a.address && p.tab === a.tab);
+    const terminal = terminals().find(t => t.address === a.address);
+    if (!space || !space.tabs.some(t => t.id === a.tab) || !pane?.cwd
+      || (space.machine !== null && (typeof space.machine !== "string" || !space.machine))
+      || !terminal || (terminal.state && terminal.state !== "live")) return null;
+    const directory = JSON.stringify([space.machine, pane.cwd]);
+    return { address: a.address, cwd: pane.cwd, on: space.machine, directory,
+      key: JSON.stringify([a.address, a.pane, a.tab, a.space, terminal.created_ms, terminal.pid, directory]) };
+  }
+
+  refreshGit(cx, list = null) {
+    if (props()?.role) return;
+    list ??= [...agents(), ...startupCandidates().filter(a => this.asks[a.address]?.key === spell(a) && this.asks[a.address]?.visible)];
+    const shown = !isExpanded() && this.h > 0;
+    const ctx = this.groups(list);
+    const idleShown = shared(IDLE_KEY) !== false || this.below(800);
+    const eligible = shown ? ["blocked", "working", "done", ...(idleShown ? ["idle"] : [])].flatMap(k => ctx.by[k]) : [];
+    this.gitChanges.sync(eligible.map(a => this.gitContext(a)).filter(Boolean),
+      task => cx.spawn(async () => task()), () => cx.notify());
+  }
+
+  gitLabel(a) {
+    const value = this.gitChanges.value(this.gitContext(a));
+    return div().id(`git-${a.address}`).min_w(0).text_size(10).text_color(C.dim).truncate()
+      .tooltip(L.worktreeTip).child(value === null ? L.worktreeUnavailable : L.worktree(value));
+  }
+
+  cardHeight(_a) { return 82; }
 
   // How long the agent has been in its status. Reported agents use Herdr's per-tab times;
   // otherwise observe locally, with startup waits belonging to their process lifecycle.
@@ -458,7 +500,7 @@ export default class Herdboard extends View {
     const choices = shownChoices(ask);
     const extras = choices && ask.mode === "numbered" ? ask.options.filter(o => o.n >= 1 && o.n <= 9 && o.n !== choices.yes.n && o.n !== choices.no.n) : [];
     return h_flex().id(`agent-${a.address}`).w_full().flex_none().rounded(7).overflow_hidden().relative()
-      .when(!blocked, el => el.h(64))
+      .when(!blocked, el => el.h(this.cardHeight(a)))
       .when(blocked, el => el.on_size_change((size, cx) => {
         const height = Math.ceil(size.height);
         if (!Number.isFinite(height) || height <= 0 || this.cardHeights[a.address] === height) return;
@@ -500,7 +542,8 @@ export default class Herdboard extends View {
             ? h_flex().flex_none().gap(4).items_center().px(6).py(1).rounded(4).bg(wash(C.t.working, "26")).text_color(C.t.working)
                 .tooltip(L.stuckTip)
                 .child(svg("mods/workspace-chrome/clock.svg").size(10)).child(`${ageText} · ${L.stuck}`)
-            : div().flex_none().child(ageText)))))
+            : div().flex_none().child(ageText))))
+        .child(this.gitLabel(a)))
       // Actions show on hover, over the card's top right (blocked cards have theirs inline).
       .when(hovered && !blocked, el => el.child(h_flex().absolute().top(6).right(6).p(2).gap(2).rounded(6).bg(C.pop).border(1).border_color(C.strong)
         .child(this.actionButton(`peek-${a.address}`, L.peek, L.peekTip, () => run("terminal.peek", { terminal: a.address })))
@@ -553,7 +596,8 @@ export default class Herdboard extends View {
         .child(h_flex().gap(6).items_center().min_w(0)
           .when(t.last, el => el.child(div().flex_none().text_size(10).text_color(C.dim).child(L.lastTask)))
           .child(div().min_w(0).text_size(12).text_color(t.text ? C.ink : C.muted).truncate().child(t.text || L.noTitle)))
-        .child(div().text_size(10).text_color(C.dim).truncate().child(where)))
+        .child(div().text_size(10).text_color(C.dim).truncate().child(where))
+        .child(this.gitLabel(a)))
       .when(a.pinned, el => el.child(svg("mods/workspace-chrome/pin.svg").size(10).text_color(C.dim).flex_none()))
       .child(div().flex_none().text_size(10).text_color(C.dim).child(duration(mins)));
   }
@@ -720,7 +764,7 @@ export default class Herdboard extends View {
     const lines = (text || L.noAsk).split("\n").reduce((n, l) => n + Math.max(1, Math.ceil(l.length / perLine)), 0);
     // The Yes / No row, when the card shows one: 24px buttons and the 8px gap above them.
     const answers = shownChoices(this.asks[a.address]) ? 24 + 8 : 0;
-    return 10 + 20 + 8 + (16 + lines * 16) + answers + 8 + 24 + 10 + 2;
+    return 10 + 20 + 8 + (16 + lines * 16) + answers + 8 + 24 + 10 + 2 + 20;
   }
 
   // Size the board block to its tallest column (140–360px; past that, columns scroll).
@@ -737,7 +781,7 @@ export default class Herdboard extends View {
   boardList(ctx) {
     const ordered = STATES.flatMap(state => ctx.by[state.key].map(a => ({ a, state })));
     const padY = 12, gap = 8;
-    this.fitHeight(padY * 2 + 24 + 9 + ordered.reduce((h, { a }) => h + (a.status === "blocked" ? this.blockedHeight(a) : 64) + gap, 0));
+    this.fitHeight(padY * 2 + 24 + 9 + ordered.reduce((h, { a }) => h + (a.status === "blocked" ? this.blockedHeight(a) : this.cardHeight(a)) + gap, 0));
     return this.sized(v_flex().size_full().px(14).py(padY).gap(9).bg(C.bg)
       .child(h_flex().flex_none().gap(6).items_center().flex_wrap().children(STATES.map(state => {
         const n = ctx.by[state.key].length;
@@ -755,6 +799,7 @@ export default class Herdboard extends View {
   board(list, cx) {
     this.rememberTitles(list);
     const ctx = this.groups(list);
+    this.refreshGit(cx, list);
     // Agent navigation (agent.next/prev) follows the board's order.
     const idleShown = shared(IDLE_KEY) !== false || this.below(800);
     setAgentOrder(STATES.filter(s => s.key !== "idle" || idleShown).flatMap(s => ctx.by[s.key].map(a => a.address)));
@@ -768,7 +813,7 @@ export default class Herdboard extends View {
       const items = ctx.by[key];
       if (!items.length) return 40;
       if (key === "idle") return idleOpen ? items.length * IDLE_ROW + (items.length - 1) * 4 : 0;
-      return items.reduce((h, a) => h + (key === "blocked" ? this.blockedHeight(a) : 64) + gap, -gap) + (key === "blocked" ? 12 : 0);
+      return items.reduce((h, a) => h + (key === "blocked" ? this.blockedHeight(a) : this.cardHeight(a)) + gap, -gap) + (key === "blocked" ? 12 : 0);
     };
     this.fitHeight(padY * 2 + 26 + gap + Math.max(...STATES.map(s => colHeight(s.key))) + 2);
     return this.sized(h_flex().size_full().px(padX).py(padY).gap(colGap).bg(C.bg).children(STATES.map(state => {

@@ -146,6 +146,16 @@ continuam na barra enquanto está expandido.
   há*).
 - Passe o mouse no card para ver o título completo, o local, o programa e o endereço
   do terminal.
+- **Worktree**: o total de arquivos pendentes no Git do worktree da pasta atual
+  deste terminal, incluindo alterações feitas por qualquer pessoa. Conta alterações
+  staged e unstaged, conflitos e cada arquivo não rastreado; ignora os arquivos
+  marcados como ignorados. Um arquivo alterado no índice e no disco conta uma vez.
+  Uma renomeação reconhecida pelo Git conta uma vez; uma movimentação ainda
+  reportada como exclusão e arquivo novo conta duas. Subpastas mostram o total do
+  worktree inteiro. **0 arquivos** indica uma consulta bem-sucedida sem alterações.
+  **Indisponível** indica que não foi possível verificar a pasta, a máquina ou a
+  consulta Git; nunca significa zero. Entradas Ociosas e o quadro compacto mostram
+  o mesmo total. Passe o mouse no número para ver seu significado.
 
 ### Voltar ao layout de sempre
 
@@ -178,8 +188,24 @@ Layout** lista todos.
   o quadro está visível; uma resposta inicial consulta `hc get` antes e depois da
   leitura da tela e envia as setas e o Enter juntos. As respostas ao Codex também
   consultam `hc get` antes e depois dessa leitura para confirmar processo, pasta,
-  configuração e report de permissão bloqueado. Nenhum mod baixa nada da internet
-  nem lê seus arquivos.
+  configuração e report de permissão bloqueado. O total Git também executa
+  `git rev-parse --absolute-git-dir` e
+  `git --no-optional-locks status --porcelain=v1 -z --untracked-files=all --ignored=no --renames`
+  na máquina e na pasta atual do próprio terminal do card. O Git inspeciona o
+  worktree; o quadro não exibe conteúdos de arquivos nem diffs. Nenhum mod baixa
+  nada da internet.
+- As consultas Git têm **intervalo mínimo de 10 segundos** por consulta equivalente
+  e no máximo **dois comandos físicos** em andamento, incluindo a descoberta.
+  A descoberta é compartilhada por máquina e pasta; o status, por máquina e
+  worktree Git canônico, mesmo em subpastas. Worktrees vinculados ficam separados.
+  Descobertas bem-sucedidas ficam em cache enquanto houver cards visíveis usando
+  a pasta. Consultas lentas ocupam a vaga até terminar; falhas esperam o intervalo.
+  Não há fila de retentativas; até 128 intervalos recentes são mantidos por um
+  período. Muitos worktrees diferentes podem aumentar a espera pelo total.
+  Só a instância do quadro consulta. Filtros, Guardar, Ociosos recolhidos e ocultar
+  ou expandir o quadro suspendem consultas sem consumidor visível. Ao voltar, o
+  card espera um resultado atual. O [registro de verificação](issue-26-verification.md)
+  separa medições de execução nativa dos testes de runtime simulado.
 - A janela do Espiar e a barra lateral são do próprio Herdr e ficam em inglês.
 - O Herdr não permite mudar a pasta registrada de um espaço depois de criado; o
   Herdboard sempre usa a pasta atual dos terminais.

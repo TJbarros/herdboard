@@ -4,6 +4,12 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+- Agent cards, compact entries and visible Idle rows show the pending-file total
+  of their own terminal's live Git worktree, including remote machines. Clean
+  results show zero; failed or missing context stays visibly unavailable. Counts
+  include staged/unstaged, conflicts, renames and individual untracked files,
+  exclude ignored files and share bounded queries by machine and worktree.
+
 ## [1.4.0] - 2026-11-09
 
 - Verified Codex CLI 0.167.0 local command approvals can be answered from cards:
