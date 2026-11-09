@@ -16,8 +16,8 @@ to-questionnaire, to-spec, to-tickets, triage, wait-what, wayfinder, wizard, wri
  Warning: Failed to download fd: The operation was aborted due to timeout
 
  Warning: No models available. Use /login to log into a provider via OAuth or API key. See:
-   /mnt/c/Users/tjaba/AppData/Roaming/npm/node_modules/@earendil-works/pi-coding-agent/docs/providers.md
-   /mnt/c/Users/tjaba/AppData/Roaming/npm/node_modules/@earendil-works/pi-coding-agent/docs/models.md
+   /mnt/c/Users/userx/AppData/Roaming/npm/node_modules/@earendil-works/pi-coding-agent/docs/providers.md
+   /mnt/c/Users/userx/AppData/Roaming/npm/node_modules/@earendil-works/pi-coding-agent/docs/models.md
 
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
  Update Available

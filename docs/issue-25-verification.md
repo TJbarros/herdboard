@@ -48,7 +48,8 @@ Only disposable local sessions are included under
   errors, without a reported agent. The wide startup is 148×33; narrow is 82×33.
 
 Each text screen is paired with `hc get` metadata. Captures use `--lines 0` and
-preserve the original text. Negative tests also derive deliberately incomplete or
+preserve activity text. A Windows profile path in the pi evidence uses an
+equal-length `userx` replacement. Negative tests also derive deliberately incomplete or
 historical screens from these fixtures; those transformations are simulated cases.
 Native app snapshots confirmed the split `status`/`report` model and availability
 of `created_ms`, terminal/foreground PIDs and argv, foreground cwd, `turn` and the
@@ -106,8 +107,9 @@ all visibility gates, deferred-executor dispatch, missing metadata, rejection an
 full-text tooltip with long original activity. These simulated checks do not establish
 native remote performance or rendered font metrics.
 
-`scripts/check.sh` passed before integration; the integration coordinator records the
-final combined check and native PT/EN viewport matrix at 1280, 1024 and 760px. Native
+`scripts/check.sh` passed after merging integration commit `0933647`: all three mod
+checks and **455 tests** passed. The integration coordinator records the final native
+PT/EN viewport matrix at 1280, 1024 and 760px. Native
 activity-only viewing at 1280 confirmed the third line, retained status age and scrolling;
 combined Git/machine sizing and hover checks belong to that final matrix. Older usage
 images predate this extra line. No private mixed-machine screenshot is committed.

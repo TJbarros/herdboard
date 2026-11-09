@@ -13,10 +13,10 @@ triage, wait-what, wayfinder, wizard, writing-for-agents
  Warning: No models available. Use /login to log into a provider via OAuth or API
  key. See:
 
- /mnt/c/Users/tjaba/AppData/Roaming/npm/node_modules/@earendil-works/pi-coding-ag
+ /mnt/c/Users/userx/AppData/Roaming/npm/node_modules/@earendil-works/pi-coding-ag
  ent/docs/providers.md
 
- /mnt/c/Users/tjaba/AppData/Roaming/npm/node_modules/@earendil-works/pi-coding-ag
+ /mnt/c/Users/userx/AppData/Roaming/npm/node_modules/@earendil-works/pi-coding-ag
  ent/docs/models.md
 
 ──────────────────────────────────────────────────────────────────────────────────

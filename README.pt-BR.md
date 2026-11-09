@@ -82,6 +82,10 @@ e abre novas abas na pasta de projeto que você escolher.
 - **Cards que dizem o que está acontecendo**: título da tarefa, espaço · aba · branch,
   tempo no status e **Fazendo agora** em Trabalhando, com atividade recente reconhecida
   na tela ou estado neutro indisponível. [Formatos e limites verificados](docs/issue-25-verification.md).
+- **Total do worktree** nos cards e nas entradas Ociosas: arquivos pendentes no Git
+  da pasta atual de cada terminal, inclusive remoto, com estado indisponível separado.
+- **Nome da máquina nos cards** quando há espaços remotos, com identificação Local
+  e nas entradas compactas de Ocioso; origem indisponível aparece explicitamente.
 - **"travado?"** num agente trabalhando há mais de 30 minutos.
 - **Espiar, Fixar e Guardar** ao passar o mouse num card.
 - **Novas abas na pasta certa**, com escolha de pasta.
