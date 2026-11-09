@@ -21,13 +21,14 @@ column, top to bottom:
    button.
 2. **Board**, height = its tallest column (140–360px), `canvas`, 1px `border`
    frame. Four equal columns, 16px gaps (10 below 1100px). Column header 26px:
-   status dot, label 13px semibold, count chip (status color at 14%). Cards 64px,
+   status dot, label 13px semibold, count chip (status color at 14%). Cards 82px,
    `background`, 7px corners, 3px status stripe: program icon + task title (13px
    semibold), then space · tab · branch and the age (11px `muted`). Blocked cards
    are taller: the question in a mono box tinted `blocked`, then, for a permission
    dialog, *Yes*, *No* and, when there are other options, *More…* (24px outlined
    buttons, their own row), then *Open and
-   answer* (solid `blocked`) and *Peek*. Idle agents are 44px rows (icon, task over where,
+   answer* (solid `blocked`) and *Peek*. Every card also shows a worktree-file total.
+   Idle agents are 60px rows (icon, task over where and worktree total,
    age). In a context with remote spaces, bounded machine chips share the metadata
    line (blocked cards: title line), including visible Idle rows and compact cards;
    known local cards say Local. Full machine names are available in localized
@@ -63,6 +64,25 @@ column, top to bottom:
   [issue #27 verification](docs/issue-27-verification.md).
 - Age: Herdr's per-tab `working_since` / `changed_at` when the agent is alone in
   its tab, else the time the board first saw the status; refreshed every 30s.
+- Worktree total: resolve the card's own terminal/pane/tab/space and live `cwd`,
+  with an explicit owning-space `machine` (`null` means local). Missing context
+  never falls back to the focused terminal or local host. `exec` runs Git discovery
+  (`rev-parse --absolute-git-dir`) by machine + cwd, then porcelain-v1 NUL status by
+  machine + canonical Git worktree. Include every untracked file, override hidden
+  untracked/disabled rename settings and count Git records, including both paths
+  of a recognized rename once. No custom move detection. A clean success is zero;
+  missing/failed/disconnected/capped execution is neutral unavailable. Native exec
+  silently truncates each output stream at 8 MiB; reject capped output by UTF-8 byte
+  length, even when a prefix ends at a NUL record boundary. `git-changes.js` owns
+  interpretation and bounded scheduling; `tests/git-changes.test.js` uses real
+  temporary Git repositories and `tests/git-runtime.test.js` drives real main.js.
+  Poll at most every 10 s per equivalent query with at most two physical commands
+  in flight, discovery included. Register pending work before awaiting, keep slots
+  until physical settlement, bound recent cooldowns to 128 for one interval and
+  keep no retry queue. Visible cards consume caches; filters, Put away, folded Idle
+  and hidden/expanded board remove unused demand. Context revisions reject stale
+  terminal/directory/machine/association responses. [Native execution load results
+  and validation limits](docs/issue-26-verification.md) are separate from simulations.
 - Blocked question: on each new blocked spell (address + `seq`), `hc read <t>
   --lines 0`; the last line ending in "?" and up to two before it, frames dropped,
   separator lines dropped (lines of horizontal glyphs only:
@@ -209,13 +229,15 @@ column, top to bottom:
   `new-menu`, translated, with the folder choice). Uses the shipped
   `workspace-chrome`, `spaces` and `agents` mods in the sidebar and their icons.
 - **herdr API**: `agents`, `terminals` (an agent's `report`), `spaces`, `panes`,
-  `layout`, `theme`, `shared` / `setShared`, `run`, `hc`, `openOverlay` /
+  `layout`, `theme`, `shared` / `setShared`, `run`, `hc`, `exec`, `openOverlay` /
   `closeOverlay`, `notify`, `setAgentOrder`, `knownAgents`.
 - **Programs run**: `hc read <t> --lines 0` (board, blocked agents; again on a Yes /
   No click or More… choice; also startup discovery), `hc get <t> --json` (startup
   and Codex source validation), `hc keys <t> <digit>` (numbered permission answers),
   `hc keys <t> <arrows...> enter` (recognised cursor answers), `hc keys <t> y|esc`
-  (verified Codex one-time approval / cancellation) and
+  (verified Codex one-time approval / cancellation), `git rev-parse --absolute-git-dir`,
+  `git --no-optional-locks status --porcelain=v1 -z --untracked-files=all --ignored=no --renames`
+  (board, terminal's own machine/worktree; Git inspects working files) and
   `hc machine ls` (picker, as Herdr's own); `knownAgents()` (new-tab menu). **Art**:
   `logo.svg`, `maximize.svg`, `minimize.svg`, `preview.svg`.
 - **Keys** (`keys.json`, section `layout:herdboard`): Ctrl+Shift+T new-tab menu,

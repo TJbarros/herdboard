@@ -81,6 +81,8 @@ e abre novas abas na pasta de projeto que você escolher.
   e no [diálogo verificado de comando local do Codex](docs/guide.pt-BR.md).
 - **Cards que dizem o que está acontecendo**: título da tarefa, espaço · aba · branch,
   tempo no status.
+- **Total do worktree** nos cards e nas entradas Ociosas: arquivos pendentes no Git
+  da pasta atual de cada terminal, inclusive remoto, com estado indisponível separado.
 - **Nome da máquina nos cards** quando há espaços remotos, com identificação Local
   e nas entradas compactas de Ocioso; origem indisponível aparece explicitamente.
 - **"travado?"** num agente trabalhando há mais de 30 minutos.

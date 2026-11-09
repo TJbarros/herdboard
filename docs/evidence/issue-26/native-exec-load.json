@@ -1,0 +1,362 @@
+{
+  "sourceSha256": "d6b92c624fa74336f433ecb60ded8d968b7496083289e7352c534f3f76ae6d3f",
+  "at": 1794203789172,
+  "results": [
+    {
+      "workload": "40 synthetic consumers / one 20-file worktree",
+      "durationMs": 22112,
+      "calls": [
+        {
+          "kind": "discovery",
+          "at": 0,
+          "code": 0,
+          "ms": 77
+        },
+        {
+          "kind": "status",
+          "at": 78,
+          "code": 0,
+          "ms": 18
+        },
+        {
+          "kind": "status",
+          "at": 11058,
+          "code": 0,
+          "ms": 15
+        },
+        {
+          "kind": "status",
+          "at": 21111,
+          "code": 0,
+          "ms": 15
+        }
+      ],
+      "peak": 1,
+      "values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "workload": "8 synthetic consumers / eight 20-file worktrees",
+      "durationMs": 22161,
+      "calls": [
+        {
+          "kind": "discovery",
+          "at": 0,
+          "code": 0,
+          "ms": 15
+        },
+        {
+          "kind": "discovery",
+          "at": 0,
+          "code": 0,
+          "ms": 15
+        },
+        {
+          "kind": "status",
+          "at": 15,
+          "code": 0,
+          "ms": 15
+        },
+        {
+          "kind": "status",
+          "at": 15,
+          "code": 0,
+          "ms": 16
+        },
+        {
+          "kind": "discovery",
+          "at": 31,
+          "code": 0,
+          "ms": 96
+        },
+        {
+          "kind": "discovery",
+          "at": 31,
+          "code": 0,
+          "ms": 95
+        },
+        {
+          "kind": "status",
+          "at": 126,
+          "code": 0,
+          "ms": 53
+        },
+        {
+          "kind": "status",
+          "at": 127,
+          "code": 0,
+          "ms": 51
+        },
+        {
+          "kind": "discovery",
+          "at": 178,
+          "code": 0,
+          "ms": 16
+        },
+        {
+          "kind": "discovery",
+          "at": 179,
+          "code": 0,
+          "ms": 15
+        },
+        {
+          "kind": "status",
+          "at": 194,
+          "code": 0,
+          "ms": 16
+        },
+        {
+          "kind": "status",
+          "at": 195,
+          "code": 0,
+          "ms": 16
+        },
+        {
+          "kind": "discovery",
+          "at": 210,
+          "code": 0,
+          "ms": 41
+        },
+        {
+          "kind": "discovery",
+          "at": 211,
+          "code": 0,
+          "ms": 41
+        },
+        {
+          "kind": "status",
+          "at": 251,
+          "code": 0,
+          "ms": 57
+        },
+        {
+          "kind": "status",
+          "at": 252,
+          "code": 0,
+          "ms": 57
+        },
+        {
+          "kind": "status",
+          "at": 10038,
+          "code": 0,
+          "ms": 15
+        },
+        {
+          "kind": "status",
+          "at": 10038,
+          "code": 0,
+          "ms": 16
+        },
+        {
+          "kind": "status",
+          "at": 11038,
+          "code": 0,
+          "ms": 16
+        },
+        {
+          "kind": "status",
+          "at": 11039,
+          "code": 0,
+          "ms": 15
+        },
+        {
+          "kind": "status",
+          "at": 11054,
+          "code": 0,
+          "ms": 16
+        },
+        {
+          "kind": "status",
+          "at": 11054,
+          "code": 0,
+          "ms": 16
+        },
+        {
+          "kind": "status",
+          "at": 11070,
+          "code": 0,
+          "ms": 29
+        },
+        {
+          "kind": "status",
+          "at": 11070,
+          "code": 0,
+          "ms": 30
+        },
+        {
+          "kind": "status",
+          "at": 20142,
+          "code": 0,
+          "ms": 15
+        },
+        {
+          "kind": "status",
+          "at": 20142,
+          "code": 0,
+          "ms": 15
+        },
+        {
+          "kind": "status",
+          "at": 21151,
+          "code": 0,
+          "ms": 39
+        },
+        {
+          "kind": "status",
+          "at": 21152,
+          "code": 0,
+          "ms": 38
+        },
+        {
+          "kind": "status",
+          "at": 21190,
+          "code": 0,
+          "ms": 16
+        },
+        {
+          "kind": "status",
+          "at": 21190,
+          "code": 0,
+          "ms": 16
+        },
+        {
+          "kind": "status",
+          "at": 21206,
+          "code": 0,
+          "ms": 15
+        },
+        {
+          "kind": "status",
+          "at": 21206,
+          "code": 0,
+          "ms": 15
+        }
+      ],
+      "peak": 2,
+      "values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "workload": "40 synthetic consumers / one 10000-file worktree",
+      "durationMs": 22152,
+      "calls": [
+        {
+          "kind": "discovery",
+          "at": 0,
+          "code": 0,
+          "ms": 37
+        },
+        {
+          "kind": "status",
+          "at": 38,
+          "code": 0,
+          "ms": 56
+        },
+        {
+          "kind": "status",
+          "at": 10097,
+          "code": 0,
+          "ms": 94
+        },
+        {
+          "kind": "status",
+          "at": 20150,
+          "code": 0,
+          "ms": 96
+        }
+      ],
+      "peak": 1,
+      "values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "measurement": "Real Herdr exec and real disposable Git repositories; synthetic consumers, not native agent sessions."
+}

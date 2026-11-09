@@ -4,6 +4,11 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+- Agent cards, compact entries and visible Idle rows show the pending-file total
+  of their own terminal's live Git worktree, including remote machines. Clean
+  results show zero; failed or missing context stays visibly unavailable. Counts
+  include staged/unstaged, conflicts, renames and individual untracked files,
+  exclude ignored files and share bounded queries by machine and worktree.
 - Cards, compact entries and visible Idle rows identify each agent's own machine
   when remote spaces are present, with Local and Unknown machine labels in English
   and Portuguese and full-name tooltips. All / This space preserves mixed-machine

@@ -144,6 +144,14 @@ the rail while expanded.
   means the agent's owning space or machine information is unavailable; it does
   not mean Local. Hover the label to read the full machine name.
 - Hover the card for the full title, place, program and terminal address.
+- **Worktree**: the total pending Git files in this terminal's current worktree,
+  including changes made by anyone. Staged and unstaged changes, conflicts and each
+  untracked file count; ignored files do not. A file changed in both places counts
+  once. A Git-recognized rename counts once; a move Git still reports as a deletion
+  and a new file counts twice. Subdirectories show the whole worktree total.
+  **0 files** means a successful clean query. **Unavailable** means the directory,
+  machine or Git query could not be verified; it never means zero. Idle rows and
+  the compact board show the same total. Hover the number for its meaning.
 
 Machine ownership comes from each agent's own space, so identically named spaces
 on different machines remain separate. It follows Herdr's existing live updates
@@ -182,7 +190,22 @@ them all.
   and after its fresh screen read, then sends the arrows and Enter together.
   Codex answers also check `hc get` on both sides of that read to confirm the same
   process, working directory, launch configuration and blocked permission report.
-  No mod downloads anything from the internet or reads your files.
+  Git totals additionally run `git rev-parse --absolute-git-dir` and
+  `git --no-optional-locks status --porcelain=v1 -z --untracked-files=all --ignored=no --renames`
+  on the card's own machine and live directory. Git inspects the worktree; no file
+  contents or diffs are shown. No mod downloads anything from the internet.
+- Git queries have a **10-second minimum interval** per equivalent query and at
+  most **two physical commands** in flight, including discovery. Matching machine
+  and directory discovery is shared; matching machine and canonical Git worktree
+  status is shared even across subdirectories. Linked worktrees remain separate.
+  Successful directory discovery is cached while visible cards consume it.
+  Slow requests keep their slots until settlement; failures wait for the interval.
+  There is no retry queue, and at most 128 recent query cooldowns are retained for
+  one interval. Counts may wait longer when many different worktrees are shown.
+  Only the board copy polls. Filtering, Put away, folded Idle rows and hiding or
+  expanding the board stop queries without a visible consumer. Returning cards
+  wait for a current result. Native execution measurements and simulated runtime
+  checks are distinguished in [the verification record](issue-26-verification.md).
 - The Peek window and Herdr's sidebar are Herdr's own and stay in English.
 - Herdr can't change a space's registered folder after it's made; Herdboard always
   uses the terminals' live folders instead.
