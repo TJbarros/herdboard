@@ -21,9 +21,10 @@ column, top to bottom:
    button.
 2. **Board**, height = its tallest column (140–360px), `canvas`, 1px `border`
    frame. Four equal columns, 16px gaps (10 below 1100px). Column header 26px:
-   status dot, label 13px semibold, count chip (status color at 14%). Cards 64px,
+   status dot, label 13px semibold, count chip (status color at 14%). Ordinary cards 64px,
    `background`, 7px corners, 3px status stripe: program icon + task title (13px
-   semibold), then space · tab · branch and the age (11px `muted`). Blocked cards
+   semibold), then space · tab · branch and the age (11px `muted`). Working cards
+   are 86px, adding a truncated Doing now line with a full-text tooltip. Blocked cards
    are taller: the question in a mono box tinted `blocked`, then, for a permission
    dialog, *Yes*, *No* and, when there are other options, *More…* (24px outlined
    buttons, their own row), then *Open and
@@ -51,6 +52,22 @@ column, top to bottom:
   `herdboard.titles` and shown as "Last: …" when the agent has none.
 - Age: Herdr's per-tab `working_since` / `changed_at` when the agent is alone in
   its tab, else the time the board first saw the status; refreshed every 30s.
+- Working activity: `activity.js` recognizes only captured live Claude Code
+  2.1.319 and Codex 0.167.0 progress formats/configurations. Prefer a Claude
+  running-tool label only with its timer and command adjacent to the active
+  phase; otherwise show the phase. Codex's captured format exposes only Working.
+  Unsupported/ambiguous screens, including the tested unreported pi, use the
+  translated unavailable state. Original activity is transient, never stored in
+  `herdboard.titles`. See `docs/issue-25-verification.md` for native evidence.
+  Only the cards instance polls eligible Working consumers: visible layout and
+  ancestors, active filter, tabs not put away. One-second timer checks enforce a
+  minimum 5000ms cooldown after completion, two physical reads globally and one
+  per address, even after replacement. There is no saved queue; dispatch and
+  completion revalidate current consumers. Late results from an old terminal,
+  foreground, turn, report sequence or association are dropped. `seq` is a
+  conservative invalidation signal, separate from core `turn`. Cached text expires
+  after 10000ms while stalled reads keep their slot. Failures clear text and use
+  the same cooldown. Existing question/startup reads have separate budgets.
 - Blocked question: on each new blocked spell (address + `seq`), `hc read <t>
   --lines 0`; the last line ending in "?" and up to two before it, frames dropped,
   separator lines dropped (lines of horizontal glyphs only:
@@ -200,7 +217,7 @@ column, top to bottom:
   `layout`, `theme`, `shared` / `setShared`, `run`, `hc`, `openOverlay` /
   `closeOverlay`, `notify`, `setAgentOrder`, `knownAgents`.
 - **Programs run**: `hc read <t> --lines 0` (board, blocked agents; again on a Yes /
-  No click or More… choice; also startup discovery), `hc get <t> --json` (startup
+  No click or More… choice; also startup discovery and bounded Working activity), `hc get <t> --json` (startup
   and Codex source validation), `hc keys <t> <digit>` (numbered permission answers),
   `hc keys <t> <arrows...> enter` (recognised cursor answers), `hc keys <t> y|esc`
   (verified Codex one-time approval / cancellation) and

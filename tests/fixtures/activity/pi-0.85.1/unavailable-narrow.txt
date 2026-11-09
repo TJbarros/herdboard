@@ -1,0 +1,33 @@
+implement-spec, improve-codebase-architecture, maestri, maestri-chat,
+maestri-manager, maestri-portal, maestri-portal-devices, maestri-routines,
+maestri-workspace, pr, prototype, research, retro, reverse-engineer-anything,
+setup-matt-pocock-skills, tdd, teach, to-questionnaire, to-spec, to-tickets,
+triage, wait-what, wayfinder, wizard, writing-for-agents
+
+
+ fd not found. Downloading...
+
+ Startup is still in progress
+ Warning: Failed to download fd: The operation was aborted due to timeout
+
+ Warning: No models available. Use /login to log into a provider via OAuth or API
+ key. See:
+
+ /mnt/c/Users/tjaba/AppData/Roaming/npm/node_modules/@earendil-works/pi-coding-ag
+ ent/docs/providers.md
+
+ /mnt/c/Users/tjaba/AppData/Roaming/npm/node_modules/@earendil-works/pi-coding-ag
+ ent/docs/models.md
+
+──────────────────────────────────────────────────────────────────────────────────
+ Update Available
+ New version 1.5.0 is available. Run pi update
+ Changelog: https://pi.dev/changelog
+──────────────────────────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────────────────────────────
+For a Herdboard activity capture, run exactly one shell command: sleep 40;
+printf activity-capture-done. Do not edit files. After the result say done.
+──────────────────────────────────────────────────────────────────────────────────
+/tmp/herdboard-issues-25-27/native/workspace
+0.0%/0 (auto)                                                              unknown

@@ -138,6 +138,12 @@ continuam na barra enquanto está expandido.
 
 - **Faixa à esquerda**: a cor do status (aqui âmbar, Trabalhando).
 - **Linha de cima**: o ícone do agente e o título da tarefa.
+- **Fazendo agora** (Trabalhando e lista compacta): descrição reconhecida da
+  ferramenta em execução ou fase ativa de progresso, nas palavras do agente.
+  Passe o mouse na atividade para ver o texto completo. **Atividade indisponível**
+  significa que a tela, configuração ou terminal não comprovou uma atividade atual;
+  o título da tarefa nunca substitui esse dado.
+  [Formatos capturados de Claude/Codex e limite do pi](issue-25-verification.md).
 - **Linha de baixo**: espaço · aba · branch e, à direita, há quanto tempo ele está
   nesse status.
 - **Título**: o nome que o agente deu à tarefa. Depois de um `/clear`, o card mostra
@@ -180,6 +186,14 @@ Layout** lista todos.
   consultam `hc get` antes e depois dessa leitura para confirmar processo, pasta,
   configuração e report de permissão bloqueado. Nenhum mod baixa nada da internet
   nem lê seus arquivos.
+- A atividade em Trabalhando acrescenta leituras da tela visível só pela instância
+  de cards, com pelo menos **5 segundos após cada leitura terminar** e no máximo
+  **2 leituras de atividade em andamento** no quadro. Filtros, Guardar e
+  ocultar/expandir o quadro suspendem novas leituras. Leituras pendentes conservam
+  a vaga até terminar; falhas respeitam o mesmo intervalo. A atividade expira após
+  **10 segundos**, e mudanças de turno, processo ou status a descartam imediatamente.
+  As leituras de perguntas e descoberta inicial descritas acima têm agendamento
+  próprio e ficam fora desse teto de atividade.
 - A janela do Espiar e a barra lateral são do próprio Herdr e ficam em inglês.
 - O Herdr não permite mudar a pasta registrada de um espaço depois de criado; o
   Herdboard sempre usa a pasta atual dos terminais.

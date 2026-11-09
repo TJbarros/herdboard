@@ -1,0 +1,33 @@
+● Background command "Aguarda 40s e imprime marcador de captura" completed (exit
+code 0)
+
+  Read 1 file
+
+● ✅ Saída activity-capture-done, código 0. O comando rodou em background porque
+  esta sessão bloqueia sleep em primeiro plano. Nenhum arquivo editado.
+
+  done
+
+✻ Sautéed for 6s · done 2:47 AM · 1 shell still running
+
+❯ Repeat the harmless capture command once: sleep 45; printf second-capture-done.
+  Do not edit files.
+
+  Ran 1 shell command
+
+● ⏳ Segunda captura rodando em background (45s). Aguardo notificação.
+
+✻ Baked for 5s · done 2:47 AM · 1 shell still running
+
+❯ Think carefully about how to distinguish current terminal progress from
+  historical transcript text. Give five concrete pitfalls and discuss lifecycle
+  races. Do not use tools or edit files.
+
+✶ Sublimating… (running UserPromptSubmit hooks… 2/5 · 0s)
+  ⎿  Tip: Run /install-slack-app to use Claude in Slack
+
+──────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────
+  [CAVEMAN] Opus 5.5 | ░░░░░░░░░░ 9%
+  ⏵⏵ bypass permissions on · 1 shell

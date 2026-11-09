@@ -3,10 +3,10 @@
 export const herdr = { agents: [], terminals: [], spaces: [], panes: [], props: {}, calls: [], runs: [], shared: {} };
 export const agents = () => herdr.agents;
 export const terminals = () => herdr.terminals;
-export const hc = (args) => new Promise((resolve) => herdr.calls.push({ args, resolve }));
+export const hc = (args) => new Promise((resolve, reject) => herdr.calls.push({ args, resolve, reject }));
 export const shared = (key) => herdr.shared[key];
 export const setShared = (key, value) => { herdr.shared[key] = value; };
-export const spaces = () => herdr.spaces, panes = () => herdr.panes, props = () => herdr.props, layout = () => ({});
+export const spaces = () => herdr.spaces, panes = () => herdr.panes, props = () => herdr.props, layout = () => herdr.layout ?? {};
 export const theme = () => ({}), notify = () => {}, setAgentOrder = () => {};
 export const run = (command, args) => {
   herdr.runs.push({ command, args });
