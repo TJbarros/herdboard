@@ -13,9 +13,9 @@
 
 <p align="center"><a href="README.md">English</a> · <b>Português (Brasil)</b></p>
 
-<p align="center"><img src="docs/images/demo.pt-BR.gif" alt="Animação: um agente trabalhando; ele para e pede permissão, e o card vai para Precisa de você mostrando a pergunta; depois da resposta volta para Trabalhando"></p>
+<p align="center"><img src="docs/images/demo.pt-BR.gif" alt="Animação: um agente vai de Trabalhando para Precisa de você com um pedido de permissão e os botões Sim, Não e Mais…; o clique em Sim no card devolve o mesmo agente a Trabalhando"></p>
 
-<p align="center"><sub>Dados de exemplo. Um agente pede permissão: o card dele vai para <b>Precisa de você</b> com a pergunta; depois de respondido, volta para <b>Trabalhando</b>.</sub></p>
+<p align="center"><sub>Dados de exemplo no Herdr. Um pedido de permissão leva o agente a <b>Precisa de você</b>, com <b>Sim / Não / Mais…</b> no card. O clique em <b>Sim</b> ali o devolve a <b>Trabalhando</b>.</sub></p>
 
 ## Instalação
 

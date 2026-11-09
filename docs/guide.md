@@ -25,9 +25,10 @@ stay on the active space's machine.
 When an agent stops to ask something, its card jumps to **Needs you** and the column
 turns red. If it's in another space, that space's pill in the header turns red too.
 
-<img src="images/usage-needs-you.png" width="470" alt="Needs you column with a blocked card showing the agent's question and the Open and answer and Peek buttons">
+<img src="images/usage-needs-you.png" width="470" alt="Needs you column with a blocked permission card showing the question, Yes, No, More…, Open and answer, Peek and waiting time">
 
-*A blocked agent: its question, **Open and answer**, **Peek** and how long it has been waiting.*
+*Demo permission request in Herdr: the question, **Yes / No / More…**, **Open and
+answer**, **Peek** and how long the agent has been waiting.*
 
 1. Read the question right on the card: it shows the last lines of the agent's
    screen, without frames or separator lines (so a command between Claude Code's

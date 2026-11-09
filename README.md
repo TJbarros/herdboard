@@ -13,9 +13,9 @@
 
 <p align="center"><b>English</b> · <a href="README.pt-BR.md">Português (Brasil)</a></p>
 
-<p align="center"><img src="docs/images/demo.gif" alt="Animation: an agent working; it stops to ask for permission and its card moves to Needs you, showing the question; after the answer it goes back to Working"></p>
+<p align="center"><img src="docs/images/demo.gif" alt="Animation: an agent moves from Working to Needs you with a permission question and Yes, No and More… buttons; clicking Yes on its card returns the same agent to Working"></p>
 
-<p align="center"><sub>Demo data. An agent asks for permission: its card moves to <b>Needs you</b> with the question; once answered, it goes back to <b>Working</b>.</sub></p>
+<p align="center"><sub>Demo data in Herdr. A permission request moves the agent to <b>Needs you</b>, with <b>Yes / No / More…</b> on its card. Clicking <b>Yes</b> there returns it to <b>Working</b>.</sub></p>
 
 ## Install
 

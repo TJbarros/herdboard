@@ -26,10 +26,10 @@ Quando um agente para e pergunta algo, o card dele vai para **Precisa de você**
 coluna fica vermelha. Se ele estiver em outro espaço, esse espaço também fica vermelho
 no cabeçalho.
 
-<img src="images/usage-needs-you.pt-BR.png" width="470" alt="Coluna Precisa de você com um card bloqueado mostrando a pergunta do agente e os botões Abrir e responder e Espiar">
+<img src="images/usage-needs-you.pt-BR.png" width="470" alt="Coluna Precisa de você com um card de permissão bloqueado mostrando a pergunta, Sim, Não, Mais…, Abrir e responder, Espiar e o tempo de espera">
 
-*Um agente bloqueado: a pergunta dele, **Abrir e responder**, **Espiar** e há quanto
-tempo ele está esperando.*
+*Pedido de permissão de exemplo no Herdr: a pergunta, **Sim / Não / Mais…**,
+**Abrir e responder**, **Espiar** e há quanto tempo o agente está esperando.*
 
 1. Leia a pergunta no próprio card: ele mostra as últimas linhas da tela do agente,
    sem molduras nem linhas separadoras (assim aparece o comando entre as linhas
