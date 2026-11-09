@@ -1,5 +1,7 @@
 # Worktree change totals: verification
 
+[Português](issue-26-verification.pt-BR.md)
+
 Verified on 2026-11-09. These totals describe pending Git file records in the
 terminal's worktree, including changes made by anyone. They do not attribute work
 to an agent. Real remote connection details and captures remain private and are
@@ -27,8 +29,9 @@ The agreed public seams were Git-result interpretation with real repositories an
 the real-main.js runtime harness. Red/green slices were recorded before adding the
 helper, the cap guard, card querying, terminal revisions, hidden retry cooldowns,
 Git type changes and the positive-height gate. Raw failure/pass logs remain in the
-session's temporary evidence bundle. The full `scripts/check.sh` passed all three
-mod checks and the Node suite; the coordinator records the final combined suite
+session's temporary evidence bundle. After integrating machine identification,
+the full `scripts/check.sh` passed all three mod checks and **429 Node tests**;
+the coordinator records the final combined suite
 after integrating the other card changes.
 
 ## Native execution API

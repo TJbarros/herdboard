@@ -218,7 +218,7 @@ Layout** lista todos.
   período. Muitos worktrees diferentes podem aumentar a espera pelo total.
   Só a instância do quadro consulta. Filtros, Guardar, Ociosos recolhidos e ocultar
   ou expandir o quadro suspendem consultas sem consumidor visível. Ao voltar, o
-  card espera um resultado atual. O [registro de verificação](issue-26-verification.md)
+  card espera um resultado atual. O [registro de verificação](issue-26-verification.pt-BR.md)
   separa medições de execução nativa dos testes de runtime simulado.
 - A janela do Espiar e a barra lateral são do próprio Herdr e ficam em inglês.
 - O Herdr não permite mudar a pasta registrada de um espaço depois de criado; o
