@@ -61,6 +61,8 @@ blocked permission request. **Yes** sends `y`, approving this command once.
 **No** sends `esc`, canceling the request and interrupting the turn; type your
 next instruction in the terminal. Neither adds Enter, and both work from every
 captured selection. Tooltips show the original option and the cancellation effect.
+Direct answers require the launch configuration recorded in the verification
+notes; other launch settings retain the terminal fallback.
 The persistent “don't ask again” choice has no card shortcut or **More…** entry;
 use **Open and answer** for it. Other Codex dialogs, questions, remote environments
 and incomplete screens keep **Open and answer** / **Peek**. If a resize changes the
@@ -165,6 +167,8 @@ them all.
   agents are installed. Startup discovery additionally reads eligible Claude terminals
   about once a second while the board shows; a startup answer checks `hc get` before
   and after its fresh screen read, then sends the arrows and Enter together.
+  Codex answers also check `hc get` on both sides of that read to confirm the same
+  process, working directory, launch configuration and blocked permission report.
   No mod downloads anything from the internet or reads your files.
 - The Peek window and Herdr's sidebar are Herdr's own and stay in English.
 - Herdr can't change a space's registered folder after it's made; Herdboard always

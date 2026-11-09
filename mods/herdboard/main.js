@@ -139,14 +139,33 @@ function taskTitle(a) {
 function mayAnswer(a) {
   if (a.source?.kind === "workspace-trust") return startupCandidates().some(x => spell(x) === spell(a));
   const terminal = terminals().find(t => t.address === a.address);
-  if (a.app === "codex") return terminal?.state === "live" && terminal.screen === "exact" && terminal.reported === true
-    && terminal.status === "blocked" && terminal.report?.app === "codex"
-    && terminal.report.state === "blocked" && terminal.report.kind === "permission";
+  if (a.app === "codex") return codexContext(a) !== null;
   if (a.app !== "claude-code") return false;
   return terminal?.report?.kind === "permission";
 }
-// Reported requests use address#seq; startup requests use their explicit process lifecycle.
-const spell = (a) => a.source?.key ?? `${a.address}#${a.seq}`;
+// The only foreground launch configuration with captured shortcut outcomes (Codex 0.167.0).
+// These arguments identify the supported configuration, not the installed binary's version.
+const CODEX_APPROVAL_ARGV = ["codex", "--no-daemon", "--no-alt-screen", "--ask-for-approval",
+  "on-request", "--sandbox", "read-only", "-c", 'approvals_reviewer="user"'];
+// Bind Codex reads and answers to the process observed when the request was first read.
+function codexContext(a, t = terminals().find(t => t.address === a.address)) {
+  const f = t?.foreground;
+  // Core `get` has a status object; app snapshots split it into status and report.
+  const report = typeof t?.status === "object" ? t.status : t?.report;
+  const status = typeof t?.status === "string" ? t.status : report?.state;
+  const positive = n => Number.isSafeInteger(n) && n > 0;
+  const text = s => typeof s === "string" && s.trim().length > 0;
+  const argv = args => Array.isArray(args) && args.length > 0 && args.every(text);
+  if (t?.address !== a.address || t?.state !== "live" || t.screen !== "exact" || t.reported !== true || status !== "blocked"
+    || report?.app !== "codex" || report.state !== "blocked" || report.kind !== "permission"
+    || !positive(t.created_ms) || !positive(t.pid) || !positive(f?.pid)
+    || !text(t.cwd) || !text(f?.cwd) || f?.name !== "codex" || !argv(t.argv)
+    || JSON.stringify(f?.argv) !== JSON.stringify(CODEX_APPROVAL_ARGV)) return null;
+  return JSON.stringify([a.app, a.program?.key, t?.created_ms, t?.pid, t?.cwd, t?.argv,
+    f?.pid, f?.cwd, f?.name, f?.argv]);
+}
+// Codex also binds its stable process context; startup has its own explicit lifecycle.
+const spell = (a, terminal) => a.source?.key ?? `${a.address}#${a.seq}${a.app === "codex" ? `#codex:${codexContext(a, terminal)}` : ""}`;
 
 // A separate, explicitly identified startup source. These are terminal facts, never forged
 // OSC reports. Only a live Claude foreground process, before its first report, is eligible.
@@ -397,12 +416,14 @@ export default class Herdboard extends View {
     if (this.moreOpen === ask.key) this.moreOpen = null;
     cx.notify();
     const stillBlocked = () => { const now = stillOn(a.address, ask.key); return this.asks[a.address] === ask && !!now && !!answersFor(now, ask); };
-    // App snapshots arrive asynchronously. For the pre-report source, re-read the core's
-    // process/lifecycle facts on both sides of the screen read as well as checking the snapshot.
+    // App snapshots arrive asynchronously. Re-read Codex and pre-report process/lifecycle
+    // facts from the core on both sides of the screen read as well as checking the snapshot.
     const sameSource = async () => {
-      if (!a.source) return true;
+      if (!a.source && a.app !== "codex") return true;
       const r = await hc(["get", a.address, "--json"]);
-      return r?.code === 0 && startupKey(JSON.parse(r.stdout)) === ask.key && stillBlocked();
+      if (r?.code !== 0) return false;
+      const terminal = JSON.parse(r.stdout);
+      return (a.source ? startupKey(terminal) : spell(a, terminal)) === ask.key && stillBlocked();
     };
     cx.spawn(async (cx) => {
       let typed = false;

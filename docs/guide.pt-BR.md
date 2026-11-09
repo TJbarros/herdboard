@@ -64,6 +64,8 @@ Codex reporta um pedido de permissão bloqueado. **Sim** envia `y` e aprova esse
 comando uma vez. **Não** envia `esc`, cancela o pedido e interrompe o turno; digite
 a próxima instrução no terminal. Nenhum acrescenta Enter, e ambos funcionam a partir
 das três seleções capturadas. Os tooltips mostram a opção original e o efeito de cancelar.
+A resposta direta exige a configuração de inicialização registrada nas notas de
+verificação; outras configurações mantêm o fallback no terminal.
 A opção persistente “don't ask again” não tem atalho no card nem entrada em **Mais…**;
 use **Abrir e responder** para ela. Outros diálogos do Codex, perguntas, ambientes
 remotos e telas incompletas mantêm **Abrir e responder** / **Espiar**. Se um
@@ -174,8 +176,10 @@ Layout** lista todos.
   nova aba pergunta ao Herdr quais agentes estão instalados. A descoberta inicial
   também lê os terminais Claude elegíveis aproximadamente a cada segundo enquanto
   o quadro está visível; uma resposta inicial consulta `hc get` antes e depois da
-  leitura da tela e envia as setas e o Enter juntos. Nenhum mod baixa nada
-  da internet nem lê seus arquivos.
+  leitura da tela e envia as setas e o Enter juntos. As respostas ao Codex também
+  consultam `hc get` antes e depois dessa leitura para confirmar processo, pasta,
+  configuração e report de permissão bloqueado. Nenhum mod baixa nada da internet
+  nem lê seus arquivos.
 - A janela do Espiar e a barra lateral são do próprio Herdr e ficam em inglês.
 - O Herdr não permite mudar a pasta registrada de um espaço depois de criado; o
   Herdboard sempre usa a pasta atual dos terminais.

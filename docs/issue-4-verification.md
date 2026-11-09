@@ -28,6 +28,13 @@ existing defaults rejected the escalation without a dialog; starting Codex alone
 does not establish approval eligibility. The test reused the installed login;
 credentials and account/status screens are not included in fixtures.
 
+Direct answers require the complete captured foreground argument vector above,
+with no additional overrides, and a Codex foreground process. Other launch
+configurations retain the fallback. `0.167.0` identifies the version used to
+verify this dialog and configuration; terminal metadata does not expose a binary
+version, and the banner scrolls out of later requests. There is no runtime
+binary-version check.
+
 The pending request reported `{app: "codex", state: "blocked", kind: "permission"}`.
 Raw `hc get` nests that report in `status` and exposes `turn`. The app's actual
 `terminals()` snapshot exposes a `status` word and a separate `report`; its
@@ -140,6 +147,40 @@ Reads and key sends remain separate core operations. A change after the final
 check and before a key is processed cannot be excluded by a screen comparison;
 this change does not claim an atomic compare-and-send transport.
 
+## Review refinement — 2026-11-09
+
+The real card-handler harness reproduced an old click sending `y` after only the
+terminal PID changed during validation. Address and agent `seq` alone did not
+identify the same process or working directory. The regression failed before
+the correction. The request key now also binds terminal creation, terminal and
+foreground PIDs, both working directories, argument vectors and foreground
+identity. Missing facts or an unverified foreground configuration retain the
+fallback. `hc get` checks the core's source and permission report before and
+after the screen reread, including when the app snapshot is stale.
+
+`scripts/check.sh` passed all three mods and **393 tests**, with zero failures or
+skips. Both changed JavaScript modules passed TypeScript `checkJs`. New tests
+cover source changes during initial reads, retry waits and answer validation;
+failed/malformed core reads; a replacement process at the same address/`seq`;
+and preservation of the sent latch across volatile title, clock and size changes.
+
+The corrected source was installed into another isolated native Herdr home.
+Yes approved exactly once; No canceled a separate request and interrupted the
+turn. Controls remained visible in PT/EN at 760×1000 and 1280×1000. A 60 fps
+recording captured both buttons disabled during cancellation. Adding the
+unverified `-c tui.animations=false` argument kept only Open and answer / Peek
+despite a complete, reported Codex permission dialog. No persistent choice was
+executed. Native process replacement during validation was not recreated; that
+race is covered by the deterministic real-handler harness.
+
+The [refinement evidence bundle](../tests/fixtures/codex-0.167.0/refinement.json)
+records source hashes, raw paired screens/metadata, both outcomes and the four
+viewport/language captures. Current screenshots: [EN wide](images/issue-4-review-en-1280.png),
+[PT wide](images/issue-4-review-pt-1280.png), [EN narrow](images/issue-4-review-en-760.png),
+[PT narrow](images/issue-4-review-pt-760.png),
+[disabled](images/issue-4-review-disabled-pt-760.png) and
+[unverified-configuration fallback](images/issue-4-review-fallback-pt-760.png).
+
 ## Português (Brasil)
 
 O suporte desta entrega é o **diálogo local de aprovação de comando do Codex CLI
@@ -151,6 +192,12 @@ As fixtures preservam as capturas de 120×40 e 48×40, os metadados pareados e o
 snapshot real do app. `hc get` guarda o report em `status` e tem `turn`; no app,
 `terminals()` separa `status` e `report`, e `agents()` fornece seu próprio `seq`.
 Não são o mesmo contador. Nenhum report foi inventado.
+
+A resposta direta exige o vetor completo de argumentos de inicialização acima,
+sem overrides adicionais, e um processo Codex em primeiro plano. Outras
+configurações mantêm o fallback. `0.167.0` identifica a versão usada para validar
+esse formato e configuração; os metadados não informam a versão do binário e o
+banner deixa de aparecer após a rolagem. Não há trava de versão em runtime.
 
 Os seis testes nativos independentes confirmaram `y` para aprovar uma vez e `esc`
 para cancelar o pedido e interromper o turno, a partir de cada uma das três
@@ -182,3 +229,21 @@ retentativas e preservação dos fluxos Claude. Os módulos alterados passaram n
 checagem de tipos; `scripts/check.sh` executa os três checks e a suíte completa.
 O resultado final foi de **três mods e 308 testes aprovados, sem falhas ou skips**.
 Leitura e envio continuam sendo operações separadas do core, sem garantia atômica.
+
+Na revisão de 2026-11-09, o harness real reproduziu um clique antigo enviando `y`
+após trocar apenas o PID durante a validação. O teste falhou antes da correção.
+A chave agora vincula criação, PIDs, pastas, argumentos e identidade do processo;
+fatos ausentes ou configuração não verificada mantêm o fallback. `hc get` confere
+origem e report no core antes e depois da releitura, mesmo com snapshot atrasado.
+Os três mods e **393 testes** passaram, sem falhas ou skips, além da checagem de
+tipos. A cobertura inclui leituras iniciais, retentativas, respostas, erros do core,
+processo novo no mesmo endereço/`seq` e preservação do latch após mudanças voláteis.
+
+A versão corrigida também foi testada em outro Herdr isolado: Sim aprovou uma vez
+e Não cancelou um pedido separado, interrompendo o turno. Os controles ficaram
+visíveis em PT/EN a 760×1000 e 1280×1000; uma gravação a 60 fps mostrou os dois
+desabilitados. Um Codex com o argumento adicional não verificado
+`-c tui.animations=false` manteve só Abrir e responder / Espiar, apesar do diálogo
+completo e report de permissão. Não houve aprovação persistente. A troca de
+processo durante a validação foi reproduzida no harness, sem reprodução nativa
+dessa corrida. O bundle e as capturas da revisão estão vinculados acima.

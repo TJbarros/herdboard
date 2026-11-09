@@ -6,7 +6,8 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 - Verified Codex CLI 0.167.0 local command approvals can be answered from cards:
   Yes sends `y` for one-time approval; No sends `esc` to cancel the request and
-  interrupt the turn. Full-screen and reported-agent checks precede each send.
+  interrupt the turn. Full-screen, process/context and reported-agent checks
+  precede each send; unverified launch configurations retain the fallback.
   The persistent choice and the tested unreported pi 0.85.1 confirmation remain
   available only in the terminal; versioned native evidence documents the scope.
 

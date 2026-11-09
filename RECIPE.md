@@ -98,7 +98,12 @@ column, top to bottom:
   lines are supported in the captured format; ambiguous or incomplete shapes fall
   back. Eligibility requires a live, reported terminal with `screen: exact`, `status: blocked`, and
   `report: {app: codex, state: blocked, kind: permission}`. Never reuse Claude's
-  numbered or startup parser for this integration. The id guards the raw dialog
+  numbered or startup parser for this integration. Require the complete captured
+  foreground argument vector and a Codex foreground process. The request key
+  binds terminal creation, terminal/foreground PIDs, both working directories and
+  argument vectors; a source change invalidates cached reads and old handlers.
+  Before and after the fresh screen read, `hc get` also verifies the source and
+  blocked permission report independently of the app snapshot. The id guards the raw dialog
   through its footer, including the unexposed persistent option; only the cursor
   on option rows is blanked. Native captures verified `y` (one-time approval) and
   `esc` (cancel request and interrupt turn) from all three selections, without
@@ -196,7 +201,7 @@ column, top to bottom:
   `closeOverlay`, `notify`, `setAgentOrder`, `knownAgents`.
 - **Programs run**: `hc read <t> --lines 0` (board, blocked agents; again on a Yes /
   No click or More… choice; also startup discovery), `hc get <t> --json` (startup
-  source validation), `hc keys <t> <digit>` (numbered permission answers),
+  and Codex source validation), `hc keys <t> <digit>` (numbered permission answers),
   `hc keys <t> <arrows...> enter` (recognised cursor answers), `hc keys <t> y|esc`
   (verified Codex one-time approval / cancellation) and
   `hc machine ls` (picker, as Herdr's own); `knownAgents()` (new-tab menu). **Art**:

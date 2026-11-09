@@ -46,15 +46,28 @@ const moreScreen = (cmd) => screen(cmd).replace("   3. No", [
 
 // cx.sleep waits until the test wakes it, so a test can end a spell between a miss and its retry.
 const waits = [];
+let autoCodexCore = true, codexCore = null;
 const cx = { spawn: (f) => f(cx), notify() {}, timer: { every() {} }, stop_propagation() {},
   sleep: (ms) => new Promise((resolve) => waits.push({ ms, resolve })) };
-const flush = async () => { for (let i = 0; i < 5; i++) await new Promise(r => setImmediate(r)); };
+const flush = async () => {
+  for (let i = 0; i < 5; i++) {
+    await new Promise(r => setImmediate(r));
+    // Default to captured core facts; race/error tests settle their own get calls explicitly.
+    if (autoCodexCore && codexCore) for (const call of herdr.calls) {
+      if (call.args[0] === "get" && !call.settled) {
+        call.settled = true;
+        call.resolve({ code: 0, stdout: JSON.stringify(codexCore) });
+      }
+    }
+  }
+};
 const blocked = (seq) => ({ address: "t1", status: "blocked", seq, app: "claude-code" });
 const reads = () => herdr.calls.filter(c => c.args[0] === "read");
 const keys = () => herdr.calls.filter(c => c.args[0] === "keys").map(c => c.args.slice(1));
-// Settle an hc call the way the app would: reads return the screen, keys succeed.
+// Settle an hc call the way the app would: reads/get return stdout, keys succeed.
 async function settle(call, stdout) {
-  call.resolve(call.args[0] === "read" ? { code: 0, stdout } : { code: 0 });
+  call.settled = true;
+  call.resolve(call.args[0] === "keys" ? { code: 0 } : { code: 0, stdout });
   await flush();
 }
 async function settleKeys() {
@@ -102,17 +115,21 @@ beforeEach(() => {
   herdr.runs.length = 0;
   herdr.shared = {};
   waits.length = 0;
+  autoCodexCore = true;
+  codexCore = null;
   herdr.terminals = [{ address: "t1", report: { kind: "permission" } }];
 });
 
 const CODEX = readFileSync(new URL("./fixtures/codex-0.167.0/command-wide.txt", import.meta.url), "utf8");
 const CODEX_NARROW = readFileSync(new URL("./fixtures/codex-0.167.0/command-narrow.txt", import.meta.url), "utf8");
 const CODEX_SNAPSHOT = JSON.parse(readFileSync(new URL("./fixtures/codex-0.167.0/app-snapshot.json", import.meta.url), "utf8"));
+const CODEX_CORE = JSON.parse(readFileSync(new URL("./fixtures/codex-0.167.0/command-wide.json", import.meta.url), "utf8"));
 function reportedCodex(seq = 1) {
-  const a = { ...blocked(seq), app: "codex" };
+  const a = { ...structuredClone(CODEX_SNAPSHOT.agents[0]), ...blocked(seq), app: "codex" };
   herdr.agents = [a];
-  const terminal = CODEX_SNAPSHOT.terminals[0];
+  const terminal = structuredClone(CODEX_SNAPSHOT.terminals[0]);
   herdr.terminals = [{ ...terminal, address: a.address, report: { ...terminal.report } }];
+  codexCore = { ...structuredClone(CODEX_CORE), address: a.address };
   return a;
 }
 test("Codex one-time approval sends only y once after validating the captured request", async () => {
@@ -129,6 +146,16 @@ test("Codex one-time approval sends only y once after validating the captured re
   assert.deepEqual(keys(), [["t1", "y"]]);
 });
 
+test("Codex sends nothing if the terminal process changes during validation", async () => {
+  const b = board(), a = reportedCodex();
+  await readFor(b, a, CODEX);
+  await draw(b, a).yes();
+  herdr.terminals[0].pid++;
+  await settle(reads().at(-1), CODEX);
+  await settleKeys();
+  assert.deepEqual(keys(), []);
+});
+
 for (const [width, capture] of [["wide", CODEX], ["narrow", CODEX_NARROW]]) {
   for (const selected of [1, 2, 3]) for (const answer of ["yes", "no"]) {
     test(`Codex ${answer} uses its verified shortcut from selection ${selected} in the ${width} capture`, async () => {
@@ -143,8 +170,83 @@ for (const [width, capture] of [["wide", CODEX], ["narrow", CODEX_NARROW]]) {
   }
 }
 
+const CONTEXT_CHANGES = {
+  "terminal creation": t => t.created_ms++,
+  "terminal process": t => t.pid++,
+  "foreground process": t => t.foreground.pid++,
+  "terminal cwd": t => t.cwd = "/tmp/another-workspace",
+  "foreground cwd": t => t.foreground.cwd = "/tmp/another-workspace",
+  "terminal argv": t => t.argv = ["bash"],
+  "foreground argv": t => t.foreground.argv = [...t.foreground.argv, "-c", "sandbox_mode=\"workspace-write\""],
+  "foreground name": t => t.foreground.name = "other-agent",
+};
+for (const [fact, remove] of [
+  ["terminal creation", t => delete t.created_ms], ["terminal process", t => delete t.pid],
+  ["foreground process", t => delete t.foreground.pid], ["terminal cwd", t => delete t.cwd],
+  ["foreground cwd", t => delete t.foreground.cwd], ["terminal argv", t => delete t.argv],
+  ["foreground argv", t => delete t.foreground.argv], ["foreground name", t => delete t.foreground.name],
+  ["invalid creation time", t => t.created_ms = NaN], ["invalid terminal pid", t => t.pid = -1],
+  ["invalid foreground pid", t => t.foreground.pid = 1.5], ["empty cwd", t => t.cwd = ""],
+]) test(`Codex without reliable ${fact} retains fallback controls`, async () => {
+  const b = board(), a = reportedCodex();
+  remove(herdr.terminals[0]);
+  await readFor(b, a, CODEX);
+  assert.equal(draw(b, a).yes, null);
+  assert.deepEqual(keys(), []);
+});
+for (const [configuration, change] of [
+  ["extra override", args => [...args, "-c", "sandbox_mode=\"workspace-write\""]],
+  ["different policy", args => args.map(arg => arg === "on-request" ? "untrusted" : arg)],
+  ["different sandbox", args => args.map(arg => arg === "read-only" ? "workspace-write" : arg)],
+  ["missing option", args => args.slice(0, -2)], ["unknown executable", args => ["other", ...args.slice(1)]],
+]) test(`Codex with an unverified ${configuration} retains fallback controls`, async () => {
+  const b = board(), a = reportedCodex();
+  const f = herdr.terminals[0].foreground;
+  f.argv = change(f.argv);
+  await readFor(b, a, CODEX);
+  assert.equal(draw(b, a).yes, null);
+  assert.deepEqual(keys(), []);
+});
+test("Codex checks the core process before validating the screen", async () => {
+  autoCodexCore = false;
+  const b = board(), a = reportedCodex();
+  await readFor(b, a, CODEX);
+  await draw(b, a).yes();
+  assert.deepEqual(herdr.calls.at(-1).args, ["get", "t1", "--json"]);
+});
+
+for (const phase of ["before screen", "after screen"]) {
+  for (const change of [...Object.keys(CONTEXT_CHANGES), "report", "status", "state", "screen", "reported", "address", "missing lifecycle", "read failure", "invalid JSON"]) {
+    test(`Codex sends nothing when core ${change} changes ${phase} while the app snapshot lags`, async () => {
+      autoCodexCore = false;
+      const b = board(), a = reportedCodex();
+      await readFor(b, a, CODEX);
+      await draw(b, a).yes();
+      if (phase === "after screen") {
+        await settle(herdr.calls.at(-1), JSON.stringify(codexCore));
+        await settle(reads().at(-1), CODEX);
+      }
+      const validation = herdr.calls.at(-1);
+      assert.deepEqual(validation.args, ["get", "t1", "--json"]);
+      CONTEXT_CHANGES[change]?.(codexCore);
+      if (change === "report") codexCore.status.kind = "question";
+      if (change === "status") codexCore.status.state = "working";
+      if (change === "state") codexCore.state = "finished";
+      if (change === "screen") codexCore.screen = "lossy";
+      if (change === "reported") codexCore.reported = false;
+      if (change === "address") codexCore.address = "t2";
+      if (change === "missing lifecycle") delete codexCore.created_ms;
+      if (change === "read failure") { validation.resolve({ code: 1 }); await flush(); }
+      else await settle(validation, change === "invalid JSON" ? "{" : JSON.stringify(codexCore));
+      await settleKeys();
+      assert.deepEqual(keys(), []);
+      assert.equal(b.asks.t1, undefined);
+      assert.equal(reads().length, phase === "after screen" ? 2 : 1);
+    });
+  }
+}
 for (const phase of ["before click", "during read"]) {
-  for (const change of ["agent", "kind", "report app", "report state", "reported", "screen", "terminal state", "terminal status", "terminal gone", "status", "seq"]) {
+  for (const change of ["agent", "agent program", "kind", "report app", "report state", "reported", "screen", "terminal state", "terminal status", "terminal gone", "status", "seq", ...Object.keys(CONTEXT_CHANGES)]) {
     test(`Codex sends nothing if ${change} changes ${phase}`, async () => {
       const b = board(), a = reportedCodex();
       await readFor(b, a, CODEX);
@@ -152,6 +254,7 @@ for (const phase of ["before click", "during read"]) {
       const changeSource = () => {
         const t = herdr.terminals[0];
         if (change === "agent") herdr.agents = [{ ...a, app: "claude-code" }];
+        if (change === "agent program") herdr.agents = [{ ...a, program: { ...a.program, key: "pi" } }];
         if (change === "kind") t.report.kind = "question";
         if (change === "report app") t.report.app = "pi";
         if (change === "report state") t.report.state = "working";
@@ -162,6 +265,7 @@ for (const phase of ["before click", "during read"]) {
         if (change === "terminal gone") herdr.terminals = [];
         if (change === "status") herdr.agents = [{ ...a, status: "working" }];
         if (change === "seq") herdr.agents = [{ ...a, seq: 2 }];
+        CONTEXT_CHANGES[change]?.(t);
       };
       if (phase === "before click") changeSource();
       await click();
@@ -172,6 +276,102 @@ for (const phase of ["before click", "during read"]) {
     });
   }
 }
+
+for (const [change, mutate] of Object.entries(CONTEXT_CHANGES)) {
+  test(`Codex discards an initial read if ${change} changes before it returns`, async () => {
+    const b = board(), a = reportedCodex();
+    b.fetchAsks([a], cx);
+    mutate(herdr.terminals[0]);
+    await settle(reads().at(-1), CODEX);
+    assert.equal(b.asks.t1, undefined);
+    assert.equal(draw(b, a).yes, null);
+    assert.equal(reads().length, 1);
+    assert.equal(waits.length, 0);
+  });
+}
+
+for (const phase of ["during wait", "during retry"]) {
+  test(`Codex ends an old context's retry chain after process replacement ${phase}`, async () => {
+    const b = board(), a = reportedCodex();
+    await readFor(b, a, "Running…");
+    if (phase === "during retry") await wake();
+    herdr.terminals[0].pid++;
+    if (phase === "during retry") await settle(reads().at(-1), CODEX);
+    else await wake();
+    assert.equal(b.asks.t1, undefined);
+    assert.equal(reads().length, phase === "during retry" ? 2 : 1);
+    assert.equal(waits.length, 1);
+    assert.deepEqual(keys(), []);
+  });
+}
+
+test("a new Codex process at the same address and seq becomes answerable and rejects the old initial read", async () => {
+  const b = board(), a = reportedCodex();
+  b.fetchAsks([a], cx);
+  const late = reads().at(-1);
+  const t = herdr.terminals[0];
+  t.created_ms++; t.pid++; t.foreground.pid++;
+  codexCore.created_ms++; codexCore.pid++; codexCore.foreground.pid++;
+  await readFor(b, a, CODEX);
+  const current = b.asks.t1;
+  await settle(late, CODEX);
+  assert.equal(b.asks.t1, current);
+  await draw(b, a).yes();
+  await settle(reads().at(-1), CODEX);
+  await settleKeys();
+  assert.deepEqual(keys(), [["t1", "y"]]);
+});
+
+test("a new Codex process rearms an answered card at the same seq while old handlers stay inert", async () => {
+  const b = board(), a = reportedCodex();
+  await readFor(b, a, CODEX);
+  const old = draw(b, a);
+  await old.yes();
+  await settle(reads().at(-1), CODEX);
+  await settleKeys();
+  const t = herdr.terminals[0];
+  t.created_ms++; t.pid++; t.foreground.pid++;
+  codexCore.created_ms++; codexCore.pid++; codexCore.foreground.pid++;
+  b.fetchAsks([], cx);
+  await readFor(b, a, CODEX);
+  await old.no();
+  await draw(b, a).no();
+  await settle(reads().at(-1), CODEX);
+  await settleKeys();
+  assert.deepEqual(keys(), [["t1", "y"], ["t1", "esc"]]);
+});
+
+test("Codex report clocks, turn, titles and terminal resize neither invalidate validation nor rearm sent answers", async () => {
+  const b = board(), a = reportedCodex();
+  await readFor(b, a, CODEX);
+  await draw(b, a).yes();
+  const changeDisplay = t => {
+    t.status_ms++; t.turn++; t.cols--; t.rows++; t.title = "Updated title";
+    if (t.report) t.report.updated_ms = 123;
+  };
+  changeDisplay(herdr.terminals[0]);
+  changeDisplay(codexCore);
+  a.title = "A newer task title";
+  await settle(reads().at(-1), CODEX);
+  await settleKeys();
+  b.fetchAsks([], cx);
+  changeDisplay(herdr.terminals[0]);
+  b.fetchAsks([a], cx);
+  await draw(b, a).yes();
+  assert.deepEqual(keys(), [["t1", "y"]]);
+  assert.equal(reads().length, 2);
+});
+
+test("a Codex foreground launched through a terminal shell wrapper remains answerable", async () => {
+  const b = board(), a = reportedCodex();
+  herdr.terminals[0].argv = ["/bin/bash", "-lc", "exec codex"];
+  codexCore.argv = ["/bin/bash", "-lc", "exec codex"];
+  await readFor(b, a, CODEX);
+  await draw(b, a).yes();
+  await settle(reads().at(-1), CODEX);
+  await settleKeys();
+  assert.deepEqual(keys(), [["t1", "y"]]);
+});
 
 for (const change of ["command", "reason", "spaces", "persistent option", "footer", "read failure"]) {
   test(`Codex sends nothing after a fresh ${change} mismatch`, async () => {

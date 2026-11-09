@@ -1,0 +1,721 @@
+{
+  "date": "2026-11-09",
+  "os": "Linux x86_64 / WSL2",
+  "codex": "0.167.0",
+  "herdr_app": "0.1.13",
+  "herdr_core": "0.1.18",
+  "source_sha256": {
+    "mods/herdboard/main.js": "2a59e5c243025d4a9fe77aa8ff3b7abb2ebfcd126cb01529c92480b894e549ce",
+    "mods/herdboard/ask.js": "4894e15fbd897de8cb738e8b3fdba69d383c5ac1a01b52a40de22a6c97b65d64"
+  },
+  "matrix": [
+    {
+      "language": "en",
+      "window": [
+        760,
+        1000
+      ],
+      "capture": "docs/images/issue-4-review-en-760.png",
+      "before": {
+        "screen": "\n\u2022 It ran successfully and printed approval-probe.\n\n  Worked for 2m 2s \u2022 01:02\n\n\n\u203a Repeat the identical harmless approval probe once with the same escalated\n  exec_command and justification. No other actions. Wait for a human answer. If\n  canceled, do not retry; state whether it ran and stop.\n\n\n\u2022 I\u2019ll submit the same probe for approval and wait.\n\n\u25e6 Running /usr/bin/printf approval-probe\n\n\n  Would you like to run the following command?\n\n  Environment: local\n\n  Reason: May I run this harmless printf for the Herdboard approval capture?\n\n  $ /usr/bin/printf approval-probe\n\n\n\u203a 1. Yes, proceed (y)\n  2. Yes, and don't ask again for commands that start with `/usr/bin/printf\n     approval-probe` (p)\n  3. No, and tell Codex what to do differently (esc)\n\n  Press enter to confirm or esc to cancel\n",
+        "hc_get": {
+          "address": "t2",
+          "argv": [
+            "/bin/bash",
+            "-ic",
+            "\"$@\"; exec \"$0\" -i",
+            "/bin/bash",
+            "codex",
+            "--no-daemon",
+            "--no-alt-screen",
+            "--ask-for-approval",
+            "on-request",
+            "--sandbox",
+            "read-only",
+            "-c",
+            "approvals_reviewer=\"user\""
+          ],
+          "cols": 82,
+          "created_ms": 1794196819706,
+          "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+          "die_with_parent": false,
+          "exit_code": null,
+          "finished_ms": null,
+          "foreground": {
+            "argv": [
+              "codex",
+              "--no-daemon",
+              "--no-alt-screen",
+              "--ask-for-approval",
+              "on-request",
+              "--sandbox",
+              "read-only",
+              "-c",
+              "approvals_reviewer=\"user\""
+            ],
+            "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+            "name": "codex",
+            "pid": 14315
+          },
+          "identity": "ghostty",
+          "keep": true,
+          "labels": {
+            "herdr.seen": "0",
+            "herdr.space": "spb71e160ab6efe6a6c86dff04850c4892",
+            "herdr.tab": "tbbb727dee0c697341a72fee935434036f",
+            "where": "PR 23 verification / 1"
+          },
+          "name": null,
+          "notify": true,
+          "parent": null,
+          "pid": 13979,
+          "reason": null,
+          "reported": true,
+          "rm": false,
+          "rows": 31,
+          "screen": "exact",
+          "signal": null,
+          "state": "live",
+          "status": {
+            "app": "codex",
+            "kind": "permission",
+            "state": "blocked"
+          },
+          "status_ms": 1794196987802,
+          "template": null,
+          "title": "[ ! ] Action Required | Run approval-dialog probe | workspace",
+          "turn": 3
+        }
+      }
+    },
+    {
+      "language": "en",
+      "window": [
+        1280,
+        1000
+      ],
+      "capture": "docs/images/issue-4-review-en-1280.png",
+      "before": {
+        "screen": "\n\u2022 It ran successfully and printed approval-probe.\n\n  Worked for 2m 2s \u2022 01:02\n\n\n\u203a Repeat the identical harmless approval probe once with the same escalated exec_command and justification. No other actions. Wait for a human\n  answer. If canceled, do not retry; state whether it ran and stop.\n\n\n\u2022 I\u2019ll submit the same probe for approval and wait.\n\n\u2022 Running /usr/bin/printf approval-probe\n\n\n  Would you like to run the following command?\n\n  Environment: local\n\n  Reason: May I run this harmless printf for the Herdboard approval capture?\n\n  $ /usr/bin/printf approval-probe\n\n\n\u203a 1. Yes, proceed (y)\n  2. Yes, and don't ask again for commands that start with `/usr/bin/printf approval-probe` (p)\n  3. No, and tell Codex what to do differently (esc)\n\n  Press enter to confirm or esc to cancel\n",
+        "hc_get": {
+          "address": "t2",
+          "argv": [
+            "/bin/bash",
+            "-ic",
+            "\"$@\"; exec \"$0\" -i",
+            "/bin/bash",
+            "codex",
+            "--no-daemon",
+            "--no-alt-screen",
+            "--ask-for-approval",
+            "on-request",
+            "--sandbox",
+            "read-only",
+            "-c",
+            "approvals_reviewer=\"user\""
+          ],
+          "cols": 149,
+          "created_ms": 1794196819706,
+          "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+          "die_with_parent": false,
+          "exit_code": null,
+          "finished_ms": null,
+          "foreground": {
+            "argv": [
+              "codex",
+              "--no-daemon",
+              "--no-alt-screen",
+              "--ask-for-approval",
+              "on-request",
+              "--sandbox",
+              "read-only",
+              "-c",
+              "approvals_reviewer=\"user\""
+            ],
+            "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+            "name": "codex",
+            "pid": 14315
+          },
+          "identity": "ghostty",
+          "keep": true,
+          "labels": {
+            "herdr.seen": "0",
+            "herdr.space": "spb71e160ab6efe6a6c86dff04850c4892",
+            "herdr.tab": "tbbb727dee0c697341a72fee935434036f",
+            "where": "PR 23 verification / 1"
+          },
+          "name": null,
+          "notify": true,
+          "parent": null,
+          "pid": 13979,
+          "reason": null,
+          "reported": true,
+          "rm": false,
+          "rows": 29,
+          "screen": "exact",
+          "signal": null,
+          "state": "live",
+          "status": {
+            "app": "codex",
+            "kind": "permission",
+            "state": "blocked"
+          },
+          "status_ms": 1794196987802,
+          "template": null,
+          "title": "[ . ] Action Required | Run approval-dialog probe | workspace",
+          "turn": 3
+        }
+      }
+    },
+    {
+      "language": "pt",
+      "window": [
+        760,
+        1000
+      ],
+      "capture": "docs/images/issue-4-review-pt-760.png",
+      "before": {
+        "screen": "\n\u2022 It ran successfully and printed approval-probe.\n\n  Worked for 2m 2s \u2022 01:02\n\n\n\u203a Repeat the identical harmless approval probe once with the same escalated\n  exec_command and justification. No other actions. Wait for a human answer. If\n  canceled, do not retry; state whether it ran and stop.\n\n\n\u2022 I\u2019ll submit the same probe for approval and wait.\n\n\u25e6 Running /usr/bin/printf approval-probe\n\n\n  Would you like to run the following command?\n\n  Environment: local\n\n  Reason: May I run this harmless printf for the Herdboard approval capture?\n\n  $ /usr/bin/printf approval-probe\n\n\n\u203a 1. Yes, proceed (y)\n  2. Yes, and don't ask again for commands that start with `/usr/bin/printf\n     approval-probe` (p)\n  3. No, and tell Codex what to do differently (esc)\n\n  Press enter to confirm or esc to cancel\n",
+        "hc_get": {
+          "address": "t2",
+          "argv": [
+            "/bin/bash",
+            "-ic",
+            "\"$@\"; exec \"$0\" -i",
+            "/bin/bash",
+            "codex",
+            "--no-daemon",
+            "--no-alt-screen",
+            "--ask-for-approval",
+            "on-request",
+            "--sandbox",
+            "read-only",
+            "-c",
+            "approvals_reviewer=\"user\""
+          ],
+          "cols": 82,
+          "created_ms": 1794196819706,
+          "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+          "die_with_parent": false,
+          "exit_code": null,
+          "finished_ms": null,
+          "foreground": {
+            "argv": [
+              "codex",
+              "--no-daemon",
+              "--no-alt-screen",
+              "--ask-for-approval",
+              "on-request",
+              "--sandbox",
+              "read-only",
+              "-c",
+              "approvals_reviewer=\"user\""
+            ],
+            "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+            "name": "codex",
+            "pid": 14315
+          },
+          "identity": "ghostty",
+          "keep": true,
+          "labels": {
+            "herdr.seen": "0",
+            "herdr.space": "spb71e160ab6efe6a6c86dff04850c4892",
+            "herdr.tab": "tbbb727dee0c697341a72fee935434036f",
+            "where": "PR 23 verification / 1"
+          },
+          "name": null,
+          "notify": true,
+          "parent": null,
+          "pid": 13979,
+          "reason": null,
+          "reported": true,
+          "rm": false,
+          "rows": 31,
+          "screen": "exact",
+          "signal": null,
+          "state": "live",
+          "status": {
+            "app": "codex",
+            "kind": "permission",
+            "state": "blocked"
+          },
+          "status_ms": 1794196987802,
+          "template": null,
+          "title": "[ ! ] Action Required | Run approval-dialog probe | workspace",
+          "turn": 3
+        }
+      }
+    },
+    {
+      "language": "pt",
+      "window": [
+        1280,
+        1000
+      ],
+      "capture": "docs/images/issue-4-review-pt-1280.png",
+      "before": {
+        "screen": "\n\u2022 It ran successfully and printed approval-probe.\n\n  Worked for 2m 2s \u2022 01:02\n\n\n\u203a Repeat the identical harmless approval probe once with the same escalated exec_command and justification. No other actions. Wait for a human\n  answer. If canceled, do not retry; state whether it ran and stop.\n\n\n\u2022 I\u2019ll submit the same probe for approval and wait.\n\n\u2022 Running /usr/bin/printf approval-probe\n\n\n  Would you like to run the following command?\n\n  Environment: local\n\n  Reason: May I run this harmless printf for the Herdboard approval capture?\n\n  $ /usr/bin/printf approval-probe\n\n\n\u203a 1. Yes, proceed (y)\n  2. Yes, and don't ask again for commands that start with `/usr/bin/printf approval-probe` (p)\n  3. No, and tell Codex what to do differently (esc)\n\n  Press enter to confirm or esc to cancel\n",
+        "hc_get": {
+          "address": "t2",
+          "argv": [
+            "/bin/bash",
+            "-ic",
+            "\"$@\"; exec \"$0\" -i",
+            "/bin/bash",
+            "codex",
+            "--no-daemon",
+            "--no-alt-screen",
+            "--ask-for-approval",
+            "on-request",
+            "--sandbox",
+            "read-only",
+            "-c",
+            "approvals_reviewer=\"user\""
+          ],
+          "cols": 149,
+          "created_ms": 1794196819706,
+          "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+          "die_with_parent": false,
+          "exit_code": null,
+          "finished_ms": null,
+          "foreground": {
+            "argv": [
+              "codex",
+              "--no-daemon",
+              "--no-alt-screen",
+              "--ask-for-approval",
+              "on-request",
+              "--sandbox",
+              "read-only",
+              "-c",
+              "approvals_reviewer=\"user\""
+            ],
+            "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+            "name": "codex",
+            "pid": 14315
+          },
+          "identity": "ghostty",
+          "keep": true,
+          "labels": {
+            "herdr.seen": "0",
+            "herdr.space": "spb71e160ab6efe6a6c86dff04850c4892",
+            "herdr.tab": "tbbb727dee0c697341a72fee935434036f",
+            "where": "PR 23 verification / 1"
+          },
+          "name": null,
+          "notify": true,
+          "parent": null,
+          "pid": 13979,
+          "reason": null,
+          "reported": true,
+          "rm": false,
+          "rows": 29,
+          "screen": "exact",
+          "signal": null,
+          "state": "live",
+          "status": {
+            "app": "codex",
+            "kind": "permission",
+            "state": "blocked"
+          },
+          "status_ms": 1794196987802,
+          "template": null,
+          "title": "[ . ] Action Required | Run approval-dialog probe | workspace",
+          "turn": 3
+        }
+      }
+    }
+  ],
+  "outcomes": [
+    {
+      "keys": [
+        "y"
+      ],
+      "outcome": "one-time approval; command printed approval-probe",
+      "before": {
+        "screen": "\u25a0 Conversation interrupted - use /feedback if something went wrong\n\n\n\u203a Repeat the identical harmless approval probe once with the same escalated\n  exec_command and justification. No other actions. Wait for a human answer. If\n  canceled, do not retry; state whether it ran and stop.\n\n\n\u2022 I\u2019ll submit the same probe for approval and wait.\n\n\u25e6 Running /usr/bin/printf approval-probe\n\n\n  Would you like to run the following command?\n\n  Environment: local\n\n  Reason: May I run this harmless printf for the Herdboard approval capture?\n\n  $ /usr/bin/printf approval-probe\n\n\n\u203a 1. Yes, proceed (y)\n  2. Yes, and don't ask again for commands that start with `/usr/bin/printf\n     approval-probe` (p)\n  3. No, and tell Codex what to do differently (esc)\n\n  Press enter to confirm or esc to cancel\n",
+        "hc_get": {
+          "address": "t2",
+          "argv": [
+            "/bin/bash",
+            "-ic",
+            "\"$@\"; exec \"$0\" -i",
+            "/bin/bash",
+            "codex",
+            "--no-daemon",
+            "--no-alt-screen",
+            "--ask-for-approval",
+            "on-request",
+            "--sandbox",
+            "read-only",
+            "-c",
+            "approvals_reviewer=\"user\""
+          ],
+          "cols": 82,
+          "created_ms": 1794196819706,
+          "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+          "die_with_parent": false,
+          "exit_code": null,
+          "finished_ms": null,
+          "foreground": {
+            "argv": [
+              "codex",
+              "--no-daemon",
+              "--no-alt-screen",
+              "--ask-for-approval",
+              "on-request",
+              "--sandbox",
+              "read-only",
+              "-c",
+              "approvals_reviewer=\"user\""
+            ],
+            "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+            "name": "codex",
+            "pid": 14315
+          },
+          "identity": "ghostty",
+          "keep": true,
+          "labels": {
+            "herdr.seen": "0",
+            "herdr.space": "spb71e160ab6efe6a6c86dff04850c4892",
+            "herdr.tab": "tbbb727dee0c697341a72fee935434036f",
+            "where": "PR 23 verification / 1"
+          },
+          "name": null,
+          "notify": true,
+          "parent": null,
+          "pid": 13979,
+          "reason": null,
+          "reported": true,
+          "rm": false,
+          "rows": 28,
+          "screen": "exact",
+          "signal": null,
+          "state": "live",
+          "status": {
+            "app": "codex",
+            "kind": "permission",
+            "state": "blocked"
+          },
+          "status_ms": 1794197115784,
+          "template": null,
+          "title": "[ ! ] Action Required | Run approval-dialog probe | workspace",
+          "turn": 5
+        }
+      },
+      "after": {
+        "screen": "\n\u2717 You canceled the request to run /usr/bin/printf approval-probe\n\n\u2022 Ran /usr/bin/printf approval-probe\n  \u2514 (no output)\n\n\u25a0 Conversation interrupted - use /feedback if something went wrong\n\n\n\u203a Repeat the identical harmless approval probe once with the same escalated\n  exec_command and justification. No other actions. Wait for a human answer. If\n  canceled, do not retry; state whether it ran and stop.\n\n\n\u2022 I\u2019ll submit the same probe for approval and wait.\n\n\u2714 You approved codex to run /usr/bin/printf approval-probe this time\n\n\u2022 Ran /usr/bin/printf approval-probe\n  \u2514 approval-probe\n\n\u2022 It ran successfully and printed approval-probe.\n\n  Worked for 26s \u2022 01:05\n\n\n\u203a Ask Codex to do anything\n\n  GPT-6.1-Sol xhigh \u00b7 /tmp/herdboard-pr23-review/native/workspace \u00b7 Run approval-\u2026\n",
+        "hc_get": {
+          "address": "t2",
+          "argv": [
+            "/bin/bash",
+            "-ic",
+            "\"$@\"; exec \"$0\" -i",
+            "/bin/bash",
+            "codex",
+            "--no-daemon",
+            "--no-alt-screen",
+            "--ask-for-approval",
+            "on-request",
+            "--sandbox",
+            "read-only",
+            "-c",
+            "approvals_reviewer=\"user\""
+          ],
+          "cols": 82,
+          "created_ms": 1794196819706,
+          "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+          "die_with_parent": false,
+          "exit_code": null,
+          "finished_ms": null,
+          "foreground": {
+            "argv": [
+              "codex",
+              "--no-daemon",
+              "--no-alt-screen",
+              "--ask-for-approval",
+              "on-request",
+              "--sandbox",
+              "read-only",
+              "-c",
+              "approvals_reviewer=\"user\""
+            ],
+            "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+            "name": "codex",
+            "pid": 14315
+          },
+          "identity": "ghostty",
+          "keep": true,
+          "labels": {
+            "herdr.seen": "0",
+            "herdr.space": "spb71e160ab6efe6a6c86dff04850c4892",
+            "herdr.tab": "tbbb727dee0c697341a72fee935434036f",
+            "where": "PR 23 verification / 1"
+          },
+          "name": null,
+          "notify": true,
+          "parent": null,
+          "pid": 13979,
+          "reason": null,
+          "reported": true,
+          "rm": false,
+          "rows": 29,
+          "screen": "exact",
+          "signal": null,
+          "state": "live",
+          "status": {
+            "app": "codex",
+            "state": "done"
+          },
+          "status_ms": 1794197139156,
+          "template": null,
+          "title": "Run approval-dialog probe | workspace",
+          "turn": 6
+        }
+      }
+    },
+    {
+      "keys": [
+        "esc"
+      ],
+      "outcome": "request canceled; turn interrupted; state idle",
+      "before": {
+        "screen": "\n\u2022 It ran successfully and printed approval-probe.\n\n  Worked for 2m 2s \u2022 01:02\n\n\n\u203a Repeat the identical harmless approval probe once with the same escalated\n  exec_command and justification. No other actions. Wait for a human answer. If\n  canceled, do not retry; state whether it ran and stop.\n\n\n\u2022 I\u2019ll submit the same probe for approval and wait.\n\n\u25e6 Running /usr/bin/printf approval-probe\n\n\n  Would you like to run the following command?\n\n  Environment: local\n\n  Reason: May I run this harmless printf for the Herdboard approval capture?\n\n  $ /usr/bin/printf approval-probe\n\n\n\u203a 1. Yes, proceed (y)\n  2. Yes, and don't ask again for commands that start with `/usr/bin/printf\n     approval-probe` (p)\n  3. No, and tell Codex what to do differently (esc)\n\n  Press enter to confirm or esc to cancel\n",
+        "hc_get": {
+          "address": "t2",
+          "argv": [
+            "/bin/bash",
+            "-ic",
+            "\"$@\"; exec \"$0\" -i",
+            "/bin/bash",
+            "codex",
+            "--no-daemon",
+            "--no-alt-screen",
+            "--ask-for-approval",
+            "on-request",
+            "--sandbox",
+            "read-only",
+            "-c",
+            "approvals_reviewer=\"user\""
+          ],
+          "cols": 82,
+          "created_ms": 1794196819706,
+          "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+          "die_with_parent": false,
+          "exit_code": null,
+          "finished_ms": null,
+          "foreground": {
+            "argv": [
+              "codex",
+              "--no-daemon",
+              "--no-alt-screen",
+              "--ask-for-approval",
+              "on-request",
+              "--sandbox",
+              "read-only",
+              "-c",
+              "approvals_reviewer=\"user\""
+            ],
+            "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+            "name": "codex",
+            "pid": 14315
+          },
+          "identity": "ghostty",
+          "keep": true,
+          "labels": {
+            "herdr.seen": "0",
+            "herdr.space": "spb71e160ab6efe6a6c86dff04850c4892",
+            "herdr.tab": "tbbb727dee0c697341a72fee935434036f",
+            "where": "PR 23 verification / 1"
+          },
+          "name": null,
+          "notify": true,
+          "parent": null,
+          "pid": 13979,
+          "reason": null,
+          "reported": true,
+          "rm": false,
+          "rows": 31,
+          "screen": "exact",
+          "signal": null,
+          "state": "live",
+          "status": {
+            "app": "codex",
+            "kind": "permission",
+            "state": "blocked"
+          },
+          "status_ms": 1794196987802,
+          "template": null,
+          "title": "[ ! ] Action Required | Run approval-dialog probe | workspace",
+          "turn": 3
+        }
+      },
+      "after": {
+        "screen": "  harmless printf for the Herdboard approval capture?\". Do not read or edit any\n  files, run other commands, spawn agents, or use MCP tools. Wait for a human\n  answer and do not retry a cancellation. After the tool result, state whether it\n  ran and stop.\n\n\n\u2022 I\u2019ll submit the requested printf command for approval and wait for your answer.\n\n\u2714 You approved codex to run /usr/bin/printf approval-probe this time\n\n\u2022 Ran /usr/bin/printf approval-probe\n  \u2514 approval-probe\n\n\u2022 It ran successfully and printed approval-probe.\n\n  Worked for 2m 2s \u2022 01:02\n\n\n\u203a Repeat the identical harmless approval probe once with the same escalated\n  exec_command and justification. No other actions. Wait for a human answer. If\n  canceled, do not retry; state whether it ran and stop.\n\n\n\u2022 I\u2019ll submit the same probe for approval and wait.\n\n\u2717 You canceled the request to run /usr/bin/printf approval-probe\n\n\u2022 Ran /usr/bin/printf approval-probe\n  \u2514 (no output)\n\n\u25a0 Conversation interrupted - use /feedback if something went wrong\n\n\n\u203a Ask Codex to do anything\n\n  GPT-6.1-Sol xhigh \u00b7 /tmp/herdboard-pr23-review/native/workspace \u00b7 Run approval-\u2026\n",
+        "hc_get": {
+          "address": "t2",
+          "argv": [
+            "/bin/bash",
+            "-ic",
+            "\"$@\"; exec \"$0\" -i",
+            "/bin/bash",
+            "codex",
+            "--no-daemon",
+            "--no-alt-screen",
+            "--ask-for-approval",
+            "on-request",
+            "--sandbox",
+            "read-only",
+            "-c",
+            "approvals_reviewer=\"user\""
+          ],
+          "cols": 82,
+          "created_ms": 1794196819706,
+          "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+          "die_with_parent": false,
+          "exit_code": null,
+          "finished_ms": null,
+          "foreground": {
+            "argv": [
+              "codex",
+              "--no-daemon",
+              "--no-alt-screen",
+              "--ask-for-approval",
+              "on-request",
+              "--sandbox",
+              "read-only",
+              "-c",
+              "approvals_reviewer=\"user\""
+            ],
+            "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+            "name": "codex",
+            "pid": 14315
+          },
+          "identity": "ghostty",
+          "keep": true,
+          "labels": {
+            "herdr.seen": "0",
+            "herdr.space": "spb71e160ab6efe6a6c86dff04850c4892",
+            "herdr.tab": "tbbb727dee0c697341a72fee935434036f",
+            "where": "PR 23 verification / 1"
+          },
+          "name": null,
+          "notify": true,
+          "parent": null,
+          "pid": 13979,
+          "reason": null,
+          "reported": true,
+          "rm": false,
+          "rows": 36,
+          "screen": "exact",
+          "signal": null,
+          "state": "live",
+          "status": {
+            "app": "codex",
+            "state": "idle"
+          },
+          "status_ms": 1794197030565,
+          "template": null,
+          "title": "Run approval-dialog probe | workspace",
+          "turn": 4
+        }
+      }
+    }
+  ],
+  "disabled": {
+    "language": "pt",
+    "window": [
+      760,
+      1000
+    ],
+    "fps": 60,
+    "frame": 30,
+    "capture": "docs/images/issue-4-review-disabled-pt-760.png"
+  },
+  "unsupported_configuration": {
+    "extra_foreground_argv": [
+      "-c",
+      "tui.animations=false"
+    ],
+    "observed_controls": [
+      "Abrir e responder",
+      "Espiar"
+    ],
+    "capture": "docs/images/issue-4-review-fallback-pt-760.png",
+    "before": {
+      "screen": "\u203a This is a disposable approval-dialog validation. Make exactly one exec_command\n  tool call for /usr/bin/printf approval-probe with\n  sandbox_permissions=require_escalated and justification=\"May I run this\n  harmless printf for the Herdboard approval capture?\". Do not read or edit\n  files, run other commands, spawn agents, or use MCP tools. Wait for a human\n  answer and do not retry a cancellation. After the result, state whether it ran\n  and stop.\n\n\n\u2022 I\u2019ll request approval for the single printf command and report whether it ran.\n\n\u2022 Running /usr/bin/printf approval-probe\n\n\n  Would you like to run the following command?\n\n  Environment: local\n\n  Reason: May I run this harmless printf for the Herdboard approval capture?\n\n  $ /usr/bin/printf approval-probe\n\n\n\u203a 1. Yes, proceed (y)\n  2. Yes, and don't ask again for commands that start with `/usr/bin/printf\n     approval-probe` (p)\n  3. No, and tell Codex what to do differently (esc)\n\n  Press enter to confirm or esc to cancel\n",
+      "hc_get": {
+        "address": "t3",
+        "argv": [
+          "/bin/bash",
+          "-ic",
+          "\"$@\"; exec \"$0\" -i",
+          "/bin/bash",
+          "codex",
+          "--no-daemon",
+          "--no-alt-screen",
+          "--ask-for-approval",
+          "on-request",
+          "--sandbox",
+          "read-only",
+          "-c",
+          "approvals_reviewer=\"user\"",
+          "-c",
+          "tui.animations=false"
+        ],
+        "cols": 82,
+        "created_ms": 1794197113724,
+        "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+        "die_with_parent": false,
+        "exit_code": null,
+        "finished_ms": null,
+        "foreground": {
+          "argv": [
+            "codex",
+            "--no-daemon",
+            "--no-alt-screen",
+            "--ask-for-approval",
+            "on-request",
+            "--sandbox",
+            "read-only",
+            "-c",
+            "approvals_reviewer=\"user\"",
+            "-c",
+            "tui.animations=false"
+          ],
+          "cwd": "/tmp/herdboard-pr23-review/native/workspace",
+          "name": "codex",
+          "pid": 23280
+        },
+        "identity": "ghostty",
+        "keep": true,
+        "labels": {
+          "herdr.seen": "0",
+          "herdr.space": "spb71e160ab6efe6a6c86dff04850c4892",
+          "herdr.tab": "tbc5d39417f1da7d994e324bece7b357e1",
+          "where": "PR 23 verification / Unverified config"
+        },
+        "name": null,
+        "notify": true,
+        "parent": null,
+        "pid": 22932,
+        "reason": null,
+        "reported": true,
+        "rm": false,
+        "rows": 29,
+        "screen": "exact",
+        "signal": null,
+        "state": "live",
+        "status": {
+          "app": "codex",
+          "kind": "permission",
+          "state": "blocked"
+        },
+        "status_ms": 1794197142363,
+        "template": null,
+        "title": "[ ! ] Action Required | Run approval-dialog validation | workspace",
+        "turn": 2
+      }
+    }
+  }
+}
