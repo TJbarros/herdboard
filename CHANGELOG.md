@@ -4,12 +4,19 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-09
+
 - Verified Codex CLI 0.167.0 local command approvals can be answered from cards:
   Yes sends `y` for one-time approval; No sends `esc` to cancel the request and
   interrupt the turn. Full-screen, process/context and reported-agent checks
   precede each send; unverified launch configurations retain the fallback.
   The persistent choice and the tested unreported pi 0.85.1 confirmation remain
   available only in the terminal; versioned native evidence documents the scope.
+- English and Portuguese usage screenshots and full previews show the card's
+  localized Yes / No / More controls. Both demo GIFs show a permission request,
+  a direct card answer and the same agent returning to Working. Paired README
+  and guide captions describe the refreshed media and preserve the demo-data
+  disclosure.
 
 ## [1.3.0] - 2026-11-08
 
@@ -124,7 +131,8 @@ First public release.
 - `scripts/install.sh` (tested on Windows from WSL and Git Bash), README and guide in
   both languages.
 
-[Unreleased]: https://github.com/TJbarros/herdboard/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/TJbarros/herdboard/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/TJbarros/herdboard/releases/tag/v1.4.0
 [1.3.0]: https://github.com/TJbarros/herdboard/releases/tag/v1.3.0
 [1.2.1]: https://github.com/TJbarros/herdboard/releases/tag/v1.2.1
 [1.2.0]: https://github.com/TJbarros/herdboard/releases/tag/v1.2.0
