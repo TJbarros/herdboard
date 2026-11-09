@@ -13,7 +13,8 @@ export const exec = (command, args, options) => new Promise((resolve, reject) =>
 export const shared = (key) => herdr.shared[key];
 export const setShared = (key, value) => { herdr.shared[key] = value; };
 export const spaces = () => herdr.spaces, panes = () => herdr.panes, props = () => herdr.props, layout = () => herdr.layout;
-export const theme = () => ({}), notify = () => {}, setAgentOrder = () => {};
+export const theme = () => ({}), notify = () => {};
+export const setAgentOrder = addresses => { herdr.agentOrder = addresses; };
 export const run = (command, args) => {
   herdr.runs.push({ command, args });
   if (command === "tab.settle" || command === "tab.unsettle") {

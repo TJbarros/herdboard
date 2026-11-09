@@ -1,0 +1,46 @@
+{
+  "address": "t2",
+  "argv": [
+    "/bin/bash"
+  ],
+  "cols": 148,
+  "created_ms": 1794238225419,
+  "cwd": "/workspace/cursor",
+  "die_with_parent": false,
+  "exit_code": null,
+  "finished_ms": null,
+  "foreground": {
+    "argv": [
+      "/home/tester/.local/bin/agent",
+      "--use-system-ca",
+      "/home/tester/.local/share/cursor-agent/versions/2026.11.05-86047df/index.js"
+    ],
+    "cwd": "/workspace/cursor",
+    "name": "MainThread",
+    "pid": 62729
+  },
+  "identity": "ghostty",
+  "keep": true,
+  "labels": {
+    "herdr.seen": "0",
+    "herdr.space": "sp7345b70bdd3bcd32b35bb74e08abecc5",
+    "herdr.tab": "tb7bd174c20800507b268b8d4c794273cb",
+    "where": "Cursor check / 1"
+  },
+  "name": null,
+  "notify": true,
+  "parent": null,
+  "pid": 47292,
+  "reason": null,
+  "reported": false,
+  "rm": false,
+  "rows": 35,
+  "screen": "exact",
+  "signal": null,
+  "state": "live",
+  "status": null,
+  "status_ms": null,
+  "template": null,
+  "title": "tester@host: /workspace/cursor",
+  "turn": 0
+}

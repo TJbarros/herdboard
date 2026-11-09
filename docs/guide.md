@@ -20,6 +20,29 @@ Need a new project instead? **⋯ › New space** creates a space in the active 
 folder; **+ › New space** creates it in the folder picked under **Open in**. Both
 stay on the active space's machine.
 
+### Cursor CLI sessions
+
+Run `agent` in a terminal in your Herdr space. Herdboard recognizes the verified
+Cursor installation's current foreground process, including when the terminal
+originally started as a shell. No hook, wrapper or `programs.json` change is needed.
+The verified launch forms are `agent` and `agent --yolo`; the latter is optional
+and retains Cursor's own approval behavior. Other flags, subcommands, initial
+prompts and Windows executable layouts are outside this discovery contract.
+
+When Cursor has no usable reported status, its **Cursor CLI** card appears under
+**Status unavailable**, with a neutral color and no status age or task inferred
+from its screen. Click the card to open its terminal; hover for **Peek**, **Pin**
+and **Put away**. All / This space and settled tabs work as for other cards.
+The extra column appears only when needed; narrow windows show a labeled card in
+the existing list. Header space counts include these sessions. Native agent
+next/previous shortcuts still require a reported status in Herdr 0.1.14.
+
+A current reported agent replaces the fallback card. If the report disappears,
+the card returns to unavailable status; ending or replacing the Cursor process
+removes it. Discovery does not read transcripts or provide Cursor activity text,
+approval answers or in-process chat identity. See the
+[verified versions, native checks and limits](issue-29-verification.md).
+
 ### Answer an agent that needs you
 
 When an agent stops to ask something, its card jumps to **Needs you** and the column

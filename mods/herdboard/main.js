@@ -4,6 +4,7 @@ import { agents, terminals, spaces, panes, props, run, setAgentOrder, theme, not
 import { parseAsk, pickAnswers } from "./ask.js";
 import { extractActivity } from "./activity.js";
 import { WorktreeChanges } from "./git-changes.js";
+import { cursorSessions } from "./cursor.js";
 
 // ---- Layout state ---------------------------------------------------------------------------
 
@@ -32,7 +33,7 @@ function liveFolder() {
 const LANG_KEY = "herdboard.lang";        // "pt" | "en"
 const FILTER_KEY = "herdboard.filter";    // "all" | "here"
 const IDLE_KEY = "herdboard.idleOpen";    // false: the Idle column is folded
-const TITLES_KEY = "herdboard.titles";    // address -> { title, at }: the last task title seen
+const TITLES_KEY = "herdboard.titles";    // address -> { title, at, lifecycle }: the last task title seen
 const STARTUP_KEY = "herdboard.startup";  // recognised lifecycle keys only, for the header copy
 const ACTIVITY_INTERVAL = 5000;
 const ACTIVITY_CONCURRENCY = 2;
@@ -74,7 +75,7 @@ const STUCK_MIN = 30;
 
 const TEXT = {
   pt: {
-    blocked: "Precisa de você", working: "Trabalhando", done: "Concluído", idle: "Ocioso",
+    blocked: "Precisa de você", working: "Trabalhando", done: "Concluído", idle: "Ocioso", unknown: "Status indisponível",
     verb: { blocked: "esperando há", working: "há", done: "concluiu há", idle: "há" },
     stuck: "travado?", stuckTip: `Trabalhando há mais de ${STUCK_MIN} min. Pode estar travado: vale conferir.`,
     noTitle: "Sem título da tarefa", tab: "aba", none: "Nenhum",
@@ -104,7 +105,7 @@ const TEXT = {
     worktreeTip: "Total de arquivos alterados no worktree da pasta atual deste terminal; inclui alterações feitas por qualquer pessoa.",
   },
   en: {
-    blocked: "Needs you", working: "Working", done: "Done", idle: "Idle",
+    blocked: "Needs you", working: "Working", done: "Done", idle: "Idle", unknown: "Status unavailable",
     verb: { blocked: "waiting", working: "for", done: "finished", idle: "for" }, ago: { blocked: false, done: true },
     stuck: "stuck?", stuckTip: `Working for over ${STUCK_MIN} min. It may be stuck: worth a look.`,
     noTitle: "No task title", tab: "tab", none: "None",
@@ -149,6 +150,7 @@ function palette() {
   C = { ink: t.foreground, muted: t.muted, dim: t.dim, line: t.border, strong: t.input, bg: t.canvas, card: t.background,
     bar: t.chrome, head: t.surface, accent: t.accent, selected: t.selected, hover: t.hover, pop: t.popover, t };
   STATES = ["blocked", "working", "done", "idle"].map(key => ({ key, color: t[key], label: L[key], wash: wash(t[key]) }));
+  STATES.push({ key: "unknown", color: t.muted, label: L.unknown, wash: wash(t.muted) });
 }
 const stateColor = (status) => STATES.find(s => s.key === status)?.color ?? C.muted;
 const dot = (color, size = 7) => div().size(size).rounded(size).bg(color).flex_none();
@@ -174,6 +176,12 @@ function taskTitle(a) {
   if ([a.program?.name, a.app, "claude", "claude code", "bash", "zsh", "pwsh"].some(n => n && low === String(n).toLowerCase())) return "";
   if (isAddress(t)) return "";
   return t;
+}
+/** @param {{ address: string }} a */
+function titleLifecycle(a) {
+  const t = terminals().find(t => t.address === a.address);
+  return t?.created_ms > 0 && t.pid > 0 && t.foreground?.pid > 0
+    ? JSON.stringify([t.created_ms, t.pid, t.foreground.pid]) : null;
 }
 
 // ---- What a blocked agent is asking (parsed in ./ask.js) ------------------------------------
@@ -237,6 +245,7 @@ function startupCandidates() {
   }
   return result;
 }
+const cursorCandidates = () => cursorSessions(agents(), terminals(), panes(), spaces());
 // The agent at `address` now, if it is still blocked on `key`'s spell; else null.
 const stillOn = (address, key) => {
   if (key.startsWith(`${address}#startup:`)) return startupCandidates().find(a => a.address === address && spell(a) === key) ?? null;
@@ -397,11 +406,11 @@ export default class Herdboard extends View {
 
   gitContexts(list = null) {
     if (props()?.role) return [];
-    list ??= [...agents(), ...startupCandidates().filter(a => this.asks[a.address]?.key === spell(a) && this.asks[a.address]?.visible)];
+    list ??= [...agents(), ...cursorCandidates(), ...startupCandidates().filter(a => this.asks[a.address]?.key === spell(a) && this.asks[a.address]?.visible)];
     const shown = boardVisible() && this.h > 0;
     const ctx = this.groups(list);
     const idleShown = shared(IDLE_KEY) !== false || this.below(800);
-    const eligible = shown ? ["blocked", "working", "done", ...(idleShown ? ["idle"] : [])].flatMap(k => ctx.by[k]) : [];
+    const eligible = shown ? ["blocked", "working", "done", ...(idleShown ? ["idle"] : []), "unknown"].flatMap(k => ctx.by[k]) : [];
     return eligible.map(a => this.gitContext(a)).filter(Boolean);
   }
 
@@ -599,8 +608,8 @@ export default class Herdboard extends View {
   // Card: task, where · age and Git total; Working adds activity, blocked adds its question.
   card(a, state, ctx, showState = false) {
     const tab = ctx.tabs.get(a.tab);
-    const mins = Math.max(0, Math.floor((Date.now() - this.since(a, tab)) / 60000));
-    const ageText = statusAge(a.status, duration(mins));
+    const mins = a.status === "unknown" ? 0 : Math.max(0, Math.floor((Date.now() - this.since(a, tab)) / 60000));
+    const ageText = a.status === "unknown" ? "" : statusAge(a.status, duration(mins));
     const stuck = a.status === "working" && mins >= STUCK_MIN;
     const shown = this.shownTitle(a);
     const title = shown.text;
@@ -671,21 +680,27 @@ export default class Herdboard extends View {
   // The task to show: the title the agent sets now, else the last one this board saw for that
   // terminal (kept in shared state, so it survives restarts and /clear), marked as the last task.
   shownTitle(a) {
+    if (a.source?.kind === "cursor-process") return { text: "Cursor CLI", last: false, label: "Cursor CLI" };
     const now = taskTitle(a);
     if (now) return { text: now, last: false, label: now };
-    const stored = (shared(TITLES_KEY) ?? {})[a.address]?.title;
+    const entry = (shared(TITLES_KEY) ?? {})[a.address];
+    const stored = entry?.lifecycle === titleLifecycle(a) ? entry.title : "";
     const prev = stored && !isAddress(stored) ? stored : "";
     return prev ? { text: prev, last: true, label: `${L.lastTask}: ${prev}` } : { text: "", last: false, label: L.noTitle };
   }
 
   // Remember each terminal's latest task title (one shared write, only when something changed).
   rememberTitles(list) {
-    const kept = /** @type {Record<string, {title: string, at: number}>} */ (shared(TITLES_KEY) ?? {});
+    const kept = /** @type {Record<string, {title: string, at: number, lifecycle: string}>} */ (shared(TITLES_KEY) ?? {});
     let changed = false;
     const next = { ...kept };
     for (const a of list) {
+      if (a.source?.kind === "cursor-process") continue;
       const t = taskTitle(a);
-      if (t && kept[a.address]?.title !== t) { next[a.address] = { title: t, at: Date.now() }; changed = true; }
+      const lifecycle = titleLifecycle(a);
+      if (t && (kept[a.address]?.title !== t || kept[a.address]?.lifecycle !== lifecycle)) {
+        next[a.address] = { title: t, at: Date.now(), lifecycle }; changed = true;
+      }
     }
     const keys = Object.keys(next);
     if (keys.length > 60) {
@@ -768,7 +783,7 @@ export default class Herdboard extends View {
       .child(h_flex().id("space-strip").flex_1().min_w(0).gap(4).items_center().overflow_x_scrollbar()
         .children(all.map(s => {
           const shown = list.filter(a => a.space === s.id && !s.tabs.find(t => t.id === a.tab)?.settled);
-          return this.spacePill(shown.some(a => a.source) ? { ...s, status: "blocked" } : s, shown.length, tiny);
+          return this.spacePill(shown.some(a => a.source?.kind === "workspace-trust") ? { ...s, status: "blocked" } : s, shown.length, tiny);
         })))
       .child(this.segment("filter", [["all", L.all], ["here", tiny ? L.hereShort : L.here]], filter, (v) => setShared(FILTER_KEY, v), L.filterTip))
       .child(this.iconButton("space-find", "mods/workspace-chrome/search.svg", L.searchTip, () => run("mod.open", { name: "herdboard-picker" }), narrow ? null : L.search))
@@ -899,12 +914,13 @@ export default class Herdboard extends View {
   }
 
   // Narrow windows: one list, most urgent first, each card labelled with its status.
-  boardList(ctx) {
-    const ordered = STATES.flatMap(state => ctx.by[state.key].map(a => ({ a, state })));
+  /** @param {typeof STATES} states */
+  boardList(ctx, states) {
+    const ordered = states.flatMap(state => ctx.by[state.key].map(a => ({ a, state })));
     const padY = 12, gap = 8;
     this.fitHeight(padY * 2 + 24 + 9 + ordered.reduce((h, { a }) => h + (a.status === "blocked" ? this.blockedHeight(a) : this.cardHeight(a)) + gap, 0));
     return this.sized(v_flex().size_full().px(14).py(padY).gap(9).bg(C.bg)
-      .child(h_flex().flex_none().gap(6).items_center().flex_wrap().children(STATES.map(state => {
+      .child(h_flex().flex_none().gap(6).items_center().flex_wrap().children(states.map(state => {
         const n = ctx.by[state.key].length;
         const urgent = state.key === "blocked" && n > 0;
         return h_flex().id(`count-${state.key}`).h(24).px(8).gap(6).items_center().rounded(6)
@@ -920,15 +936,16 @@ export default class Herdboard extends View {
   board(list, cx) {
     this.rememberTitles(list);
     const ctx = this.groups(list);
+    const states = STATES.filter(s => s.key !== "unknown" || ctx.by.unknown.length);
     this.refreshGit(cx, list);
     // Agent navigation (agent.next/prev) follows the board's order.
     const idleShown = shared(IDLE_KEY) !== false || this.below(800);
     setAgentOrder(STATES.filter(s => s.key !== "idle" || idleShown).flatMap(s => ctx.by[s.key].map(a => a.address)));
     this.fetchAsks(ctx.by.blocked, cx);
-    if (this.below(800)) { this.colW = this.w - 28; return this.boardList(ctx); }
+    if (this.below(800)) { this.colW = this.w - 28; return this.boardList(ctx, states); }
     const narrow = this.below(1100);
     const padX = narrow ? 16 : 24, padY = 14, colGap = narrow ? 10 : 16, gap = 8;
-    this.colW = this.w > 0 ? (this.w - padX * 2 - colGap * 3) / 4 : 0;
+    this.colW = this.w > 0 ? (this.w - padX * 2 - colGap * (states.length - 1)) / states.length : 0;
     const idleOpen = shared(IDLE_KEY) !== false;
     const colHeight = (key) => {
       const items = ctx.by[key];
@@ -937,7 +954,7 @@ export default class Herdboard extends View {
       return items.reduce((h, a) => h + (key === "blocked" ? this.blockedHeight(a) : this.cardHeight(a)) + gap, -gap) + (key === "blocked" ? 12 : 0);
     };
     this.fitHeight(padY * 2 + 26 + gap + Math.max(...STATES.map(s => colHeight(s.key))) + 2);
-    return this.sized(h_flex().size_full().px(padX).py(padY).gap(colGap).bg(C.bg).children(STATES.map(state => {
+    return this.sized(h_flex().size_full().px(padX).py(padY).gap(colGap).bg(C.bg).children(states.map(state => {
       const items = ctx.by[state.key];
       const empty = items.length === 0;
       const urgent = state.key === "blocked" && !empty;
@@ -978,7 +995,7 @@ export default class Herdboard extends View {
       const keys = startup.map(spell);
       if (JSON.stringify(knownStartup) !== JSON.stringify(keys)) setShared(STARTUP_KEY, keys);
     }
-    const list = [...agents(), ...startup];
+    const list = [...agents(), ...cursorCandidates(), ...startup];
     if (role === "header") return this.header(list);
     if (role === "terminals") return this.rail();
     if (role === "pane") {

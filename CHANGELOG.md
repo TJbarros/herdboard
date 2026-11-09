@@ -4,6 +4,12 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+- Interactive Cursor CLI sessions launched with `agent` appear on their own terminal's
+  card even without a status report. Verified foreground metadata establishes identity;
+  missing status stays explicitly unavailable in English and Portuguese, with no
+  inferred activity or age. Discovery follows current ownership and process lifetime,
+  preserves filtering and pinning, and yields to reported agents without duplicates.
+
 ## [1.5.0] - 2026-11-09
 
 - Working cards and compact entries show Doing now / Fazendo agora from verified
