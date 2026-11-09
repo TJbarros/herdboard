@@ -4,6 +4,8 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-09
+
 - Working cards and compact entries show Doing now / Fazendo agora from verified
   live Claude/Codex screen formats, with a neutral fallback for unsupported or
   unavailable activity. Running Claude tool labels require a current timer,
@@ -151,7 +153,8 @@ First public release.
 - `scripts/install.sh` (tested on Windows from WSL and Git Bash), README and guide in
   both languages.
 
-[Unreleased]: https://github.com/TJbarros/herdboard/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/TJbarros/herdboard/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/TJbarros/herdboard/releases/tag/v1.5.0
 [1.4.0]: https://github.com/TJbarros/herdboard/releases/tag/v1.4.0
 [1.3.0]: https://github.com/TJbarros/herdboard/releases/tag/v1.3.0
 [1.2.1]: https://github.com/TJbarros/herdboard/releases/tag/v1.2.1
