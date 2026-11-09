@@ -1,7 +1,9 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex, v_flex, Popover } from "gpui-base";
-import { agents, terminals, spaces, panes, props, run, setAgentOrder, theme, notify, layout, shared, setShared, hc, openOverlay, closeOverlay } from "herdr";
+import { agents, terminals, spaces, panes, props, run, setAgentOrder, theme, notify, layout, shared, setShared, hc, exec, openOverlay, closeOverlay } from "herdr";
 import { parseAsk, pickAnswers } from "./ask.js";
+import { extractActivity } from "./activity.js";
+import { WorktreeChanges } from "./git-changes.js";
 
 // ---- Layout state ---------------------------------------------------------------------------
 
@@ -32,7 +34,37 @@ const FILTER_KEY = "herdboard.filter";    // "all" | "here"
 const IDLE_KEY = "herdboard.idleOpen";    // false: the Idle column is folded
 const TITLES_KEY = "herdboard.titles";    // address -> { title, at }: the last task title seen
 const STARTUP_KEY = "herdboard.startup";  // recognised lifecycle keys only, for the header copy
-const IDLE_ROW = 44;                  // height of an Idle row (task + where)
+const ACTIVITY_INTERVAL = 5000;
+const ACTIVITY_CONCURRENCY = 2;
+
+// Timers also run in hidden instances. Walk ancestors, including a hidden parent layout.
+function boardVisible(node = layout(), hidden = false) {
+  if (!node || typeof node !== "object") return false;
+  hidden ||= node.hidden === true;
+  if (node.id === "herdboard-cards") return !hidden;
+  return (node.children ?? []).some(child => boardVisible(child, hidden));
+}
+
+// These foreground configurations and terminal fields are paired with native captures.
+// seq conservatively invalidates report changes; turn is the independent core turn counter.
+function activityKey(a) {
+  const t = terminals().find(t => t.address === a.address), f = t?.foreground;
+  const report = typeof t?.status === "object" ? t.status : t?.report;
+  const configuration = a.app === "claude-code" ? ["claude", "--permission-mode", "bypassPermissions"]
+    : a.app === "codex" ? ["codex", "--no-daemon", "--no-alt-screen", "--ask-for-approval", "never", "--sandbox", "workspace-write"] : null;
+  const argv = f?.argv;
+  // Herdr may append its initial task as one positional argument (also captured natively).
+  const launch = configuration && Array.isArray(argv) && JSON.stringify(argv.slice(0, configuration.length)) === JSON.stringify(configuration)
+    && (argv.length === configuration.length || (a.app === "codex" && argv.length === configuration.length + 1
+      && typeof argv.at(-1) === "string" && argv.at(-1).trim() && !argv.at(-1).startsWith("-")));
+  if (!configuration || a.status !== "working" || t?.state !== "live" || t.screen !== "exact" || t.reported !== true
+    || report?.state !== "working" || report.app !== a.app || !(t.created_ms > 0) || !(t.pid > 0) || !(f?.pid > 0)
+    || !f.cwd || !Number.isSafeInteger(t.turn) || t.turn < 0 || !Number.isSafeInteger(a.seq) || a.seq < 0
+    || f.name !== configuration[0] || !launch) return null;
+  return JSON.stringify([a.address, a.app, a.program?.key, a.seq, a.space, a.tab, a.pane,
+    t.created_ms, t.pid, t.cwd, t.argv, f.pid, f.cwd, f.name, f.argv, t.turn]);
+}
+const IDLE_ROW = 60;                  // task, where and worktree total
 
 
 // A working agent past this many minutes gets a "stuck?" hint on its card.
@@ -46,6 +78,9 @@ const TEXT = {
     verb: { blocked: "esperando há", working: "há", done: "concluiu há", idle: "há" },
     stuck: "travado?", stuckTip: `Trabalhando há mais de ${STUCK_MIN} min. Pode estar travado: vale conferir.`,
     noTitle: "Sem título da tarefa", tab: "aba", none: "Nenhum",
+    doingNow: "Fazendo agora", noActivity: "Atividade indisponível",
+    localMachine: "Local", localMachineTip: "Roda nesta máquina", remoteMachineTip: name => `Roda em ${name}`,
+    unknownMachine: "Máquina desconhecida", unknownMachineTip: "A máquina do espaço do agente está indisponível",
     current: (n) => `${n} (espaço atual)`, goTo: (n) => `Ir para ${n}`,
     all: "Todos", here: "Este espaço", filterTip: "Mostrar os agentes de todos os espaços ou só do espaço atual",
     search: "Buscar", searchTip: "Buscar espaço ou aba (Ctrl+Shift+K)",
@@ -64,12 +99,18 @@ const TEXT = {
     shortcutAnswerTip: (key, text) => `Envia ${key} no terminal: "${text}"`,
     cancelAnswerTip: text => `Cancela o pedido e interrompe o turno (Esc): "${text}"`,
     fold: "recolher", unfold: "mostrar", lastTask: "Última:", hereShort: "Este",
+    worktree: n => `Worktree: ${n} ${n === 1 ? "arquivo" : "arquivos"}`,
+    worktreeUnavailable: "Worktree: indisponível",
+    worktreeTip: "Total de arquivos alterados no worktree da pasta atual deste terminal; inclui alterações feitas por qualquer pessoa.",
   },
   en: {
     blocked: "Needs you", working: "Working", done: "Done", idle: "Idle",
     verb: { blocked: "waiting", working: "for", done: "finished", idle: "for" }, ago: { blocked: false, done: true },
     stuck: "stuck?", stuckTip: `Working for over ${STUCK_MIN} min. It may be stuck: worth a look.`,
     noTitle: "No task title", tab: "tab", none: "None",
+    doingNow: "Doing now", noActivity: "Activity unavailable",
+    localMachine: "Local", localMachineTip: "Runs on this machine", remoteMachineTip: name => `Runs on ${name}`,
+    unknownMachine: "Unknown machine", unknownMachineTip: "The agent's owning machine is unavailable",
     current: (n) => `${n} (current space)`, goTo: (n) => `Go to ${n}`,
     all: "All", here: "This space", filterTip: "Show agents from every space or only the current one",
     search: "Search", searchTip: "Find a space or tab (Ctrl+Shift+K)",
@@ -88,6 +129,9 @@ const TEXT = {
     shortcutAnswerTip: (key, text) => `Sends ${key} in the terminal: "${text}"`,
     cancelAnswerTip: text => `Cancels the request and interrupts the turn (Esc): "${text}"`,
     fold: "fold", unfold: "show", lastTask: "Last:", hereShort: "Here",
+    worktree: n => `Worktree: ${n} ${n === 1 ? "file" : "files"}`,
+    worktreeUnavailable: "Worktree: unavailable",
+    worktreeTip: "Total changed files in this terminal's current worktree; includes changes made by anyone.",
   },
 };
 let L = TEXT.pt;
@@ -253,10 +297,14 @@ export default class Herdboard extends View {
     this.asks = {};      // address -> { key, text, question, options, id, choices, sent } for blocked agents
     this.recognisedStartups = new Map(); // address -> lifecycle key, independent of invalidatable reads
     this.pending = new Set();
+    this.activities = new Map(); // visible address -> current lifecycle and transient text
+    this.activityPending = new Set(); // physical reads, held even after lifecycle/visibility changes
+    this.activityNext = new Map(); // address -> earliest next read, including after failures
     this.moreOpen = null; // address#seq of the card whose permission options are open
     this.hovered = null; // address of the card under the pointer (shows its actions)
     this.w = 0;          // this copy's size, from on_size_change; 0 until the first layout (treated as wide)
     this.h = 0;
+    this.gitChanges = new WorktreeChanges(exec);
     // Ages tick every 30 s, only on the cards copy, when there's something to age and the board shows.
     if (!props()?.role) cx.timer.every(30000, (cx) => {
       const live = new Set([...agents(), ...startupCandidates()].map(a => a.address));
@@ -268,6 +316,8 @@ export default class Herdboard extends View {
     // the board copy, until the source ends; unknown screens never become cards.
     if (!props()?.role) cx.timer.every(1000, (cx) => {
       if (!isExpanded() && startupCandidates().length) cx.notify();
+      this.fetchActivities(cx);
+      this.refreshGit(cx);
     });
   }
 
@@ -281,6 +331,98 @@ export default class Herdboard extends View {
     });
   }
   below(px) { return this.w > 0 && this.w < px; }
+
+  syncActivities() {
+    const consumers = !props()?.role && boardVisible() && this.h > 0 ? this.groups(agents()).by.working : [];
+    const current = new Map(consumers.map(a => [a.address, { a, key: activityKey(a) }]).filter(([, v]) => v.key));
+    for (const [address, entry] of this.activities) if (current.get(address)?.key !== entry.key) this.activities.delete(address);
+    for (const [address, { a, key }] of current) if (!this.activities.has(address)) this.activities.set(address, { a, key, text: null });
+    for (const [address, next] of this.activityNext) if (!current.has(address) && !this.activityPending.has(address) && Date.now() >= next) this.activityNext.delete(address);
+  }
+
+  // No stored queue: only current visible consumers compete for two physical read slots.
+  // The five-second delay starts again on completion; a slow read never frees its slot early.
+  fetchActivities(cx) {
+    this.syncActivities();
+    for (const entry of this.activities.values()) if (entry.text && Date.now() >= entry.expires) {
+      entry.text = null;
+      cx.notify();
+    }
+    const due = [...this.activities].sort(([a], [b]) => (this.activityNext.get(a) ?? 0) - (this.activityNext.get(b) ?? 0));
+    for (const [address, entry] of due) {
+      if (this.activityPending.size >= ACTIVITY_CONCURRENCY) break;
+      if (this.activityPending.has(address) || Date.now() < (this.activityNext.get(address) ?? 0)) continue;
+      this.activityPending.add(address);
+      cx.spawn(async (cx) => {
+        // spawn may be deferred by the executor. A reservation is not permission to read
+        // a consumer that disappeared or changed before the task actually starts.
+        this.syncActivities();
+        if (this.activities.get(address) !== entry) {
+          this.activityPending.delete(address);
+          this.fetchActivities(cx);
+          return;
+        }
+        this.activityNext.set(address, Date.now() + ACTIVITY_INTERVAL);
+        let text = null;
+        try {
+          const r = await hc(["read", address, "--lines", "0"]);
+          if (r?.code === 0) text = extractActivity(r.stdout, entry.a.app);
+        } catch (_e) { /* Missing/disconnected terminals have the neutral state. */ }
+        this.activityPending.delete(address);
+        this.activityNext.set(address, Date.now() + ACTIVITY_INTERVAL);
+        this.syncActivities();
+        if (this.activities.get(address) === entry) {
+          entry.text = text;
+          entry.expires = Date.now() + ACTIVITY_INTERVAL * 2;
+        }
+        cx.notify();
+        this.fetchActivities(cx);
+      });
+    }
+  }
+
+  // Resolve the card's own association. An explicit null machine means local; an
+  // absent space/machine/cwd never falls back to the focused terminal or local host.
+  gitContext(a) {
+    const space = spaces().find(s => s.id === a.space);
+    const pane = panes().find(p => p.pane === a.pane && p.terminal === a.address && p.tab === a.tab);
+    const terminal = terminals().find(t => t.address === a.address);
+    if (!space || !space.tabs.some(t => t.id === a.tab) || !pane?.cwd
+      || (space.machine !== null && (typeof space.machine !== "string" || !space.machine))
+      || !terminal || (terminal.state && terminal.state !== "live")) return null;
+    const directory = JSON.stringify([space.machine, pane.cwd]);
+    return { address: a.address, cwd: pane.cwd, on: space.machine, directory,
+      key: JSON.stringify([a.address, a.pane, a.tab, a.space, terminal.created_ms, terminal.pid, directory]) };
+  }
+
+  gitContexts(list = null) {
+    if (props()?.role) return [];
+    list ??= [...agents(), ...startupCandidates().filter(a => this.asks[a.address]?.key === spell(a) && this.asks[a.address]?.visible)];
+    const shown = boardVisible() && this.h > 0;
+    const ctx = this.groups(list);
+    const idleShown = shared(IDLE_KEY) !== false || this.below(800);
+    const eligible = shown ? ["blocked", "working", "done", ...(idleShown ? ["idle"] : [])].flatMap(k => ctx.by[k]) : [];
+    return eligible.map(a => this.gitContext(a)).filter(Boolean);
+  }
+
+  refreshGit(cx, list = null) {
+    if (props()?.role) return;
+    this.gitChanges.sync(this.gitContexts(list),
+      task => cx.spawn(async (cx) => {
+        // The view may change before spawn dispatches, without another render or tick.
+        this.gitChanges.sync(this.gitContexts());
+        await task();
+        cx.notify();
+      }));
+  }
+
+  gitLabel(a) {
+    const value = this.gitChanges.value(this.gitContext(a));
+    return div().id(`git-${a.address}`).min_w(0).text_size(10).text_color(C.dim).truncate()
+      .tooltip(L.worktreeTip).child(value === null ? L.worktreeUnavailable : L.worktree(value));
+  }
+
+  cardHeight(a) { return a.status === "working" ? 104 : 82; }
 
   // How long the agent has been in its status. Reported agents use Herdr's per-tab times;
   // otherwise observe locally, with startup waits belonging to their process lifecycle.
@@ -443,7 +585,18 @@ export default class Herdboard extends View {
     });
   }
 
-  // Card: two lines (task, then where · age). Blocked cards also show what the agent asks.
+  // Full space IDs establish ownership; a missing association never implies local.
+  machineBadge(a, ctx) {
+    const machine = ctx.spaces.get(a.space)?.machine;
+    const local = machine === null;
+    const remote = typeof machine === "string" && machine.trim().length > 0;
+    return div().id(`machine-${a.address}`).max_w(96).min_w(0).flex_shrink(1).px(4).py(1).rounded(3)
+      .bg(C.bar).text_size(10).text_color(C.muted).truncate()
+      .tooltip(local ? L.localMachineTip : remote ? L.remoteMachineTip(machine) : L.unknownMachineTip)
+      .child(local ? L.localMachine : remote ? machine : L.unknownMachine);
+  }
+
+  // Card: task, where · age and Git total; Working adds activity, blocked adds its question.
   card(a, state, ctx, showState = false) {
     const tab = ctx.tabs.get(a.tab);
     const mins = Math.max(0, Math.floor((Date.now() - this.since(a, tab)) / 60000));
@@ -456,9 +609,10 @@ export default class Herdboard extends View {
     const hovered = this.hovered === a.address;
     const ask = blocked ? this.asks[a.address] : null;
     const choices = shownChoices(ask);
+    const activity = this.activities.get(a.address)?.text || L.noActivity;
     const extras = choices && ask.mode === "numbered" ? ask.options.filter(o => o.n >= 1 && o.n <= 9 && o.n !== choices.yes.n && o.n !== choices.no.n) : [];
     return h_flex().id(`agent-${a.address}`).w_full().flex_none().rounded(7).overflow_hidden().relative()
-      .when(!blocked, el => el.h(64))
+      .when(!blocked, el => el.h(this.cardHeight(a)))
       .when(blocked, el => el.on_size_change((size, cx) => {
         const height = Math.ceil(size.height);
         if (!Number.isFinite(height) || height <= 0 || this.cardHeights[a.address] === height) return;
@@ -478,6 +632,7 @@ export default class Herdboard extends View {
           .child(icon(a.program, 14))
           .when(shown.last, el => el.child(div().flex_none().text_size(10).text_color(C.dim).child(L.lastTask)))
           .child(div().flex_1().min_w(0).text_size(13).font_semibold().text_color(title ? C.ink : C.muted).truncate().child(title || L.noTitle))
+          .when(blocked && (ctx.hasRemote || ctx.spaces.get(a.space)?.machine !== null), r => r.child(this.machineBadge(a, ctx)))
           .when(a.pinned, el => el.child(svg("mods/workspace-chrome/pin.svg").size(11).text_color(C.dim).flex_none())))
         .when(blocked, el => el
           .child(div().w_full().px(10).py(7).rounded(6).bg(wash(state.color, "14")).border(1).border_color(wash(state.color, "40"))
@@ -493,14 +648,19 @@ export default class Herdboard extends View {
             .child(this.actionButton(`peek-b-${a.address}`, L.peek, L.peekTip, () => run("terminal.peek", { terminal: a.address })))
             .child(div().flex_1().min_w(0).truncate().text_right().text_size(10).text_color(state.color)
               .tooltip(ageText).child(ageText))))
+        .when(a.status === "working", el => el.child(h_flex().id(`activity-${a.address}`).min_w(0).gap(6).items_center().text_size(11).text_color(C.muted)
+          .child(div().flex_none().text_color(C.dim).child(L.doingNow))
+          .child(div().id(`activity-text-${a.address}`).flex_1().min_w(0).truncate().tooltip(activity).child(activity))))
         .when(!blocked, el => el.child(h_flex().items_center().gap(8).text_size(11).text_color(C.muted)
           .when(showState, r => r.child(dot(state.color, 6)).child(div().flex_none().font_semibold().text_color(state.color).child(state.label)))
+          .when(ctx.hasRemote || ctx.spaces.get(a.space)?.machine !== null, r => r.child(this.machineBadge(a, ctx)))
           .child(div().flex_1().min_w(0).truncate().child(where))
           .child(stuck
             ? h_flex().flex_none().gap(4).items_center().px(6).py(1).rounded(4).bg(wash(C.t.working, "26")).text_color(C.t.working)
                 .tooltip(L.stuckTip)
                 .child(svg("mods/workspace-chrome/clock.svg").size(10)).child(`${ageText} · ${L.stuck}`)
-            : div().flex_none().child(ageText)))))
+            : div().flex_none().child(ageText))))
+        .child(this.gitLabel(a)))
       // Actions show on hover, over the card's top right (blocked cards have theirs inline).
       .when(hovered && !blocked, el => el.child(h_flex().absolute().top(6).right(6).p(2).gap(2).rounded(6).bg(C.pop).border(1).border_color(C.strong)
         .child(this.actionButton(`peek-${a.address}`, L.peek, L.peekTip, () => run("terminal.peek", { terminal: a.address })))
@@ -553,7 +713,10 @@ export default class Herdboard extends View {
         .child(h_flex().gap(6).items_center().min_w(0)
           .when(t.last, el => el.child(div().flex_none().text_size(10).text_color(C.dim).child(L.lastTask)))
           .child(div().min_w(0).text_size(12).text_color(t.text ? C.ink : C.muted).truncate().child(t.text || L.noTitle)))
-        .child(div().text_size(10).text_color(C.dim).truncate().child(where)))
+        .child(h_flex().min_w(0).items_center().gap(4)
+          .when(ctx.hasRemote || ctx.spaces.get(a.space)?.machine !== null, r => r.child(this.machineBadge(a, ctx)))
+          .child(div().flex_1().min_w(0).text_size(10).text_color(C.dim).truncate().child(where)))
+        .child(this.gitLabel(a)))
       .when(a.pinned, el => el.child(svg("mods/workspace-chrome/pin.svg").size(10).text_color(C.dim).flex_none()))
       .child(div().flex_none().text_size(10).text_color(C.dim).child(duration(mins)));
   }
@@ -706,7 +869,9 @@ export default class Herdboard extends View {
     this.perTab = new Map();
     for (const a of list) this.perTab.set(a.tab, (this.perTab.get(a.tab) ?? 0) + 1);
     for (const k in by) by[k].sort((x, y) => (y.pinned ? 1 : 0) - (x.pinned ? 1 : 0));
-    return { by, tabs, paneInfo: new Map(panes().map(p => [p.pane, p])) };
+    return { by, tabs, spaces: new Map(all.map(s => [s.id, s])),
+      hasRemote: all.some(s => typeof s.machine === "string" && s.machine.trim().length > 0),
+      paneInfo: new Map(panes().map(p => [p.pane, p])) };
   }
 
   blockedHeight(a) {
@@ -720,7 +885,7 @@ export default class Herdboard extends View {
     const lines = (text || L.noAsk).split("\n").reduce((n, l) => n + Math.max(1, Math.ceil(l.length / perLine)), 0);
     // The Yes / No row, when the card shows one: 24px buttons and the 8px gap above them.
     const answers = shownChoices(this.asks[a.address]) ? 24 + 8 : 0;
-    return 10 + 20 + 8 + (16 + lines * 16) + answers + 8 + 24 + 10 + 2;
+    return 10 + 20 + 8 + (16 + lines * 16) + answers + 8 + 24 + 10 + 2 + 20;
   }
 
   // Size the board block to its tallest column (140–360px; past that, columns scroll).
@@ -737,7 +902,7 @@ export default class Herdboard extends View {
   boardList(ctx) {
     const ordered = STATES.flatMap(state => ctx.by[state.key].map(a => ({ a, state })));
     const padY = 12, gap = 8;
-    this.fitHeight(padY * 2 + 24 + 9 + ordered.reduce((h, { a }) => h + (a.status === "blocked" ? this.blockedHeight(a) : 64) + gap, 0));
+    this.fitHeight(padY * 2 + 24 + 9 + ordered.reduce((h, { a }) => h + (a.status === "blocked" ? this.blockedHeight(a) : this.cardHeight(a)) + gap, 0));
     return this.sized(v_flex().size_full().px(14).py(padY).gap(9).bg(C.bg)
       .child(h_flex().flex_none().gap(6).items_center().flex_wrap().children(STATES.map(state => {
         const n = ctx.by[state.key].length;
@@ -755,6 +920,7 @@ export default class Herdboard extends View {
   board(list, cx) {
     this.rememberTitles(list);
     const ctx = this.groups(list);
+    this.refreshGit(cx, list);
     // Agent navigation (agent.next/prev) follows the board's order.
     const idleShown = shared(IDLE_KEY) !== false || this.below(800);
     setAgentOrder(STATES.filter(s => s.key !== "idle" || idleShown).flatMap(s => ctx.by[s.key].map(a => a.address)));
@@ -768,7 +934,7 @@ export default class Herdboard extends View {
       const items = ctx.by[key];
       if (!items.length) return 40;
       if (key === "idle") return idleOpen ? items.length * IDLE_ROW + (items.length - 1) * 4 : 0;
-      return items.reduce((h, a) => h + (key === "blocked" ? this.blockedHeight(a) : 64) + gap, -gap) + (key === "blocked" ? 12 : 0);
+      return items.reduce((h, a) => h + (key === "blocked" ? this.blockedHeight(a) : this.cardHeight(a)) + gap, -gap) + (key === "blocked" ? 12 : 0);
     };
     this.fitHeight(padY * 2 + 26 + gap + Math.max(...STATES.map(s => colHeight(s.key))) + 2);
     return this.sized(h_flex().size_full().px(padX).py(padY).gap(colGap).bg(C.bg).children(STATES.map(state => {
@@ -799,6 +965,7 @@ export default class Herdboard extends View {
   render(cx) {
     palette();
     const role = props()?.role;
+    if (!role) this.fetchActivities(cx);
     if (role === "menu") return this.menu();
     if (!role) this.fetchRequests(startupCandidates(), cx);
     const knownStartup = shared(STARTUP_KEY);

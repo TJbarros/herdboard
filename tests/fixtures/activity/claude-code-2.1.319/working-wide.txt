@@ -1,0 +1,33 @@
+
+ ▐▛███▛█   Claude Code v2.1.319
+▝▜██████▀  Opus 5.5 with high effort · Claude Team
+ ▝▝   ▝▝   /tmp/herdboard-issues-25-27/native/workspace · /rc
+
+
+❯ For a Herdboard activity capture, run exactly one shell command: sleep 40; printf activity-capture-done. Do not edit files. After the result say
+  done.
+
+  Aguarda 40s e imprime marcador de captura · 7s
+  ⎿  $ sleep 40; printf activity-capture-done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+✻ Infusing… (16s · ↓ 316 tokens)
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  [CAVEMAN] Opus 5.5 | ░░░░░░░░░░ 8%
+  ⏵⏵ bypass permissions on (shift+tab to cycle)

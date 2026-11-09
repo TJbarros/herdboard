@@ -1,0 +1,127 @@
+# Worktree change totals: verification
+
+[Português](issue-26-verification.pt-BR.md)
+
+Verified on 2026-11-09. These totals describe pending Git file records in the
+terminal's worktree, including changes made by anyone. They do not attribute work
+to an agent. Real remote connection details and captures remain private and are
+excluded from this record and its artifacts.
+
+## Real Git and controlled runtime tests
+
+`tests/git-changes.test.js` executes Git against disposable repositories. It
+covers clean/unborn repositories, whole-worktree totals from a subdirectory,
+individual untracked files, ignored files, tabs/newlines in filenames, staged and
+unstaged changes in the same file, deletion, staged addition, type changes,
+recognized rename versus an unstaged deletion/new-file move, conflicting merges,
+user settings hiding untracked files/disabling renames, non-Git and missing paths.
+
+`tests/git-runtime.test.js` runs the real `main.js` with controlled Herdr and UI
+boundaries. Every attempted exec is recorded, including discovery and failures.
+It checks exact cwd/machine routing, shared discovery/status, distinct machines
+and linked-worktree identities, same-millisecond terminal replacement, stale
+directory/machine responses, no local fallback, successful zero versus failure,
+two physical slots through slow requests, minimum retry intervals across hiding,
+filters/Put away/folded Idle, auxiliary roles, zero-height visibility, compact
+Idle and paired wording. Review regressions also cover retained positive height
+under hidden ancestors/removed layouts, dispatch-time demand changes without a
+render, stale cache reservations, delayed-dispatch cooldowns and fresh callback
+contexts. These are simulated runtime checks, not native UI proof.
+
+The agreed public seams were Git-result interpretation with real repositories and
+the real-main.js runtime harness. Red/green slices were recorded before adding the
+helper, the cap guard, card querying, terminal revisions, hidden retry cooldowns,
+Git type changes and the positive-height gate. Raw failure/pass logs remain in the
+session's temporary evidence bundle. After integrating machine identification,
+the full `scripts/check.sh` passed all three mod checks and **429 Node tests**;
+the [integrated record](agent-card-context-verification.md) documents the final
+combined suite after the other card changes and review corrections.
+
+## Native execution API
+
+The isolated Herdr app's actual `exec` API preserved NUL, tab and newline output.
+A disposable local fixture returned five Git records, including MM and a rename;
+querying its root and a subdirectory returned identical output. Missing commands
+rejected, exit 7 remained exit 7, and stderr was preserved.
+
+The native API silently truncated **each stream at 8 MiB** while returning exit
+zero: a 9 MiB stdout lost its trailing sentinel, and 9 MiB stderr was capped while
+a valid small stdout survived. The implementation rejects output whose combined
+UTF-8 byte count reaches the cap, conservatively rejecting some large combined
+outputs as well. Ending at a complete NUL record is insufficient proof of a total.
+
+A separate real remote transport check returned the same five-record disposable
+fixture with preserved NUL/special filenames and exit zero in **93 ms**. This
+proves native remote exec routing/transport for that fixture. It is separate from
+remote board rendering; no real connection names, identifiers, paths, configuration
+or screenshots are included here.
+
+## Native execution load with synthetic consumers
+
+These measurements use the production `WorktreeChanges` scheduler and actual
+Herdr `exec` calls against disposable local Git repositories. The consumers are
+synthetic demand records, not 40 launched native coding agents. Each repository
+has one modified tracked file; the larger fixture has 10,000 tracked files.
+Raw command timings, totals and the measured source hash are in
+[`native-exec-load.json`](evidence/issue-26/native-exec-load.json).
+
+| Synthetic demand | Duration | All commands | Rate | Latency min / median / max | Peak physical exec |
+| --- | --- | --- | --- | --- | --- |
+| 40 consumers, one 20-file worktree | 22.112 s | 4 | 0.181/s | 15 / 16.5 / 77 ms | 1 |
+| 8 consumers, eight 20-file worktrees | 22.161 s | 32 | 1.444/s | 15 / 16 / 96 ms | 2 |
+| 40 consumers, one 10,000-file worktree | 22.152 s | 4 | 0.181/s | 37 / 75 / 96 ms | 1 |
+
+Every final consumer saw one file. Shared-worktree cases each used one discovery
+and three status commands. Eight distinct worktrees used eight discoveries and
+24 statuses. This supports the **10-second minimum interval**: repeated status
+work stays near 0.1 command/s per shared worktree after discovery, while the
+observed larger-worktree calls took up to 96 ms. The **two-command ceiling** bounds
+distinct-worktree fan-out and includes discovery. Both are limits, not latency
+guarantees for arbitrary repositories or remote machines. Physical requests retain
+their slots until settlement; no logical timeout creates duplicate work.
+
+## Native board load with genuine agents
+
+A second isolated app/core measured commit `1586738` through the real `main.js`
+board, with four genuine local Codex CLI 0.167.0 processes per scenario. Their
+native reports were idle; Herdr presented them as Done. No task prompts were
+submitted and no agent, state or report was fabricated. Other versions match
+the integrated record: herdr-app 0.1.14, hc 0.1.19, Node 24.22.1, Git 2.43.0.
+
+Each window began after all four agents were reported and associated with the
+fixtures. Reloading the instrumented copy reset caches and included discovery.
+Only `exec` was wrapped to count every attempt and its physical settlement;
+snapshots on the existing one-second timer recorded real consumers and rendered
+labels. The observer adds notifications/renders and measurement overhead; it does
+not change the scheduler or interval. [Raw timings, reports and source hashes](evidence/issue-26/native-board-load.json)
+and the [representative instrumentation diff](evidence/issue-26/native-board-load-instrumentation.diff)
+are sanitized. Full terminal identities and local configuration remain private.
+
+| Genuine native workload | Duration | Commands (discovery + status) | Rate | Latency min / median / max | Peak exec | Minimum status interval |
+| --- | --- | --- | --- | --- | --- | --- |
+| 4 agents, one 20-file worktree | 24.254 s | 4 (1 + 3) | 0.1649/s | 61 / 66 / 94 ms | 1 | 10017 ms |
+| 4 agents, four 20-file worktrees | 24.182 s | 16 (4 + 12) | 0.6616/s | 50 / 64.5 / 78 ms | 2 | 10049 ms |
+| 4 agents, one 10,000-file worktree | 24.244 s | 4 (1 + 3) | 0.1650/s | 60 / 83.5 / 92 ms | 1 | 10016 ms |
+
+The board measured **1233 × 358 px** in a 1280 px window, with All selected and
+Idle open. Every worktree had exactly one modified tracked file; all four card
+labels in each scenario rendered that expected total. Independent recalculation
+from all recorded attempts confirmed the rates, intervals and physical peaks.
+These full-board samples support the ten-second interval and two-command ceiling
+alongside the larger synthetic-consumer samples above. They measure four local
+idle processes, separately from Working-activity load and native remote transport.
+
+After measurement, the exact production modules were restored with matching
+hashes, the mod check passed and the native app reported zero errors. The primary
+Codex configuration was unchanged. This load run does not repeat the earlier
+PT/EN native layout matrix or establish remote performance. The final private frame
+contained the app's onboarding overlay; overlay state was not logged during each
+timed window. Runtime snapshots establish query behavior and rendered label values,
+not an unobstructed visual inspection of every card in this load run.
+
+## Native board scope
+
+The [final integrated verification](agent-card-context-verification.md) records
+native local/remote board checks in both languages at 1280, 1024 and 760 px, with
+actual board dimensions, tooltips and actions. This ticket's native exec
+measurements remain separate from that UI evidence and from real-agent activity load.

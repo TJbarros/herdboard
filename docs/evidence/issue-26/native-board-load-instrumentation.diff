@@ -1,0 +1,53 @@
+--- production-main.js
++++ observed-main.js
+@@ -307 +307,22 @@
+-    this.gitChanges = new WorktreeChanges(exec);
++    this.nativeLoad = { epoch: Date.now(), attempts: [], active: 0, peak: 0 };
++    this.nativeNames = new Map();
++    this.nativeLabels = new Map();
++    this.gitChanges = new WorktreeChanges(async (command, args, options) => {
++      const data = this.nativeLoad;
++      const attempt = { kind: args[0] === "rev-parse" ? "discovery" : "status",
++        cwd: options.cwd.split("/").at(-1), local: options.on === null,
++        startMs: Date.now() - data.epoch };
++      data.attempts.push(attempt);
++      data.active++;
++      data.peak = Math.max(data.peak, data.active);
++      try {
++        const result = await exec(command, args, options);
++        attempt.code = result.code;
++        return result;
++      } catch (error) { attempt.code = "rejected"; throw error; }
++      finally {
++        attempt.endMs = Date.now() - data.epoch;
++        attempt.durationMs = attempt.endMs - attempt.startMs;
++        data.active--;
++      }
++    });
+@@ -320,0 +342 @@
++      this.snapshotNativeLoad();
+@@ -333,0 +356,19 @@
++
++  snapshotNativeLoad() {
++    const data = this.nativeLoad;
++    const snapshot = { elapsedMs: Date.now() - data.epoch, width: this.w, height: this.h,
++      filter: shared(FILTER_KEY) ?? "all", idleOpen: shared(IDLE_KEY) !== false,
++      agentCount: agents().length, active: data.active, peak: data.peak,
++      attempts: data.attempts.map(a => ({ ...a })),
++      consumers: agents().map(a => {
++        if (!this.nativeNames.has(a.address)) this.nativeNames.set(a.address, `agent-${this.nativeNames.size + 1}`);
++        const terminal = terminals().find(t => t.address === a.address);
++        const context = this.gitContext(a);
++        return { agent: this.nativeNames.get(a.address), app: a.app, status: a.status,
++          live: terminal?.state === "live", reported: terminal?.reported === true,
++          reportApp: terminal?.report?.app, reportState: terminal?.report?.state,
++          cwd: context?.cwd.split("/").at(-1), local: context?.on === null,
++          value: this.gitChanges.value(context), renderedLabel: this.nativeLabels.get(a.address) };
++      }) };
++    setShared("herdboard.nativeLoad", snapshot);
++  }
+@@ -420,0 +462 @@
++    this.nativeLabels.set(a.address, value === null ? L.worktreeUnavailable : L.worktree(value));
+@@ -992,0 +1035,2 @@
++
++// Disposable native measurement scenario: shared.

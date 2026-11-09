@@ -77,7 +77,13 @@ project folder you pick.
 - **Needs you, answered from the board**: the question, *Open and answer*, *Peek*,
   and *Yes* / *No* for Claude Code permissions, its recognised workspace-trust screen,
   and the [verified Codex local command dialog](docs/guide.md#answer-an-agent-that-needs-you).
-- **Cards that say what's going on**: task title, space · tab · branch, time in status.
+- **Cards that say what's going on**: task title, space · tab · branch, time in status,
+  and **Doing now** on Working cards, with recognized recent screen activity or a
+  neutral unavailable state. [Verified formats and limits](docs/issue-25-verification.md).
+- **Worktree totals** on cards and Idle entries: pending Git files in each terminal's
+  live worktree, including remote machines, with a distinct unavailable state.
+- **Machine names on cards** when remote spaces are present, including Local labels
+  and compact Idle entries; unavailable ownership is shown explicitly.
 - **"stuck?"** on an agent working for more than 30 minutes.
 - **Peek, Pin and Put away** when you hover a card.
 - **New tabs in the right folder**, with a folder picker.
