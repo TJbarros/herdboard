@@ -4,6 +4,13 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+- Working cards and compact entries show Doing now / Fazendo agora from verified
+  live Claude/Codex screen formats, with a neutral fallback for unsupported or
+  unavailable activity. Running Claude tool labels require a current timer,
+  command and live phase; the captured Codex format exposes its Working phase.
+  Activity reads have a five-second completion cooldown, two physical slots,
+  lifecycle/visibility invalidation and ten-second text expiry. Captured pi without
+  a configured model remains unavailable; native and simulated evidence are separate.
 - Agent cards, compact entries and visible Idle rows show the pending-file total
   of their own terminal's live Git worktree, including remote machines. Clean
   results show zero; failed or missing context stays visibly unavailable. Counts

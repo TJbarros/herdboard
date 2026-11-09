@@ -3,7 +3,7 @@
 export const herdr = { agents: [], terminals: [], spaces: [], panes: [], props: {}, calls: [], execCalls: [], runs: [], shared: {}, layout: {} };
 export const agents = () => herdr.agents;
 export const terminals = () => herdr.terminals;
-export const hc = (args) => new Promise((resolve) => herdr.calls.push({ args, resolve }));
+export const hc = (args) => new Promise((resolve, reject) => herdr.calls.push({ args, resolve, reject }));
 export const exec = (command, args, options) => new Promise((resolve, reject) => {
   const call = { command, args, options, settled: false,
     resolve: value => { call.settled = true; resolve(value); },

@@ -2,6 +2,7 @@ import { View, div, svg, image } from "gpui-kit";
 import { h_flex, v_flex, Popover } from "gpui-base";
 import { agents, terminals, spaces, panes, props, run, setAgentOrder, theme, notify, layout, shared, setShared, hc, exec, openOverlay, closeOverlay } from "herdr";
 import { parseAsk, pickAnswers } from "./ask.js";
+import { extractActivity } from "./activity.js";
 import { WorktreeChanges } from "./git-changes.js";
 
 // ---- Layout state ---------------------------------------------------------------------------
@@ -33,6 +34,36 @@ const FILTER_KEY = "herdboard.filter";    // "all" | "here"
 const IDLE_KEY = "herdboard.idleOpen";    // false: the Idle column is folded
 const TITLES_KEY = "herdboard.titles";    // address -> { title, at }: the last task title seen
 const STARTUP_KEY = "herdboard.startup";  // recognised lifecycle keys only, for the header copy
+const ACTIVITY_INTERVAL = 5000;
+const ACTIVITY_CONCURRENCY = 2;
+
+// Timers also run in hidden instances. Walk ancestors, including a hidden parent layout.
+function boardVisible(node = layout(), hidden = false) {
+  if (!node || typeof node !== "object") return false;
+  hidden ||= node.hidden === true;
+  if (node.id === "herdboard-cards") return !hidden;
+  return (node.children ?? []).some(child => boardVisible(child, hidden));
+}
+
+// These foreground configurations and terminal fields are paired with native captures.
+// seq conservatively invalidates report changes; turn is the independent core turn counter.
+function activityKey(a) {
+  const t = terminals().find(t => t.address === a.address), f = t?.foreground;
+  const report = typeof t?.status === "object" ? t.status : t?.report;
+  const configuration = a.app === "claude-code" ? ["claude", "--permission-mode", "bypassPermissions"]
+    : a.app === "codex" ? ["codex", "--no-daemon", "--no-alt-screen", "--ask-for-approval", "never", "--sandbox", "workspace-write"] : null;
+  const argv = f?.argv;
+  // Herdr may append its initial task as one positional argument (also captured natively).
+  const launch = configuration && Array.isArray(argv) && JSON.stringify(argv.slice(0, configuration.length)) === JSON.stringify(configuration)
+    && (argv.length === configuration.length || (a.app === "codex" && argv.length === configuration.length + 1
+      && typeof argv.at(-1) === "string" && argv.at(-1).trim() && !argv.at(-1).startsWith("-")));
+  if (!configuration || a.status !== "working" || t?.state !== "live" || t.screen !== "exact" || t.reported !== true
+    || report?.state !== "working" || report.app !== a.app || !(t.created_ms > 0) || !(t.pid > 0) || !(f?.pid > 0)
+    || !f.cwd || !Number.isSafeInteger(t.turn) || t.turn < 0 || !Number.isSafeInteger(a.seq) || a.seq < 0
+    || f.name !== configuration[0] || !launch) return null;
+  return JSON.stringify([a.address, a.app, a.program?.key, a.seq, a.space, a.tab, a.pane,
+    t.created_ms, t.pid, t.cwd, t.argv, f.pid, f.cwd, f.name, f.argv, t.turn]);
+}
 const IDLE_ROW = 60;                  // task, where and worktree total
 
 
@@ -47,6 +78,7 @@ const TEXT = {
     verb: { blocked: "esperando há", working: "há", done: "concluiu há", idle: "há" },
     stuck: "travado?", stuckTip: `Trabalhando há mais de ${STUCK_MIN} min. Pode estar travado: vale conferir.`,
     noTitle: "Sem título da tarefa", tab: "aba", none: "Nenhum",
+    doingNow: "Fazendo agora", noActivity: "Atividade indisponível",
     localMachine: "Local", localMachineTip: "Roda nesta máquina", remoteMachineTip: name => `Roda em ${name}`,
     unknownMachine: "Máquina desconhecida", unknownMachineTip: "A máquina do espaço do agente está indisponível",
     current: (n) => `${n} (espaço atual)`, goTo: (n) => `Ir para ${n}`,
@@ -76,6 +108,7 @@ const TEXT = {
     verb: { blocked: "waiting", working: "for", done: "finished", idle: "for" }, ago: { blocked: false, done: true },
     stuck: "stuck?", stuckTip: `Working for over ${STUCK_MIN} min. It may be stuck: worth a look.`,
     noTitle: "No task title", tab: "tab", none: "None",
+    doingNow: "Doing now", noActivity: "Activity unavailable",
     localMachine: "Local", localMachineTip: "Runs on this machine", remoteMachineTip: name => `Runs on ${name}`,
     unknownMachine: "Unknown machine", unknownMachineTip: "The agent's owning machine is unavailable",
     current: (n) => `${n} (current space)`, goTo: (n) => `Go to ${n}`,
@@ -264,6 +297,9 @@ export default class Herdboard extends View {
     this.asks = {};      // address -> { key, text, question, options, id, choices, sent } for blocked agents
     this.recognisedStartups = new Map(); // address -> lifecycle key, independent of invalidatable reads
     this.pending = new Set();
+    this.activities = new Map(); // visible address -> current lifecycle and transient text
+    this.activityPending = new Set(); // physical reads, held even after lifecycle/visibility changes
+    this.activityNext = new Map(); // address -> earliest next read, including after failures
     this.moreOpen = null; // address#seq of the card whose permission options are open
     this.hovered = null; // address of the card under the pointer (shows its actions)
     this.w = 0;          // this copy's size, from on_size_change; 0 until the first layout (treated as wide)
@@ -280,6 +316,7 @@ export default class Herdboard extends View {
     // the board copy, until the source ends; unknown screens never become cards.
     if (!props()?.role) cx.timer.every(1000, (cx) => {
       if (!isExpanded() && startupCandidates().length) cx.notify();
+      this.fetchActivities(cx);
       this.refreshGit(cx);
     });
   }
@@ -294,6 +331,55 @@ export default class Herdboard extends View {
     });
   }
   below(px) { return this.w > 0 && this.w < px; }
+
+  syncActivities() {
+    const consumers = !props()?.role && boardVisible() ? this.groups(agents()).by.working : [];
+    const current = new Map(consumers.map(a => [a.address, { a, key: activityKey(a) }]).filter(([, v]) => v.key));
+    for (const [address, entry] of this.activities) if (current.get(address)?.key !== entry.key) this.activities.delete(address);
+    for (const [address, { a, key }] of current) if (!this.activities.has(address)) this.activities.set(address, { a, key, text: null });
+    for (const [address, next] of this.activityNext) if (!current.has(address) && !this.activityPending.has(address) && Date.now() >= next) this.activityNext.delete(address);
+  }
+
+  // No stored queue: only current visible consumers compete for two physical read slots.
+  // The five-second delay starts again on completion; a slow read never frees its slot early.
+  fetchActivities(cx) {
+    this.syncActivities();
+    for (const entry of this.activities.values()) if (entry.text && Date.now() >= entry.expires) {
+      entry.text = null;
+      cx.notify();
+    }
+    const due = [...this.activities].sort(([a], [b]) => (this.activityNext.get(a) ?? 0) - (this.activityNext.get(b) ?? 0));
+    for (const [address, entry] of due) {
+      if (this.activityPending.size >= ACTIVITY_CONCURRENCY) break;
+      if (this.activityPending.has(address) || Date.now() < (this.activityNext.get(address) ?? 0)) continue;
+      this.activityPending.add(address);
+      cx.spawn(async (cx) => {
+        // spawn may be deferred by the executor. A reservation is not permission to read
+        // a consumer that disappeared or changed before the task actually starts.
+        this.syncActivities();
+        if (this.activities.get(address) !== entry) {
+          this.activityPending.delete(address);
+          this.fetchActivities(cx);
+          return;
+        }
+        this.activityNext.set(address, Date.now() + ACTIVITY_INTERVAL);
+        let text = null;
+        try {
+          const r = await hc(["read", address, "--lines", "0"]);
+          if (r?.code === 0) text = extractActivity(r.stdout, entry.a.app);
+        } catch (_e) { /* Missing/disconnected terminals have the neutral state. */ }
+        this.activityPending.delete(address);
+        this.activityNext.set(address, Date.now() + ACTIVITY_INTERVAL);
+        this.syncActivities();
+        if (this.activities.get(address) === entry) {
+          entry.text = text;
+          entry.expires = Date.now() + ACTIVITY_INTERVAL * 2;
+        }
+        cx.notify();
+        this.fetchActivities(cx);
+      });
+    }
+  }
 
   // Resolve the card's own association. An explicit null machine means local; an
   // absent space/machine/cwd never falls back to the focused terminal or local host.
@@ -326,7 +412,7 @@ export default class Herdboard extends View {
       .tooltip(L.worktreeTip).child(value === null ? L.worktreeUnavailable : L.worktree(value));
   }
 
-  cardHeight(_a) { return 82; }
+  cardHeight(a) { return a.status === "working" ? 104 : 82; }
 
   // How long the agent has been in its status. Reported agents use Herdr's per-tab times;
   // otherwise observe locally, with startup waits belonging to their process lifecycle.
@@ -500,7 +586,7 @@ export default class Herdboard extends View {
       .child(local ? L.localMachine : remote ? machine : L.unknownMachine);
   }
 
-  // Card: two lines (task, then where · age). Blocked cards also show what the agent asks.
+  // Card: task, where · age and Git total; Working adds activity, blocked adds its question.
   card(a, state, ctx, showState = false) {
     const tab = ctx.tabs.get(a.tab);
     const mins = Math.max(0, Math.floor((Date.now() - this.since(a, tab)) / 60000));
@@ -513,6 +599,7 @@ export default class Herdboard extends View {
     const hovered = this.hovered === a.address;
     const ask = blocked ? this.asks[a.address] : null;
     const choices = shownChoices(ask);
+    const activity = this.activities.get(a.address)?.text || L.noActivity;
     const extras = choices && ask.mode === "numbered" ? ask.options.filter(o => o.n >= 1 && o.n <= 9 && o.n !== choices.yes.n && o.n !== choices.no.n) : [];
     return h_flex().id(`agent-${a.address}`).w_full().flex_none().rounded(7).overflow_hidden().relative()
       .when(!blocked, el => el.h(this.cardHeight(a)))
@@ -551,6 +638,9 @@ export default class Herdboard extends View {
             .child(this.actionButton(`peek-b-${a.address}`, L.peek, L.peekTip, () => run("terminal.peek", { terminal: a.address })))
             .child(div().flex_1().min_w(0).truncate().text_right().text_size(10).text_color(state.color)
               .tooltip(ageText).child(ageText))))
+        .when(a.status === "working", el => el.child(h_flex().id(`activity-${a.address}`).min_w(0).gap(6).items_center().text_size(11).text_color(C.muted)
+          .child(div().flex_none().text_color(C.dim).child(L.doingNow))
+          .child(div().id(`activity-text-${a.address}`).flex_1().min_w(0).truncate().tooltip(activity).child(activity))))
         .when(!blocked, el => el.child(h_flex().items_center().gap(8).text_size(11).text_color(C.muted)
           .when(showState, r => r.child(dot(state.color, 6)).child(div().flex_none().font_semibold().text_color(state.color).child(state.label)))
           .when(ctx.hasRemote || ctx.spaces.get(a.space)?.machine !== null, r => r.child(this.machineBadge(a, ctx)))
@@ -865,6 +955,7 @@ export default class Herdboard extends View {
   render(cx) {
     palette();
     const role = props()?.role;
+    if (!role) this.fetchActivities(cx);
     if (role === "menu") return this.menu();
     if (!role) this.fetchRequests(startupCandidates(), cx);
     const knownStartup = shared(STARTUP_KEY);

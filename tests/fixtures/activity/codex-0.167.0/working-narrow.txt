@@ -1,0 +1,33 @@
+  /init - create an AGENTS.md file with instructions for Codex
+  /status - show current session configuration
+  /permissions - choose what Codex is allowed to do
+  /model - choose what model and reasoning effort to use
+  /review - review any changes and find issues
+
+
+› For a Herdboard activity capture, run exactly one shell command: sleep 35;
+  printf activity-capture-done. Do not edit files. After the result say done.
+
+
+• I’ll run the command exactly as given.
+
+• Ran sleep 35; printf activity-capture-done
+  └ activity-capture-done
+
+• done.
+
+  Worked for 50s • 02:47
+
+
+› Repeat the harmless capture command once: sleep 45; printf second-capture-done.
+  Do not edit files.
+
+
+• I’ll run the command once as given.
+
+• Working (23s • esc to interrupt) · 1 background terminal running · /ps to view …
+
+
+› Ask Codex to do anything
+
+  GPT-6.1-Sol xhigh · /tmp/herdboard-issues-25-27/native/workspace · Run activity…

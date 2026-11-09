@@ -132,6 +132,11 @@ the rail while expanded.
 
 - **Left stripe**: the status color (here amber, Working).
 - **Top line**: the agent's icon and its task title.
+- **Doing now** (Working cards and compact entries): a recognized running tool
+  label or live progress phase, in the agent's original words. Hover the activity
+  for its full text. **Activity unavailable** means the screen, configuration or
+  terminal could not establish current activity; it never substitutes the task title.
+  [Captured Claude/Codex formats and pi limitation](issue-25-verification.md).
 - **Bottom line**: space · tab · branch, and on the right how long it has been in
   this status.
 - **Title**: what the agent named its task. After `/clear` the card shows
@@ -194,6 +199,13 @@ them all.
   `git --no-optional-locks status --porcelain=v1 -z --untracked-files=all --ignored=no --renames`
   on the card's own machine and live directory. Git inspects the worktree; no file
   contents or diffs are shown. No mod downloads anything from the internet.
+- Working activity adds visible-screen reads only from the cards instance, with
+  at least **5 seconds after each completed read** and at most **2 activity reads
+  in flight** across the board. Filters, Put away and hiding/expanding the board
+  stop new activity reads. Pending reads keep their slot until they finish;
+  failures use the same cooldown. Activity expires after **10 seconds**, and
+  turn/process/status changes discard it immediately. Question/startup reads
+  described above have their own schedules and are outside this activity ceiling.
 - Git queries have a **10-second minimum interval** per equivalent query and at
   most **two physical commands** in flight, including discovery. Matching machine
   and directory discovery is shared; matching machine and canonical Git worktree

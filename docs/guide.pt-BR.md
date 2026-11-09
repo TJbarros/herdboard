@@ -138,6 +138,12 @@ continuam na barra enquanto está expandido.
 
 - **Faixa à esquerda**: a cor do status (aqui âmbar, Trabalhando).
 - **Linha de cima**: o ícone do agente e o título da tarefa.
+- **Fazendo agora** (Trabalhando e lista compacta): descrição reconhecida da
+  ferramenta em execução ou fase ativa de progresso, nas palavras do agente.
+  Passe o mouse na atividade para ver o texto completo. **Atividade indisponível**
+  significa que a tela, configuração ou terminal não comprovou uma atividade atual;
+  o título da tarefa nunca substitui esse dado.
+  [Formatos capturados de Claude/Codex e limite do pi](issue-25-verification.md).
 - **Linha de baixo**: espaço · aba · branch e, à direita, há quanto tempo ele está
   nesse status.
 - **Título**: o nome que o agente deu à tarefa. Depois de um `/clear`, o card mostra
@@ -208,6 +214,14 @@ Layout** lista todos.
   na máquina e na pasta atual do próprio terminal do card. O Git inspeciona o
   worktree; o quadro não exibe conteúdos de arquivos nem diffs. Nenhum mod baixa
   nada da internet.
+- A atividade em Trabalhando acrescenta leituras da tela visível só pela instância
+  de cards, com pelo menos **5 segundos após cada leitura terminar** e no máximo
+  **2 leituras de atividade em andamento** no quadro. Filtros, Guardar e
+  ocultar/expandir o quadro suspendem novas leituras. Leituras pendentes conservam
+  a vaga até terminar; falhas respeitam o mesmo intervalo. A atividade expira após
+  **10 segundos**, e mudanças de turno, processo ou status a descartam imediatamente.
+  As leituras de perguntas e descoberta inicial descritas acima têm agendamento
+  próprio e ficam fora desse teto de atividade.
 - As consultas Git têm **intervalo mínimo de 10 segundos** por consulta equivalente
   e no máximo **dois comandos físicos** em andamento, incluindo a descoberta.
   A descoberta é compartilhada por máquina e pasta; o status, por máquina e
