@@ -11,6 +11,8 @@ import { terminals, theme, readTerminal, isRecord } from "./herdr-state.js";
  * @typedef {import("./types.js").BoardAgent} BoardAgent
  * @typedef {import("./types.js").CoreTerminal} CoreTerminal
  * @typedef {import("./types.js").BoardGroups} BoardGroups
+ * @typedef {Map<string, string | null>} TitleLifecycles
+ * @typedef {BoardGroups & { titleLifecycles?: TitleLifecycles }} BoardContext
  * @typedef {import("./types.js").StatusGroup} StatusGroup
  * @typedef {import("./types.js").CachedAsk} CachedAsk
  * @typedef {import("gpui-kit").Element} Element
@@ -213,9 +215,8 @@ function taskTitle(a) {
   if (isAddress(t)) return "";
   return t;
 }
-/** @param {{ address: string }} a */
-function titleLifecycle(a) {
-  const t = terminals().find(t => t.address === a.address);
+/** @param {CoreTerminal} [t] */
+function titleLifecycle(t) {
   return t?.created_ms > 0 && t.pid > 0 && t.foreground?.pid > 0
     ? JSON.stringify([t.created_ms, t.pid, t.foreground.pid]) : null;
 }
@@ -707,13 +708,13 @@ export default class Herdboard extends View {
   }
 
   // Card: task, where · age and Git total; Working adds activity, blocked adds its question.
-  /** @param {BoardAgent} a @param {StatusGroup} state @param {BoardGroups} ctx @param {boolean} [showState] */
+  /** @param {BoardAgent} a @param {StatusGroup} state @param {BoardContext} ctx @param {boolean} [showState] */
   card(a, state, ctx, showState = false) {
     const tab = ctx.tabs.get(a.tab);
     const mins = a.status === "unknown" ? 0 : Math.max(0, Math.floor((Date.now() - this.since(a, tab)) / 60000));
     const ageText = a.status === "unknown" ? "" : statusAge(a.status, duration(mins));
     const stuck = a.status === "working" && mins >= STUCK_MIN;
-    const shown = this.shownTitle(a);
+    const shown = this.shownTitle(a, ctx.titleLifecycles);
     const title = shown.text;
     const where = [a.space_name, tabLabel(a.tab_name, ctx.tabs.get(a.tab)?.named), ctx.paneInfo.get(a.pane)?.branch].filter(Boolean).join(" · ");
     const blocked = a.status === "blocked";
@@ -781,27 +782,30 @@ export default class Herdboard extends View {
 
   // The task to show: the title the agent sets now, else the last one this board saw for that
   // terminal (kept in shared state, so it survives restarts and /clear), marked as the last task.
-  /** @param {BoardAgent} a */
-  shownTitle(a) {
+  /** @param {BoardAgent} a @param {TitleLifecycles} [lifecycles] */
+  shownTitle(a, lifecycles) {
     if (a.source?.kind === "cursor-process") return { text: "Cursor CLI", last: false, label: "Cursor CLI" };
     const now = taskTitle(a);
     if (now) return { text: now, last: false, label: now };
     const entry = rememberedTitles()[a.address];
-    const stored = entry?.lifecycle === titleLifecycle(a) ? entry.title : "";
+    const lifecycle = lifecycles ? lifecycles.get(a.address) ?? null : titleLifecycle(terminals().find(t => t.address === a.address));
+    const stored = entry?.lifecycle === lifecycle ? entry.title : "";
     const prev = stored && !isAddress(stored) ? stored : "";
     return prev ? { text: prev, last: true, label: `${L.lastTask}: ${prev}` } : { text: "", last: false, label: L.noTitle };
   }
 
   // Remember each terminal's latest task title (one shared write, only when something changed).
-  /** @param {BoardAgent[]} list */
+  /** @param {BoardAgent[]} list @returns {TitleLifecycles} */
   rememberTitles(list) {
+    // One fresh native snapshot serves title retention and every card in this render.
+    const lifecycles = new Map(terminals().map(t => [t.address, titleLifecycle(t)]));
     const kept = rememberedTitles();
     let changed = false;
     const next = { ...kept };
     for (const a of list) {
       if (a.source?.kind === "cursor-process") continue;
       const t = taskTitle(a);
-      const lifecycle = titleLifecycle(a);
+      const lifecycle = lifecycles.get(a.address) ?? null;
       if (t && (kept[a.address]?.title !== t || kept[a.address]?.lifecycle !== lifecycle)) {
         next[a.address] = { title: t, at: Date.now(), lifecycle }; changed = true;
       }
@@ -812,14 +816,15 @@ export default class Herdboard extends View {
       changed = true;
     }
     if (changed) setShared(TITLES_KEY, next);
+    return lifecycles;
   }
 
   // Idle agents: one compact row each.
-  /** @param {BoardAgent} a @param {BoardGroups} ctx */
+  /** @param {BoardAgent} a @param {BoardContext} ctx */
   idleRow(a, ctx) {
     const tab = ctx.tabs.get(a.tab);
     const mins = Math.max(0, Math.floor((Date.now() - this.since(a, tab)) / 60000));
-    const t = this.shownTitle(a);
+    const t = this.shownTitle(a, ctx.titleLifecycles);
     const where = [a.space_name, tabLabel(a.tab_name, ctx.tabs.get(a.tab)?.named), ctx.paneInfo.get(a.pane)?.branch].filter(Boolean).join(" · ");
     // Two short lines: what it was doing, then where it is.
     return h_flex().id(`idle-${a.address}`).w_full().h(IDLE_ROW).flex_none().px(8).gap(8).items_center().rounded(6).cursor_pointer()
@@ -1028,7 +1033,7 @@ export default class Herdboard extends View {
   }
 
   // Narrow windows: one list, most urgent first, each card labelled with its status.
-  /** @param {BoardGroups} ctx @param {StatusGroup[]} states */
+  /** @param {BoardContext} ctx @param {StatusGroup[]} states */
   boardList(ctx, states) {
     const ordered = states.flatMap(state => ctx.by[state.key].map(a => ({ a, state })));
     const padY = 12, gap = 8;
@@ -1049,8 +1054,8 @@ export default class Herdboard extends View {
 
   /** @param {BoardAgent[]} list @param {Context} cx */
   board(list, cx) {
-    this.rememberTitles(list);
-    const ctx = this.groups(list);
+    const titleLifecycles = this.rememberTitles(list);
+    const ctx = { ...this.groups(list), titleLifecycles };
     const states = STATES.filter(s => s.key !== "unknown" || ctx.by.unknown.length);
     this.refreshGit(cx, list);
     // Agent navigation (agent.next/prev) follows the board's order.

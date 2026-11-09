@@ -68,19 +68,43 @@ test("pinning a discovered Cursor session uses Herdr's terminal label and board 
   clicks.get("pin-t2")({}, cx);
   assert.deepEqual(herdr.runs.at(-1), { command: "terminal.pin", args: { terminal: "t2", pinned: false } });
 });
-test("a replacement process never inherits the previous reported task at the same address", () => {
+for (const [replacement, change] of [
+  ["foreground PID", t => { t.foreground.pid++; }],
+  ["terminal incarnation", t => { t.created_ms++; }],
+  ["terminal PID", t => { t.pid++; }],
+]) test(`a replacement process never inherits the previous reported task at the same address (${replacement})`, () => {
   const report = { address: "t1", pane: "p1", space: "s1", space_name: "Cursor project", tab: "tab1",
     tab_name: "Cursor session", status: "working", app: "cursor", program: { name: "Cursor CLI" }, seq: 1 };
   herdr.agents = [{ ...report, title: "Previous task" }];
   const b = board(); render(b);
   herdr.agents = [{ ...report, title: "" }]; render(b);
   assert.match(text("agent-t1"), /Previous task/, "the same process retains its last task");
-  herdr.terminals[0].foreground.pid++;
+  change(herdr.terminals[0]);
   render(b);
   assert.doesNotMatch(text("agent-t1"), /Previous task/);
   herdr.agents = []; render(b);
   assert.match(text("agent-t1"), /Cursor CLI/);
   assert.doesNotMatch(text("agent-t1"), /Previous task|Last:|min|stuck/);
+});
+test("reported and retained titles add bounded native snapshot work across multiple displayed agents", () => {
+  herdr.layout.hidden = true;
+  herdr.terminals = Array.from({ length: 12 }, (_, i) => ({ ...structuredClone(captured), address: `t${i + 1}` }));
+  herdr.panes = herdr.terminals.map((t, i) => ({ ...herdr.panes[0], terminal: t.address, pane: `p${i + 1}` }));
+  const b = board();
+  const reads = () => { herdr.terminalReads = 0; render(b); return herdr.terminalReads; };
+  // Neutral cards have the same per-card Git label work but no reported task to remember.
+  const neutralReads = reads();
+  for (const t of herdr.terminals) assert.match(text(`agent-${t.address}`), /Cursor CLI/);
+  herdr.agents = herdr.terminals.map((t, i) => ({ address: t.address, pane: `p${i + 1}`, space: "s1",
+    space_name: "Cursor project", tab: "tab1", tab_name: "Cursor session", status: "done", app: "cursor",
+    program: { name: "Cursor CLI" }, seq: 1, title: `Task ${i + 1}` }));
+  const reportedReads = reads();
+  for (const a of herdr.agents) assert.match(text(`agent-${a.address}`), new RegExp(`Task ${a.address.slice(1)}\\b`));
+  for (const a of herdr.agents) a.title = "";
+  const retainedReads = reads();
+  for (const a of herdr.agents) assert.match(text(`agent-${a.address}`), new RegExp(`Last:[\\s\\S]*Task ${a.address.slice(1)}\\b`));
+  assert.ok(Math.max(reportedReads, retainedReads) <= neutralReads + 2,
+    `title work must stay bounded: neutral=${neutralReads}, reported=${reportedReads}, retained=${retainedReads}`);
 });
 for (const [name, change] of [
   ["an unrelated agent executable", t => { t.foreground.argv = ["/usr/local/bin/agent"]; }],
