@@ -153,3 +153,25 @@ test("the captured Codex launch with an initial task also receives bounded activ
   await settle(herdr.calls[0], readFileSync(new URL("./fixtures/activity/codex-0.167.0/initial-task-wide.txt", import.meta.url), "utf8"));
   render(b); assert.ok(strings(elements.get("activity-t1").children).includes("Working"));
 });
+test("deferred spawns recheck visibility and lifecycle before originating any screen read", async () => {
+  herdr.terminals = [terminal()];
+  const original = cx.spawn, queued = [];
+  cx.spawn = f => queued.push(f);
+  try {
+    const b = board(); render(b);
+    assert.equal(herdr.calls.length, 0, "the executor has not dispatched the spawn yet");
+    herdr.layout.hidden = true;
+    queued.shift()(cx);
+    await flush();
+    assert.equal(herdr.calls.length, 0, "hidden cards cannot dispatch a previously scheduled read");
+    herdr.layout.hidden = false;
+    herdr.terminals[0].turn++;
+    render(b);
+    assert.equal(queued.length, 1);
+    while (queued.length) {
+      herdr.agents[0].status = "done";
+      await queued.shift()(cx);
+    }
+    assert.equal(herdr.calls.length, 0, "a queued previous lifecycle must not dispatch either");
+  } finally { cx.spawn = original; }
+});

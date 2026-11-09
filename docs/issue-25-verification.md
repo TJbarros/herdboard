@@ -38,14 +38,14 @@ Only disposable local sessions are included under
 - `claude-code-2.1.319/working-wide.*`: 148×33 cells, active Bash sleep with original
   Portuguese tool label, command and `Infusing…` phase.
 - `claude-code-2.1.319/working-narrow.*`: 82×33 cells, active prompt-submit hook and
-  `Sublimating…` phase. `tool-narrow.*`: 82×33, synchronous Python sleep, timer,
+  `Sublimating…` phase. `tool-narrow.*`: 82×32, synchronous Python sleep, timer,
   command, background shortcut and `Generating…` phase.
 - `codex-0.167.0/working-wide.*` / `working-narrow.*`: 148×33 and 82×33 cells,
   active harmless sleep, `Working` phase and interrupt indicator.
-- `codex-0.167.0/initial-task-wide.*` / `initial-task-narrow.*`: 148×33 and 82×33,
+- `codex-0.167.0/initial-task-wide.*` / `initial-task-narrow.*`: 148×26 and 82×25,
   genuine Herdr launch with its first task in argv and minute-scale elapsed progress.
 - `pi-0.85.1/unavailable-*` / `error-wide.*`: startup/no-model and submitted-task
-  errors, without a reported agent. The wide startup is 148×30; narrow is 82×33.
+  errors, without a reported agent. The wide startup is 148×33; narrow is 82×33.
 
 Each text screen is paired with `hc get` metadata. Captures use `--lines 0` and
 preserve the original text. Negative tests also derive deliberately incomplete or
@@ -102,7 +102,7 @@ expiry, live tool labels and the initial-task launch shape. Lifecycle and limit 
 count every attempted read, including failed and obsolete reads. Twenty simulated
 consumers exercise the two-slot ceiling, address exclusion, repeated renders, queue
 pruning and completion order. Other runtime cases cover process/terminal/turn changes,
-all visibility gates, missing metadata, rejection and nonzero results, expiry and a
+all visibility gates, deferred-executor dispatch, missing metadata, rejection and nonzero results, expiry and a
 full-text tooltip with long original activity. These simulated checks do not establish
 native remote performance or rendered font metrics.
 

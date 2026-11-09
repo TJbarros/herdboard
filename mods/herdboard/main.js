@@ -341,8 +341,16 @@ export default class Herdboard extends View {
       if (this.activityPending.size >= ACTIVITY_CONCURRENCY) break;
       if (this.activityPending.has(address) || Date.now() < (this.activityNext.get(address) ?? 0)) continue;
       this.activityPending.add(address);
-      this.activityNext.set(address, Date.now() + ACTIVITY_INTERVAL);
       cx.spawn(async (cx) => {
+        // spawn may be deferred by the executor. A reservation is not permission to read
+        // a consumer that disappeared or changed before the task actually starts.
+        this.syncActivities();
+        if (this.activities.get(address) !== entry) {
+          this.activityPending.delete(address);
+          this.fetchActivities(cx);
+          return;
+        }
+        this.activityNext.set(address, Date.now() + ACTIVITY_INTERVAL);
         let text = null;
         try {
           const r = await hc(["read", address, "--lines", "0"]);
