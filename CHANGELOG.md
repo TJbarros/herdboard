@@ -4,7 +4,7 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
-## [1.6.0] - 2026-11-09
+## [1.5.1] - 2026-11-09
 
 - All three mods pass the project's strict typecheck with explicit parser, board,
   worktree and native-data contracts. Versioned ES2023 configurations describe the
