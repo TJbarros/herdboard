@@ -81,6 +81,8 @@ e abre novas abas na pasta de projeto que você escolher.
   e no [diálogo verificado de comando local do Codex](docs/guide.pt-BR.md).
 - **Cards que dizem o que está acontecendo**: título da tarefa, espaço · aba · branch,
   tempo no status.
+- **Nome da máquina nos cards** quando há espaços remotos, com identificação Local
+  e nas entradas compactas de Ocioso; origem indisponível aparece explicitamente.
 - **"travado?"** num agente trabalhando há mais de 30 minutos.
 - **Espiar, Fixar e Guardar** ao passar o mouse num card.
 - **Novas abas na pasta certa**, com escolha de pasta.

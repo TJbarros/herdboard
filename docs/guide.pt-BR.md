@@ -144,8 +144,22 @@ continuam na barra enquanto está expandido.
   **Última: …**, o último título que o Herdboard viu naquele terminal.
 - **Tempo**: há quanto tempo ele está nesse status (*esperando há*, *há*, *concluiu
   há*).
+- **Máquina**: quando há espaços remotos no Herdr, os cards mostram o nome da
+  máquina do agente e identificam quem roda neste computador como **Local**, mesmo
+  com **Este espaço** selecionado. Isso também aparece nas entradas compactas e nas
+  linhas visíveis de Ocioso. Um quadro com agentes apenas locais e conhecidos
+  mantém a apresentação habitual. **Máquina desconhecida** indica que o espaço ou
+  a informação da máquina do agente está indisponível; não significa Local.
+  Passe o mouse no rótulo para ler o nome completo da máquina.
 - Passe o mouse no card para ver o título completo, o local, o programa e o endereço
   do terminal.
+
+A máquina vem do próprio espaço de cada agente, então espaços de mesmo nome em
+máquinas diferentes continuam separados. A identificação acompanha os dados vivos
+do Herdr sem uma nova consulta de máquinas. A [verificação](issue-27-verification.pt-BR.md)
+separa a associação local real no ambiente descartável, os testes simulados com
+máquinas mistas e a validação nativa privada. Dados reais da conexão remota não
+são publicados.
 
 ### Voltar ao layout de sempre
 
