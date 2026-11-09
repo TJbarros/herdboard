@@ -18,10 +18,12 @@ function cursorKey(t) {
 // Synchronous live facts: no cached discovery or late completion can revive a process.
 // Reports retain their authoritative status. Fallbacks never manufacture OSC reports.
 /** @param {import("herdr").AgentInfo[]} reported
- * @param {ReturnType<typeof import("herdr").terminals>} terminals
+ * @param {import("./types.js").CoreTerminal[]} terminals
  * @param {import("herdr").PaneInfo[]} panes
- * @param {import("herdr").SpaceInfo[]} spaces */
+ * @param {import("herdr").SpaceInfo[]} spaces
+ * @returns {import("./types.js").BoardAgent[]} */
 export function cursorSessions(reported, terminals, panes, spaces) {
+  /** @type {import("./types.js").BoardAgent[]} */
   const result = [];
   for (const t of terminals) {
     const key = cursorKey(t);

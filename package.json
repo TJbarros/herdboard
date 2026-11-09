@@ -1,0 +1,12 @@
+{
+  "name": "herdboard",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "typecheck": "sh scripts/typecheck.sh"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

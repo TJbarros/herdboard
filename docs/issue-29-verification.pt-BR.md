@@ -102,10 +102,9 @@ foram exercitadas; o harness cobre seus contratos de comando e associação.
 
 ## Verificações
 
-`scripts/check.sh` é a verificação completa do projeto: três checks nativos de mods
-e toda a suíte Node: **506 testes aprovados**, incluindo **32 testes Cursor**.
-Os três checks de mods passaram. O novo arquivo Cursor também passa na checagem estrita de JS
-com os tipos gerados e `--skipLibCheck`. A configuração TypeScript estrita gerada
-do projeto já falha na base e continua falhando após a mudança, incluindo
-declarações geradas e tipagem anterior do JS. Não se declara um typecheck completo
-aprovado para o projeto.
+Na entrega inicial da issue #29, os três checks nativos e **506 testes** passaram,
+incluindo **32 testes Cursor**; a configuração TypeScript gerada ainda apontava
+erros. A [correção posterior de tipagem](typechecking.pt-BR.md) resolve esses erros
+e inclui os três mods na verificação completa. Execute `npm ci` e depois
+`scripts/check.sh`; `npm run typecheck` roda somente o compilador, usando as
+configurações ES2023 versionadas e as declarações instaladas do Herdr.

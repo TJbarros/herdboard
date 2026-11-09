@@ -4,6 +4,12 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+- All three mods pass the project's strict typecheck with explicit parser, board,
+  worktree and native-data contracts. Versioned ES2023 configurations describe the
+  APIs already used at runtime; generated Herdr declarations stay untouched.
+  `npm ci` installs the pinned development compiler, and `scripts/check.sh` now
+  fails on type errors as well as native mod errors and failing tests.
+
 - Interactive Cursor CLI sessions launched with `agent` appear on their own terminal's
   card even without a status report. Verified foreground metadata establishes identity;
   missing status stays explicitly unavailable in English and Portuguese, with no

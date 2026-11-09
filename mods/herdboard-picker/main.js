@@ -6,19 +6,52 @@
 
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input } from "gpui-base";
-import { agents, spaces, terminals, run, hc, theme, settings, props, closeOverlay, openOverlay, shared, setShared } from "herdr";
+import { terminals as nativeTerminals, theme as nativeTheme, agents, spaces, run, hc, settings, props, closeOverlay, openOverlay, shared, setShared } from "herdr";
+
+// Each mod is an isolated native application; its runtime adapter stays local.
+/** @param {unknown} value @returns {value is Record<string, unknown>} */
+const isRecord = value => value !== null && typeof value === "object" && !Array.isArray(value);
+/** @param {unknown} value @returns {value is import("gpui-kit").Color} */
+const isColor = value => typeof value === "string" && value.startsWith("#");
+function theme() {
+  /** @type {Record<string, import("gpui-kit").Color>} */
+  const colors = {};
+  for (const [name, value] of Object.entries(nativeTheme())) {
+    if (!isColor(value)) throw new TypeError(`Herdr theme color ${name} must use a hexadecimal value`);
+    colors[name] = value;
+  }
+  return colors;
+}
+function terminals() {
+  /** @type {{ address: string, state?: string, parent?: string }[]} */
+  const result = [];
+  for (const value of nativeTerminals()) {
+    if (!isRecord(value) || typeof value.address !== "string") continue;
+    result.push({ address: value.address, state: typeof value.state === "string" ? value.state : undefined,
+      parent: typeof value.parent === "string" ? value.parent : undefined });
+  }
+  return result;
+}
+
+/**
+ * @typedef {{ w: import("herdr").SpaceInfo, ctx: import("herdr").TabInfo, mine: import("herdr").AgentInfo[], team: number }} TabEntry
+ * @typedef {{ w: import("herdr").SpaceInfo, ctxs: TabEntry[] }} SpaceGroup
+ * @typedef {{ kind: "ctx" } & TabEntry | { kind: "new" } | { kind: "space", machine: string | null }} SelectableRow
+ * @typedef {SelectableRow | { kind: "head", w: import("herdr").SpaceInfo } | { kind: "earlier", count: number }} PickerRow
+ */
 
 // Herdboard's copy of Herdr's picker, in the Board's language (shared "herdboard.lang": "pt" or "en").
 const PICKER_TEXT = {
   pt: { placeholder: "Ir para uma aba, espaço ou agente…", title: "Ir para…", needsYou: "precisa de você", finished: "concluído",
-    earlier: (n) => `anteriores: ${n} ${n > 1 ? "espaços sem atividade" : "espaço sem atividade"}`,
-    newTab: "nova aba", newSpace: "novo espaço", newSpaceOn: (m) => `novo espaço em ${m}`, agent: "agente" },
+    earlier: (/** @type {number} */ n) => `anteriores: ${n} ${n > 1 ? "espaços sem atividade" : "espaço sem atividade"}`,
+    newTab: "nova aba", newSpace: "novo espaço", newSpaceOn: (/** @type {string} */ m) => `novo espaço em ${m}`, agent: "agente" },
   en: { placeholder: "Go to a tab, space or agent…", title: "Go to…", needsYou: "needs you", finished: "finished",
-    earlier: (n) => `earlier: ${n} quiet space${n > 1 ? "s" : ""}`,
-    newTab: "new tab", newSpace: "new space", newSpaceOn: (m) => `new space on ${m}`, agent: "agent" },
+    earlier: (/** @type {number} */ n) => `earlier: ${n} quiet space${n > 1 ? "s" : ""}`,
+    newTab: "new tab", newSpace: "new space", newSpaceOn: (/** @type {string} */ m) => `new space on ${m}`, agent: "agent" },
 };
 const T = () => PICKER_TEXT[shared("herdboard.lang") === "en" ? "en" : "pt"];
 
+/** @type {Record<string, import("gpui-kit").Color>} */
 const MARK = { ansi6: "#22a99a", ansi3: "#e3814f", ansi4: "#5b8def", ansi5: "#8b7cf6", ansi2: "#3fae6a", ansi1: "#d9649a" };
 
 // Space colors, kept by space id in shared "space.colors": a theme
@@ -28,10 +61,15 @@ const MARK = { ansi6: "#22a99a", ansi3: "#e3814f", ansi4: "#5b8def", ansi5: "#8b
 const PROJECT_COLORS = ["ansi6", "ansi3", "ansi4", "ansi5", "ansi2", "ansi1"];
 function spaceColors() {
   const ids = new Set(spaces().map((p) => p.id));
-  const kept = Object.fromEntries(Object.entries(shared("space.colors") ?? {}).filter(([id]) => ids.has(id)));
-  let changed = Object.keys(kept).length !== Object.keys(shared("space.colors") ?? {}).length;
+  const value = shared("space.colors");
+  const stored = isRecord(value) ? value : {};
+  /** @type {Record<string, string>} */
+  const kept = {};
+  for (const [id, color] of Object.entries(stored)) if (ids.has(id) && typeof color === "string") kept[id] = color;
+  let changed = Object.keys(kept).length !== Object.keys(stored).length;
   for (const p of spaces()) {
     if (kept[p.id] || p.name === "~") continue;
+    /** @param {string} c */
     const uses = (c) => Object.values(kept).filter((v) => v === c).length;
     kept[p.id] = PROJECT_COLORS.reduce((best, c) => (uses(c) < uses(best) ? c : best));
     changed = true;
@@ -39,13 +77,15 @@ function spaceColors() {
   if (changed) setShared("space.colors", kept);
   return kept;
 }
+/** @param {ReturnType<typeof theme>} t @param {import("herdr").SpaceInfo} p */
 function spaceColor(t, p) {
   if (p.name === "~") return t.dim;
   const c = spaceColors()[p.id] ?? PROJECT_COLORS[0];
-  return c.startsWith("#") ? c : (MARK[c] ?? t[c]);
+  return isColor(c) ? c : (MARK[c] ?? t[c]);
 }
 
 export default class Picker extends View {
+  /** @param {unknown} _props @param {import("gpui-kit").AsyncContext} cx */
   init(_props, cx) {
     this.filter = "";
     this.input = InputState.new({ placeholder: T().placeholder });
@@ -56,12 +96,18 @@ export default class Picker extends View {
     this.at = null;
     this.scroll = 0;
     this.showEarlier = false;
+    /** @type {string[]} */
     this.machines = [];
     this.handle = cx.focus_handle();
     cx.spawn(async (cx) => {
       try {
         const r = await hc(["machine", "ls", "--json"]);
-        if (r.code === 0) this.machines = (JSON.parse(r.stdout).machines ?? []).filter((m) => m.state === "connected" && !m.temporary).map((m) => m.name);
+        if (r.code === 0) {
+          const value = JSON.parse(r.stdout);
+          const machines = isRecord(value) && Array.isArray(value.machines) ? value.machines : [];
+          this.machines = machines.filter(isRecord).filter(m => m.state === "connected" && !m.temporary)
+            .flatMap(m => typeof m.name === "string" ? [m.name] : []);
+        }
       } catch {}
       cx.notify();
     });
@@ -71,12 +117,15 @@ export default class Picker extends View {
     closeOverlay(props().overlay);
   }
 
+  /** @returns {PickerRow[]} */
   rows() {
     const f = this.filter.toLowerCase();
     const all = agents();
     const live = terminals().filter((x) => x.state === "live");
+    /** @param {string[]} addrs */
     const teamOf = (addrs) => {
       let n = 0;
+      /** @param {string} a @returns {void} */
       const walk = (a) => live.filter((x) => x.parent === a).forEach((k) => (n++, walk(k.address)));
       addrs.forEach(walk);
       return n;
@@ -92,8 +141,10 @@ export default class Picker extends View {
     });
     const busy = groups.filter((p) => p.w.status && p.ctxs.length);
     const quiet = groups.filter((p) => !p.w.status && p.ctxs.length);
-    busy.sort((a, b) => (b.w.status === "blocked") - (a.w.status === "blocked"));
+    busy.sort((a, b) => Number(b.w.status === "blocked") - Number(a.w.status === "blocked"));
+    /** @type {PickerRow[]} */
     const out = [];
+    /** @param {SpaceGroup} p */
     const add = (p) => {
       out.push({ kind: "head", w: p.w });
       for (const c of p.ctxs) out.push({ kind: "ctx", ...c });
@@ -109,6 +160,7 @@ export default class Picker extends View {
     return out;
   }
 
+  /** @param {SelectableRow} r */
   go(r) {
     if (!r) return;
     this.close();
@@ -117,6 +169,7 @@ export default class Picker extends View {
     else if (r.kind === "space") run("space.new", { machine: r.machine ?? "" });
   }
 
+  /** @param {ReturnType<typeof theme>} t @param {string} st */
   glyph(t, st) {
     if (st === "working") return svg("mods/workspace-chrome/spinner.svg").size(12).flex_none().text_color(t.working).spin(900);
     return div().w(12).flex_none().text_color(t[st] ?? t.dim).child(st === "idle" ? "○" : st ? "●" : "·");
@@ -134,6 +187,7 @@ export default class Picker extends View {
     // y. Scrolling moves the strip only as far as it takes to keep the selected
     // row in view, so the arrows can't run the selection off the list.
     const H = { head: 29, earlier: 35, new: 36, ctx: 32, space: 32 };
+    /** @type {number[]} */
     const tops = [];
     let y = 0;
     rows.forEach((r) => { tops.push(y); y += H[r.kind] ?? 32; });
@@ -147,12 +201,15 @@ export default class Picker extends View {
       if (tops[si] < this.scroll) this.scroll = tops[si];
       if (tops[si] + (H[sel.kind] ?? 32) > this.scroll + height) this.scroll = tops[si] + (H[sel.kind] ?? 32) - height;
     }
+    /** @param {import("gpui-kit").Element} el @param {number} i */
     const place = (el, i) =>
       fixed
         ? el.absolute().left(0).right(0).top(tops[i] - this.scroll).bottom(height - (tops[i] + (H[rows[i].kind] ?? 32) - this.scroll))
         : el;
+    /** @param {number} i */
     const visible = (i) => !fixed || (tops[i] + (H[rows[i].kind] ?? 32) > this.scroll && tops[i] < this.scroll + height);
 
+    /** @param {PickerRow} r */
     const row = (r) => {
       if (r.kind === "head") {
         return h_flex()
@@ -259,7 +316,8 @@ export default class Picker extends View {
         v_flex()
           .id("pk-list")
           .on_size_change((size, cx) => {
-            this.listHeight = size.height / settings().zoom;
+            const zoom = settings().zoom;
+            this.listHeight = size.height / (typeof zoom === "number" && zoom > 0 ? zoom : 1);
             cx.notify();
           })
           .h(Math.min(320, total))

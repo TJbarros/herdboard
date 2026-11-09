@@ -3,3 +3,4 @@ gpui-kit.d.ts
 jsconfig.json
 *.error
 .DS_Store
+node_modules/

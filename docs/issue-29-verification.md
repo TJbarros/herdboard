@@ -99,10 +99,9 @@ handoff were not exercised; their command/ownership contracts are covered in the
 
 ## Checks
 
-`scripts/check.sh` is the complete project gate: all three native mod checks and
-the full Node suite: **506 tests passed**, including **32 Cursor tests**. All
-three mod checks passed. The new Cursor file also passes strict JavaScript typechecking
-against generated API types with `--skipLibCheck`. The repository-wide generated
-strict TypeScript configuration already fails on the base revision and remains
-failing after this change, including generated declarations and existing JS
-typing. It is not reported as a passing full-project typecheck.
+At the initial issue #29 delivery, the three native mod checks and **506 tests**
+passed, including **32 Cursor tests**; the old generated TypeScript configuration
+still reported errors. The follow-up [typechecking correction](typechecking.md)
+resolves those source errors and adds all three mods to the complete gate.
+Run `npm ci`, then `scripts/check.sh`; `npm run typecheck` runs the compiler alone
+using the versioned ES2023 configurations and the installed Herdr declarations.

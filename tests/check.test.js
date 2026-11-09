@@ -25,6 +25,13 @@ function makeRepo({ mods = { alpha: {}, beta: {}, gamma: {} }, testsPass = true 
   temps.push(root);
   mkdirSync(join(root, "scripts"));
   copyFileSync(SCRIPT, join(root, "scripts", "check.sh"));
+  copyFileSync(join(dirname(SCRIPT), "typecheck.sh"), join(root, "scripts", "typecheck.sh"));
+  mkdirSync(join(root, "node_modules", ".bin"), { recursive: true });
+  const compiler = join(root, "node_modules", ".bin", "tsc");
+  writeFileSync(compiler, '#!/bin/sh\n' +
+    `echo "$2" >> '${join(root, "typechecked.log")}'\n` +
+    'mod=${2%/tsconfig.json}\n[ ! -f "$mod/FAIL_TYPE" ]\n');
+  chmodSync(compiler, 0o755);
   for (const [name, { broken }] of Object.entries(mods)) {
     mkdirSync(join(root, "mods", name), { recursive: true });
     writeFileSync(join(root, "mods", name, "mod.json"), "{}\n");
@@ -55,6 +62,7 @@ function makeBin(tools = ["herdr-app", "node"]) {
   }
   if (tools.includes("node")) linkTool(process.execPath, join(bin, `node${EXE}`));
   linkTool(which("dirname"), join(bin, `dirname${EXE}`));
+  linkTool(SH, join(bin, `sh${EXE}`));
   return { bin: standInPath(bin), log };
 }
 
@@ -94,7 +102,31 @@ test("checks every mod and runs the tests, exit 0 when all pass", () => {
   assert.deepEqual(checked(log).sort(),
     modPaths(root, ["alpha", "beta", "gamma"]));
   assert.match(out, /node --test/);
+  assert.equal(readFileSync(join(root, "typechecked.log"), "utf8").trim().split("\n").length, 3);
+  assert.match(out, /^PASS: TypeScript$/m);
   assert.match(out, /all checks passed/i);
+});
+
+test("a type error fails the complete gate while all mods and Node tests still run", () => {
+  const root = makeRepo();
+  writeFileSync(join(root, "mods", "beta", "FAIL_TYPE"), "");
+  const { bin, log } = makeBin();
+  const { code, out } = check(root, bin);
+  assert.notEqual(code, 0, out);
+  assert.equal(checked(log).length, 3);
+  assert.equal(readFileSync(join(root, "typechecked.log"), "utf8").trim().split("\n").length, 3);
+  assert.ok(existsSync(join(root, "ran")), "Node tests run after the failing typecheck");
+  assert.deepEqual(failedSteps(out), ["TypeScript"]);
+});
+
+test("missing TypeScript fails the complete gate with the dependency setup command", () => {
+  const root = makeRepo();
+  rmSync(join(root, "node_modules", ".bin", "tsc"));
+  const { bin } = makeBin();
+  const { code, out } = check(root, bin);
+  assert.notEqual(code, 0, out);
+  assert.match(out, /TypeScript not installed: run npm ci/);
+  assert.deepEqual(failedSteps(out), ["TypeScript"]);
 });
 
 test("a broken mod fails its step, the other mods and the tests still run", () => {
