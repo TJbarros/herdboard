@@ -76,5 +76,19 @@ their unavailable/stale-result paths are covered by the controlled runtime tests
 
 The independent Standards and Spec reviews both reproduced the Git ancestor-visibility
 and deferred-dispatch defects. Standards also requested paired Portuguese activity
-verification. Their corrections and the final full-suite result are recorded after
-the review-fix integration; native evidence above remains distinct from simulation.
+verification. One fresh implementer corrected all three findings with failing tests
+before the runtime changes. New cases include dispatch without an intermediate
+render, removed/changed consumers, canceled reservations, physical slots and the
+cooldown measured from actual dispatch.
+
+`scripts/check.sh` passed all three mods and **471 tests**, with zero failures,
+skips or cancellations. The final integration has identical runtime/test content to
+that full check. The 78 focused activity/Git/machine tests and the mod check passed
+again after the merge. Both independent visibility reproductions now attempt zero
+Git commands, where the reviewed implementation attempted one.
+
+The final modules were installed into the isolated app without instrumentation.
+Their hashes match the integration, the expected disposable count remained visible,
+and the app reported no mod errors. No new media or real connection identifiers
+were included in the final change. Native evidence above remains distinct from the
+controlled runtime tests.

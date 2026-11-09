@@ -80,6 +80,19 @@ cobertos pelos testes de runtime controlado.
 
 As revisões independentes de padrões e de aderência à spec reproduziram os defeitos
 de visibilidade dos ancestrais e de despacho adiado do Git. A revisão de padrões
-também pediu o registro de atividade em português. As correções e o resultado final
-da suíte completa são registrados após a integração das correções; a evidência
-nativa acima permanece distinta da simulação.
+também pediu o registro de atividade em português. Um implementador novo corrigiu
+os três pontos, com testes falhando antes das mudanças no runtime. Os novos casos
+incluem despacho sem render intermediário, consumidores removidos ou alterados,
+reservas canceladas, vagas físicas e intervalo contado do despacho efetivo.
+
+`scripts/check.sh` passou nos três mods e em **471 testes**, sem falhas, skips ou
+cancelamentos. O conteúdo de runtime/testes da integração final é idêntico ao dessa
+verificação completa. Os 78 testes focados de atividade/Git/máquina e o check do mod
+passaram novamente após o merge. As duas reproduções independentes de visibilidade
+agora tentam zero comandos Git, contra um na implementação revisada.
+
+Os módulos finais foram instalados no app isolado sem instrumentação. Seus hashes
+correspondem à integração, o total esperado do worktree descartável continuou
+visível e o app não informou erros de mod. A alteração final não inclui mídia nova
+nem identificadores da conexão real. A evidência nativa acima permanece distinta
+dos testes de runtime controlado.
