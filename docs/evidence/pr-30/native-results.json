@@ -1,0 +1,315 @@
+{
+  "validatedCommit": "6be0d5c",
+  "mainGitBlob": "ef158dbcff2a76d5c6864c567cec0a0bb8551302",
+  "mainSha256": "7a772e763d7995409671f1f8e0462404de5d288b6a2900e2a8b56e16845a7270",
+  "realInteractiveCursor": true,
+  "modelTasksSent": 0,
+  "localMatrix": [
+    {
+      "language": "en",
+      "width": 1280,
+      "height": 1000,
+      "openTerminal": "t1",
+      "peekTerminal": "t1",
+      "peekOverlays": [
+        "layout"
+      ],
+      "errors": []
+    },
+    {
+      "language": "pt",
+      "width": 1280,
+      "height": 1000,
+      "openTerminal": "t1",
+      "peekTerminal": "t1",
+      "peekOverlays": [
+        "layout"
+      ],
+      "errors": []
+    },
+    {
+      "language": "en",
+      "width": 760,
+      "height": 1000,
+      "openTerminal": "t1",
+      "peekTerminal": "t1",
+      "peekOverlays": [
+        "layout"
+      ],
+      "errors": []
+    },
+    {
+      "language": "pt",
+      "width": 760,
+      "height": 1000,
+      "openTerminal": "t1",
+      "peekTerminal": "t1",
+      "peekOverlays": [
+        "layout"
+      ],
+      "errors": []
+    }
+  ],
+  "qualifiedNavigation": [
+    {
+      "language": "en",
+      "width": 1280,
+      "height": 1000,
+      "sourceTerminal": "t2",
+      "collidingLocalTerminal": "t1",
+      "openTerminal": "pr30-loopback/t1",
+      "openSpace": "pr30-loopback/sp28917ade6817cdd033097a655d0f71c0",
+      "peekTerminal": "pr30-loopback/t1",
+      "peekOverlays": [
+        "layout"
+      ],
+      "errors": [],
+      "transport": "real hc --via to a second isolated local core; not a distinct network host"
+    },
+    {
+      "language": "pt",
+      "width": 1280,
+      "height": 1000,
+      "sourceTerminal": "t2",
+      "collidingLocalTerminal": "t1",
+      "openTerminal": "pr30-loopback/t1",
+      "openSpace": "pr30-loopback/sp28917ade6817cdd033097a655d0f71c0",
+      "peekTerminal": "pr30-loopback/t1",
+      "peekOverlays": [
+        "layout"
+      ],
+      "errors": [],
+      "transport": "real hc --via to a second isolated local core; not a distinct network host"
+    }
+  ],
+  "lifecycle": [
+    {
+      "state": "native-all-two-cores",
+      "expectedVisibleUnknownCount": 2,
+      "width": 1280,
+      "height": 1000,
+      "errors": [],
+      "owningSpaces": {
+        "sp48a9b8a3cdc085d7ca0ca1f114667ed3": 1,
+        "pr30-loopback/sp28917ade6817cdd033097a655d0f71c0": 1
+      },
+      "observedVisibleUnknownCount": 2,
+      "visuallyConfirmed": true,
+      "pinAlreadyPresentAtStartOfFinalRerun": true
+    },
+    {
+      "state": "native-pinned",
+      "expectedVisibleUnknownCount": 2,
+      "width": 1280,
+      "height": 1000,
+      "errors": [],
+      "pinned": "t1",
+      "observedVisibleUnknownCount": 2,
+      "visuallyConfirmed": true,
+      "pinAlreadyPresentAtStartOfFinalRerun": true
+    },
+    {
+      "state": "native-this-remote-space",
+      "expectedVisibleUnknownCount": 1,
+      "width": 1280,
+      "height": 1000,
+      "errors": [],
+      "focusedSpace": "pr30-loopback/sp28917ade6817cdd033097a655d0f71c0",
+      "visibleTerminal": "pr30-loopback/t1",
+      "observedVisibleUnknownCount": 1,
+      "visuallyConfirmed": true
+    },
+    {
+      "state": "native-this-local-space",
+      "expectedVisibleUnknownCount": 1,
+      "width": 1280,
+      "height": 1000,
+      "errors": [],
+      "focusedSpace": "sp48a9b8a3cdc085d7ca0ca1f114667ed3",
+      "visibleTerminal": "t1",
+      "observedVisibleUnknownCount": 1,
+      "visuallyConfirmed": true
+    },
+    {
+      "state": "native-this-empty-space",
+      "expectedVisibleUnknownCount": 0,
+      "width": 1280,
+      "height": 1000,
+      "errors": [],
+      "focusedSpace": "sp87dc77fc8ebe6c1756091f61d87ac0f3",
+      "unknownColumnExpected": false,
+      "observedVisibleUnknownCount": 0,
+      "visuallyConfirmed": true,
+      "observedUnknownColumnPresent": false
+    },
+    {
+      "state": "native-all-restored",
+      "expectedVisibleUnknownCount": 2,
+      "width": 1280,
+      "height": 1000,
+      "errors": [],
+      "observedVisibleUnknownCount": 2,
+      "visuallyConfirmed": true
+    },
+    {
+      "state": "native-settled",
+      "expectedVisibleUnknownCount": 1,
+      "width": 1280,
+      "height": 1000,
+      "errors": [],
+      "hiddenTerminal": "t1",
+      "observedVisibleUnknownCount": 1,
+      "visuallyConfirmed": true
+    },
+    {
+      "state": "native-unsettled",
+      "expectedVisibleUnknownCount": 2,
+      "width": 1280,
+      "height": 1000,
+      "errors": [],
+      "restoredTerminal": "t1",
+      "observedVisibleUnknownCount": 2,
+      "visuallyConfirmed": true
+    },
+    {
+      "state": "native-second-local-session",
+      "expectedVisibleUnknownCount": 3,
+      "width": 1280,
+      "height": 1000,
+      "errors": [],
+      "secondSession": "t2",
+      "foregroundPid": 54282,
+      "observedVisibleUnknownCount": 3,
+      "visuallyConfirmed": true
+    },
+    {
+      "state": "native-process-exit",
+      "expectedVisibleUnknownCount": 2,
+      "width": 1280,
+      "height": 1000,
+      "errors": [],
+      "returnedShell": "t2",
+      "observedVisibleUnknownCount": 2,
+      "visuallyConfirmed": true
+    },
+    {
+      "state": "native-process-replacement",
+      "expectedVisibleUnknownCount": 3,
+      "width": 1280,
+      "height": 1000,
+      "errors": [],
+      "replacementSession": "t2",
+      "originalPid": 54282,
+      "replacementPid": 54645,
+      "observedVisibleUnknownCount": 3,
+      "visuallyConfirmed": true
+    },
+    {
+      "state": "native-terminal-exit",
+      "expectedVisibleUnknownCount": 2,
+      "width": 1280,
+      "height": 1000,
+      "errors": [],
+      "removedTerminal": "t2",
+      "observedVisibleUnknownCount": 2,
+      "visuallyConfirmed": true
+    },
+    {
+      "state": "native-remote-process-exit",
+      "expectedVisibleUnknownCount": 1,
+      "width": 1280,
+      "height": 1000,
+      "errors": [],
+      "returnedShell": "pr30-loopback/t1",
+      "remainingCursor": "t1",
+      "observedVisibleUnknownCount": 1,
+      "visuallyConfirmed": true
+    }
+  ],
+  "findings": [],
+  "limits": [
+    "Qualified transport used hc --via to a genuinely separate owned local core; no distinct network host was tested.",
+    "Installed Cursor emitted no usable OSC status; real Cursor report handoff was not exercised.",
+    "Only Linux and the recorded installed versions were tested."
+  ],
+  "frames": {
+    "en-1280.png": {
+      "width": 1280,
+      "height": 1000,
+      "sha256": "79274bb2c611675f69891a9b6bf7d0f20d8d2195ed75565ad519ded16dd4c5f3"
+    },
+    "en-1280-peek.png": {
+      "width": 1280,
+      "height": 1000,
+      "sha256": "d1fff4c49a0ca0ce38beb66cd5f5b2394dc508b2ad383b8bf1cd204d782bb25e"
+    },
+    "en-760.png": {
+      "width": 760,
+      "height": 1000,
+      "sha256": "4af995c6b9d3746f951d2d16a4518f068c50afe63a2a3fa619670d9a6c3cc2fd"
+    },
+    "en-760-peek.png": {
+      "width": 760,
+      "height": 1000,
+      "sha256": "81fcb1946463855a3683ad5f5d0cae659d4b01aca587a7f56b220553ce8768a4"
+    },
+    "pt-1280.png": {
+      "width": 1280,
+      "height": 1000,
+      "sha256": "474fdb3c60dca2dcdde62eacb58a2b4646f01fa4ad84591bd103b05b7b4ad3fd"
+    },
+    "pt-1280-peek.png": {
+      "width": 1280,
+      "height": 1000,
+      "sha256": "4b87833341b175efd5c7c70693250139a9e429e8a1e5d31652b8b50af5695d62"
+    },
+    "pt-760.png": {
+      "width": 760,
+      "height": 1000,
+      "sha256": "7b55838213e9e9a97560e3cf7fb6e18a184fc3eb9f3c02ef175f3bc735ad78b1"
+    },
+    "pt-760-peek.png": {
+      "width": 760,
+      "height": 1000,
+      "sha256": "c68e602348a45b3b34b694960c0dbf3d9ed3f7a500cb7e4a9b1451cd41104ac8"
+    },
+    "remote-en-1280.png": {
+      "width": 1280,
+      "height": 1000,
+      "sha256": "f59266bc5c41e7532d3e89ff4a888b558dc1ef0c4329a0dff8d2be4d408fac4f"
+    },
+    "remote-en-1280-peek.png": {
+      "width": 1280,
+      "height": 1000,
+      "sha256": "52a31067945c8dda265575d44afee990daac13d6db21b54bbd4a26c9f4e2a1fc"
+    },
+    "remote-pt-1280.png": {
+      "width": 1280,
+      "height": 1000,
+      "sha256": "dadd6c8eb2963f1446483ccccbe52f627319dc15a94665e231fd8814027d7321"
+    },
+    "remote-pt-1280-peek.png": {
+      "width": 1280,
+      "height": 1000,
+      "sha256": "e404c878d43df7d754384c0839a2f5c0c4b68d90dcb132bdfb6eeff79482cc39"
+    },
+    "native-pinned.png": {
+      "width": 1280,
+      "height": 1000,
+      "sha256": "74169cd10769ac8378f6cd8f3e8b8b799ef28a40b086dc035ca03a1f5e5494f9"
+    }
+  },
+  "pinEvidence": {
+    "beforeSnapshot": "en-1280-open.json",
+    "beforeFrame": "en-1280.png",
+    "beforePinnedLabel": null,
+    "afterSnapshot": "native-pinned.json",
+    "afterFrame": "native-pinned.png",
+    "afterPinnedLabel": "1",
+    "sameNativeCursorProcess": true,
+    "transitionObservedOnFirstLifecyclePass": true,
+    "finalLifecycleRerunInheritedExistingPin": true,
+    "pinIconVisuallyConfirmed": true,
+    "orderChangeClaimed": false
+  }
+}

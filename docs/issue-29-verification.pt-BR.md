@@ -97,8 +97,9 @@ de outro espaço, [Todos](evidence/issue-29/native-all-spaces.png) restaurando-o
 [volta ao shell](evidence/issue-29/native-process-exit.png) removendo o segundo
 card. Os JSONs pareados e o [resultado do ciclo de vida](evidence/issue-29/native-lifecycle.json)
 registram associação e processo. Encerrar a sessão anterior t2 também removeu seu
-card e deixou t4. Navegação remota real e transição de um report real do Cursor não
-foram exercitadas; o harness cobre seus contratos de comando e associação.
+card e deixou t4. Essas capturas iniciais não exercitaram navegação remota
+qualificada nem transição de um report real do Cursor; o harness cobria seus
+contratos de comando e associação.
 
 ## Verificações
 
@@ -108,3 +109,48 @@ erros. A [correção posterior de tipagem](typechecking.pt-BR.md) resolve esses 
 e inclui os três mods na verificação completa. Execute `npm ci` e depois
 `scripts/check.sh`; `npm run typecheck` roda somente o compilador, usando as
 configurações ES2023 versionadas e as declarações instaladas do Herdr.
+
+## Revisão independente e nova verificação nativa da PR #30
+
+A revisão repetiu a regressão do card ausente em `5310991`, onde ela falha, e
+conferiu a implementação completa contra a issue #29 e seu brief aprovado.
+Um pequeno [refinamento dos títulos](typechecking.pt-BR.md#refinamento-do-ciclo-de-vida-dos-títulos-na-pr-30)
+remove leituras repetidas de todos os terminais, preservando a invalidação após
+troca de processo. A verificação completa aprova **512 testes**, incluindo
+**35 testes de runtime Cursor**, no checkout de trabalho e em um arquivo limpo.
+[Registro da validação](evidence/pr-30/validation.json).
+
+Um novo app, display e dois cores próprios, isolados, conferiram o código de
+produção de `6be0d5c` (blob do módulo principal
+`ef158dbcff2a76d5c6864c567cec0a0bb8551302`). Nenhuma tarefa foi enviada ao modelo.
+A matriz local final partiu de `t2`; Abrir e Espiar chegaram ao Cursor interativo
+real em `t1`, sem erros de mod:
+
+| Idioma e janela | Card | Espiar |
+| --- | --- | --- |
+| EN 1280×1000 | [imagem](evidence/pr-30/en-1280.png) | [imagem](evidence/pr-30/en-1280-peek.png) |
+| PT 1280×1000 | [imagem](evidence/pr-30/pt-1280.png) | [imagem](evidence/pr-30/pt-1280-peek.png) |
+| EN 760×1000 | [imagem](evidence/pr-30/en-760.png) | [imagem](evidence/pr-30/en-760-peek.png) |
+| PT 760×1000 | [imagem](evidence/pr-30/pt-760.png) | [imagem](evidence/pr-30/pt-760-peek.png) |
+
+O segundo core se conectou pelo protocolo real `hc machine add --via` como
+`pr30-loopback`. Em EN e PT a 1280×1000, Abrir e Espiar chegaram a
+`pr30-loopback/t1` partindo de `t2`, com um `t1` local distinto também presente.
+[Card EN](evidence/pr-30/remote-en-1280.png), [Espiar EN](evidence/pr-30/remote-en-1280-peek.png),
+[card PT](evidence/pr-30/remote-pt-1280.png), [Espiar PT](evidence/pr-30/remote-pt-1280-peek.png).
+Snapshots pareados de [Abrir](evidence/pr-30/remote-en-open.json) e
+[Espiar](evidence/pr-30/remote-en-peek.json) preservam o endereço focado completo.
+Isso verifica qualificação de máquina e navegação nativas em um segundo core
+real no mesmo host; não houve teste entre hosts distintos pela rede.
+
+Treze observações nativas também verificaram contagens, Todos / Este espaço,
+espaço selecionado vazio, fixação, abas guardadas e restauradas, segunda sessão
+local, volta ao shell, troca por novo PID de foreground, remoção do terminal e
+saída do processo remoto. As contagens foram conferidas nas imagens renderizadas
+e coincidiram com o modelo. A fixação verifica o label do terminal e o ícone; a
+ordem dos fixados tem cobertura no harness. Os [resultados nativos](evidence/pr-30/native-results.json)
+registram identidade do código, navegação, contagens observadas e hashes das
+imagens incluídas. A emissão de report pelo Cursor real continua sem validação;
+precedência e perda de report autoritativo são testadas na interface de runtime
+do quadro real. Só são afirmados os lançamentos e versões Linux registrados.
+Todos os processos próprios da verificação foram encerrados.

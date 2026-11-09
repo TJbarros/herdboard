@@ -94,8 +94,9 @@ space, [All](evidence/issue-29/native-all-spaces.png) restoring it,
 [return to shell](evidence/issue-29/native-process-exit.png) removing the second
 card. Paired API JSON and [lifecycle results](evidence/issue-29/native-lifecycle.json)
 record ownership and foreground changes. Terminating the earlier t2 session also
-removed its card, leaving t4. Real remote navigation and actual Cursor report
-handoff were not exercised; their command/ownership contracts are covered in the harness.
+removed its card, leaving t4. These initial captures did not exercise qualified
+remote navigation or actual Cursor report handoff; their command/ownership
+contracts were covered in the harness.
 
 ## Checks
 
@@ -105,3 +106,45 @@ still reported errors. The follow-up [typechecking correction](typechecking.md)
 resolves those source errors and adds all three mods to the complete gate.
 Run `npm ci`, then `scripts/check.sh`; `npm run typecheck` runs the compiler alone
 using the versioned ES2023 configurations and the installed Herdr declarations.
+
+## PR #30 independent review and native recheck
+
+The review replayed the missing-card regression against `5310991`, where it
+fails, and checked the complete implementation against issue #29 and its approved
+brief. A small [title-lifecycle refinement](typechecking.md#pr-30-title-lifecycle-refinement)
+removes repeated full terminal reads while keeping process replacement invalidation.
+The complete gate passes **512 tests**, including **35 Cursor runtime tests**, in
+both the working checkout and a clean archive. [Validation record](evidence/pr-30/validation.json).
+
+A fresh isolated app, display and two owned cores rechecked production code from
+`6be0d5c` (main module blob `ef158dbcff2a76d5c6864c567cec0a0bb8551302`).
+No model task was sent. The final local matrix started from `t2`; Open and Peek
+both reached the real interactive Cursor in `t1`, with no mod errors:
+
+| Language and window | Card | Peek |
+| --- | --- | --- |
+| EN 1280×1000 | [frame](evidence/pr-30/en-1280.png) | [frame](evidence/pr-30/en-1280-peek.png) |
+| PT 1280×1000 | [frame](evidence/pr-30/pt-1280.png) | [frame](evidence/pr-30/pt-1280-peek.png) |
+| EN 760×1000 | [frame](evidence/pr-30/en-760.png) | [frame](evidence/pr-30/en-760-peek.png) |
+| PT 760×1000 | [frame](evidence/pr-30/pt-760.png) | [frame](evidence/pr-30/pt-760-peek.png) |
+
+The second core connected through the real `hc machine add --via` protocol as
+`pr30-loopback`. In EN and PT at 1280×1000, Open and Peek both reached
+`pr30-loopback/t1` from `t2`, while a separate local `t1` was also present.
+[EN card](evidence/pr-30/remote-en-1280.png), [EN Peek](evidence/pr-30/remote-en-1280-peek.png),
+[PT card](evidence/pr-30/remote-pt-1280.png), [PT Peek](evidence/pr-30/remote-pt-1280-peek.png).
+Paired [Open](evidence/pr-30/remote-en-open.json) and
+[Peek](evidence/pr-30/remote-en-peek.json) snapshots retain the full focused address.
+This validates native machine qualification and navigation against a genuinely
+separate core on the same host; a distinct network host was not tested.
+
+Thirteen native observations also checked counts, All / This space, an empty
+selected space, pinning, settled/unsettled tabs, a second local session, return to
+shell, replacement with a new foreground PID, terminal removal and remote process
+exit. Visible counts were inspected in the rendered frames and matched the model.
+Pinning verifies the terminal label and icon; pin ordering has harness coverage.
+The [native results](evidence/pr-30/native-results.json) record source identity,
+navigation, observed counts and the hashes of the included frames. Real Cursor
+report emission remains unverified; authoritative report precedence and loss are
+tested at the actual board's runtime interface. Only the recorded Linux versions
+and launch forms are claimed. All verification-owned processes were stopped.

@@ -72,7 +72,29 @@ Checks nativos e a nova verificação do quadro/navegação em EN/PT, estreito/l
 usam app, core e display isolados. Os checks de menu e seletor usam seus próprios
 diretórios, incluindo a restrição de imports do runtime do Herdr.
 
-A verificação completa final aprovou os três checks nativos, os três typechecks e
+## Refinamento do ciclo de vida dos títulos na PR #30
+
+A revisão identificou que guardar um título e exibir um título lembrado relia e
+normalizava todos os terminais nativos para cada agente reportado. O quadro agora
+monta uma consulta de ciclo de vida nova por renderização e a compartilha com os
+cards. Nenhum snapshot de processo fica guardado entre renderizações.
+
+Uma regressão no módulo real com 12 sessões exibidas registrou **15 / 27 / 39**
+leituras de snapshots nativos para cards neutros, com título atual e com título
+lembrado. Após o refinamento, os mesmos casos usam **16 / 16 / 16** leituras.
+A consulta de worktree por card continua incluída e não foi alterada; apenas o
+trabalho adicional dos títulos passa a ser constante. A medição conta chamadas
+ao adapter nativo, sem afirmar latência da interface nativa. Os testes também
+verificam que mudanças no PID de foreground, PID do terminal e criação do terminal
+invalidam o título lembrado na renderização seguinte.
+
+A verificação completa agora aprova os três checks nativos, os três typechecks e
+**512 testes**, tanto no checkout de trabalho quanto em um arquivo do commit
+`6be0d5c` inicialmente sem declarações geradas nem `jsconfig.json` locais. O Herdr
+gerou três declarações e nenhuma configuração local foi necessária. Veja o
+[registro da validação de revisão](evidence/pr-30/validation.json).
+
+A entrega inicial da tipagem aprovou os três checks nativos, os três typechecks e
 **509 testes**. O mesmo check também passou em um arquivo limpo da árvore
 versionada, inicialmente sem declarações geradas nem configs locais. O Herdr
 gerou as três declarações, sem precisar de `jsconfig.json`. Os [resultados](evidence/typechecking/checks.json) e as

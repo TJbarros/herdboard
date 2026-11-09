@@ -1,0 +1,338 @@
+{
+  "agents": [],
+  "terminals": [
+    {
+      "address": "t1",
+      "argv": [
+        "/bin/bash",
+        "-ic",
+        "\"$@\"; exec \"$0\" -i",
+        "/bin/bash",
+        "bash"
+      ],
+      "cols": 82,
+      "created_ms": 1794243354027,
+      "cwd": "<verification>/workspace",
+      "die_with_parent": false,
+      "exit_code": null,
+      "finished_ms": null,
+      "foreground": {
+        "argv": [
+          "<home>/.local/bin/agent",
+          "--use-system-ca",
+          "<home>/.local/share/cursor-agent/versions/2026.11.05-86047df/index.js"
+        ],
+        "cwd": "<verification>/workspace",
+        "name": "MainThread",
+        "pid": 34585
+      },
+      "identity": "ghostty",
+      "keep": true,
+      "labels": {
+        "herdr.seen": "0",
+        "herdr.space": "sp48a9b8a3cdc085d7ca0ca1f114667ed3",
+        "herdr.tab": "tb33fe957eaa43e72a504bda19a426ea12",
+        "where": "PR 30 native / Cursor native"
+      },
+      "name": null,
+      "notify": true,
+      "parent": null,
+      "pid": 33004,
+      "reason": null,
+      "reported": false,
+      "rm": false,
+      "rows": 31,
+      "screen": "exact",
+      "signal": null,
+      "state": "live",
+      "turn": 0,
+      "status_ms": null,
+      "template": null,
+      "title": "Cursor Agent",
+      "status": null,
+      "program": {
+        "key": "agent",
+        "name": "Agent",
+        "icon": "icons/agent.svg",
+        "tint": true,
+        "tile": "#1c1d21",
+        "color": "#d6d8db",
+        "shell": false,
+        "agent": false
+      },
+      "report": null
+    },
+    {
+      "address": "t2",
+      "argv": [
+        "/bin/bash",
+        "-ic",
+        "\"$@\"; exec \"$0\" -i",
+        "/bin/bash",
+        "bash"
+      ],
+      "cols": 82,
+      "created_ms": 1794243354182,
+      "cwd": "<verification>/workspace",
+      "die_with_parent": false,
+      "exit_code": null,
+      "finished_ms": null,
+      "foreground": {
+        "argv": [
+          "bash"
+        ],
+        "cwd": "<verification>/workspace",
+        "name": "bash",
+        "pid": 33688
+      },
+      "identity": "ghostty",
+      "keep": true,
+      "labels": {
+        "herdr.seen": "0",
+        "herdr.space": "sp48a9b8a3cdc085d7ca0ca1f114667ed3",
+        "herdr.tab": "tb305ca563f90752f6058ad51e745edc30",
+        "where": "PR 30 native / Other terminal"
+      },
+      "name": null,
+      "notify": true,
+      "parent": null,
+      "pid": 33026,
+      "reason": null,
+      "reported": false,
+      "rm": false,
+      "rows": 31,
+      "screen": "exact",
+      "signal": null,
+      "state": "live",
+      "turn": 0,
+      "status_ms": null,
+      "template": null,
+      "title": "tjbarros@<host>: <verification>/workspace",
+      "status": null,
+      "program": {
+        "key": "shell",
+        "name": "bash",
+        "icon": "icons/shell.svg",
+        "tint": true,
+        "tile": "#16241a",
+        "color": "#4ec95f",
+        "shell": true,
+        "agent": false
+      },
+      "report": null
+    },
+    {
+      "address": "pr30-loopback/t1",
+      "argv": [
+        "sh",
+        "-c",
+        "shell=${SHELL:-/bin/sh}\ncase \"${shell##*/}\" in\n  fish) exec \"$shell\" -lic 'command $argv[2..]; exec $argv[1] -li' \"$shell\" \"$@\" ;;\n  sh|bash|zsh|dash|ksh) exec \"$shell\" -lic '\"$@\"; exec \"$0\" -li' \"$shell\" \"$@\" ;;\n  *) exec sh -c '\"$@\"; exec \"${SHELL:-sh}\" -i' sh \"$@\" ;;\nesac",
+        "sh",
+        "bash"
+      ],
+      "cols": 82,
+      "created_ms": 1794243432246,
+      "cwd": "<verification>/workspace",
+      "die_with_parent": false,
+      "exit_code": null,
+      "finished_ms": null,
+      "identity": "ghostty",
+      "keep": true,
+      "labels": {
+        "herdr.seen": "0",
+        "herdr.space": "sp28917ade6817cdd033097a655d0f71c0",
+        "herdr.tab": "tbac8b187a8db8760a9e37629933b43c6f",
+        "where": "Remote Cursor / Remote interactive"
+      },
+      "name": null,
+      "notify": true,
+      "parent": null,
+      "pid": 37714,
+      "reason": null,
+      "reported": false,
+      "rm": false,
+      "rows": 31,
+      "screen": "exact",
+      "signal": null,
+      "state": "live",
+      "foreground": {
+        "argv": [
+          "<home>/.local/bin/agent",
+          "--use-system-ca",
+          "<home>/.local/share/cursor-agent/versions/2026.11.05-86047df/index.js"
+        ],
+        "cwd": "<verification>/workspace",
+        "name": "MainThread",
+        "pid": 38413
+      },
+      "status_ms": null,
+      "template": null,
+      "title": "Cursor Agent",
+      "turn": 0,
+      "status": null,
+      "program": {
+        "key": "agent",
+        "name": "Agent",
+        "icon": "icons/agent.svg",
+        "tint": true,
+        "tile": "#1c1d21",
+        "color": "#d6d8db",
+        "shell": false,
+        "agent": false
+      },
+      "report": null
+    }
+  ],
+  "spaces": [
+    {
+      "id": "sp48a9b8a3cdc085d7ca0ca1f114667ed3",
+      "index": 1,
+      "name": "PR 30 native",
+      "named": true,
+      "folder": "<verification>/workspace",
+      "machine": null,
+      "branch": null,
+      "active": true,
+      "status": null,
+      "tabs": [
+        {
+          "id": "tb33fe957eaa43e72a504bda19a426ea12",
+          "index": 1,
+          "name": "Cursor native",
+          "named": true,
+          "active": true,
+          "status": null,
+          "panes": 1,
+          "zoomed": false,
+          "settled": false,
+          "settled_at": null,
+          "changed_at": null,
+          "working_since": null
+        },
+        {
+          "id": "tb305ca563f90752f6058ad51e745edc30",
+          "index": 2,
+          "name": "Other terminal",
+          "named": true,
+          "active": false,
+          "status": null,
+          "panes": 1,
+          "zoomed": false,
+          "settled": false,
+          "settled_at": null,
+          "changed_at": null,
+          "working_since": null
+        }
+      ]
+    },
+    {
+      "id": "pr30-loopback/sp28917ade6817cdd033097a655d0f71c0",
+      "index": 2,
+      "name": "Remote Cursor",
+      "named": true,
+      "folder": "<verification>/workspace",
+      "machine": "pr30-loopback",
+      "branch": null,
+      "active": false,
+      "status": null,
+      "tabs": [
+        {
+          "id": "pr30-loopback/tbac8b187a8db8760a9e37629933b43c6f",
+          "index": 1,
+          "name": "Remote interactive",
+          "named": true,
+          "active": true,
+          "status": null,
+          "panes": 1,
+          "zoomed": false,
+          "settled": false,
+          "settled_at": null,
+          "changed_at": null,
+          "working_since": null
+        }
+      ]
+    }
+  ],
+  "panes": [
+    {
+      "pane": "pe03bf502bd491f46929de243e4c5400c",
+      "terminal": "t1",
+      "tab": "tb33fe957eaa43e72a504bda19a426ea12",
+      "title": "Cursor Agent",
+      "cwd": "<verification>/workspace",
+      "branch": null,
+      "status": null,
+      "app": null,
+      "program": {
+        "key": "agent",
+        "name": "Agent",
+        "icon": "icons/agent.svg",
+        "tint": true,
+        "tile": "#1c1d21",
+        "color": "#d6d8db",
+        "shell": false,
+        "agent": false
+      },
+      "focused": true,
+      "zoomed": false,
+      "movable": false
+    },
+    {
+      "pane": "p7f0357e5f2d67bad5d6f95e665e4771d",
+      "terminal": "t2",
+      "tab": "tb305ca563f90752f6058ad51e745edc30",
+      "title": "tjbarros@<host>: <verification>/workspace",
+      "cwd": "<verification>/workspace",
+      "branch": null,
+      "status": null,
+      "app": null,
+      "program": {
+        "key": "shell",
+        "name": "bash",
+        "icon": "icons/shell.svg",
+        "tint": true,
+        "tile": "#16241a",
+        "color": "#4ec95f",
+        "shell": true,
+        "agent": false
+      },
+      "focused": false,
+      "zoomed": false,
+      "movable": false
+    },
+    {
+      "pane": "pr30-loopback/p06f906727078276355441a2e3a13059d",
+      "terminal": "pr30-loopback/t1",
+      "tab": "pr30-loopback/tbac8b187a8db8760a9e37629933b43c6f",
+      "title": "Cursor Agent",
+      "cwd": "<verification>/workspace",
+      "branch": null,
+      "status": null,
+      "app": null,
+      "program": {
+        "key": "agent",
+        "name": "Agent",
+        "icon": "icons/agent.svg",
+        "tint": true,
+        "tile": "#1c1d21",
+        "color": "#d6d8db",
+        "shell": false,
+        "agent": false
+      },
+      "focused": false,
+      "zoomed": false,
+      "movable": false
+    }
+  ],
+  "focused": {
+    "space": "sp48a9b8a3cdc085d7ca0ca1f114667ed3",
+    "tab": "tb33fe957eaa43e72a504bda19a426ea12",
+    "terminal": "t1",
+    "shown": null,
+    "pane": "pe03bf502bd491f46929de243e4c5400c",
+    "agent": null,
+    "cwd": "<verification>/workspace"
+  },
+  "language": "en",
+  "filter": "all"
+}

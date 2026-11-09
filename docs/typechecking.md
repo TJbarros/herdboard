@@ -70,7 +70,28 @@ Native mod checks and the EN/PT narrow/wide board and navigation recheck use an
 isolated app/core/display. Native menu and picker checks cover their own module
 directories, including Herdr's runtime import restriction.
 
-The final complete gate passed all three native checks, all three typechecks and
+## PR #30 title lifecycle refinement
+
+Review found that remembering a title and displaying a retained title each reread
+and normalized the entire native terminal collection for every reported agent.
+The board now builds one fresh title-lifecycle lookup for each render and shares
+it with the cards. It retains no process snapshot between renders.
+
+A failing real-board regression with 12 displayed sessions recorded **15 / 27 /
+39** native snapshot reads for neutral, current-title and retained-title cards.
+After the refinement, the same cases use **16 / 16 / 16** reads. The existing
+per-card worktree lookup is included and remains unchanged; only the additional
+title work becomes constant. This measures native-adapter calls, not native UI
+latency. Tests also verify that foreground PID, terminal PID and terminal creation
+changes invalidate a retained title on the next render.
+
+The complete gate now passes all three native checks, all three typechecks and
+**512 tests**, both in the working checkout and in an archive of commit
+`6be0d5c` with no initial generated declarations or local `jsconfig.json` files.
+Herdr generated three declaration files, and no local configuration was needed.
+See the [review validation record](evidence/pr-30/validation.json).
+
+The initial typechecking delivery passed all three native checks, all three typechecks and
 **509 tests**. The same gate also passed from a clean archive of the tracked
 tree, initially without generated declarations or local configs. Herdr generated
 all three declaration files and no `jsconfig.json` was needed. [Recorded results](evidence/typechecking/checks.json) and the
