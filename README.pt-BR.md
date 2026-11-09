@@ -77,7 +77,8 @@ e abre novas abas na pasta de projeto que você escolher.
 ## Recursos
 
 - **"Precisa de você", respondido pelo quadro**: a pergunta, *Abrir e responder*, *Espiar*,
-  e *Sim* / *Não* num pedido de permissão do Claude Code ou na tela de confiança de pasta reconhecida.
+  e *Sim* / *Não* nas permissões do Claude Code, na tela de confiança de pasta reconhecida
+  e no [diálogo verificado de comando local do Codex](docs/guide.pt-BR.md).
 - **Cards que dizem o que está acontecendo**: título da tarefa, espaço · aba · branch,
   tempo no status.
 - **"travado?"** num agente trabalhando há mais de 30 minutos.

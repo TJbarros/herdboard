@@ -4,6 +4,76 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { parseAsk, pickAnswers } from "../mods/herdboard/ask.js";
 
+const CODEX_WIDE = readFileSync(new URL("./fixtures/codex-0.167.0/command-wide.txt", import.meta.url), "utf8");
+const CODEX_NARROW = readFileSync(new URL("./fixtures/codex-0.167.0/command-narrow.txt", import.meta.url), "utf8");
+test("the captured Codex command approval exposes only verified one-time and cancellation shortcuts", () => {
+  const ask = parseAsk(CODEX_WIDE, undefined, "codex");
+  assert.equal(ask.dialog, "codex-command");
+  assert.equal(ask.mode, "shortcut");
+  assert.ok(ask.id);
+  const answers = pickAnswers(ask);
+  assert.equal(answers.yes.text, "Yes, proceed (y)");
+  assert.equal(answers.yes.shortcut, "y");
+  assert.equal(answers.no.text, "No, and tell Codex what to do differently (esc)");
+  assert.equal(answers.no.shortcut, "esc");
+  assert.equal(ask.options[1].shortcut, undefined);
+});
+
+test("agent context rejects cross-agent permission and startup lookalikes", () => {
+  const claude = "───\nProceed?\n 1. Yes\n 2. No";
+  for (const app of ["codex", "pi", "unknown"]) {
+    assert.equal(pickAnswers(parseAsk(claude, undefined, app)), null);
+    assert.equal(pickAnswers(parseAsk(readFileSync(new URL("./fixtures/workspace-trust.txt", import.meta.url), "utf8"), undefined, app)), null);
+  }
+  for (const app of ["claude-code", "pi", "unknown"]) assert.equal(pickAnswers(parseAsk(CODEX_WIDE, undefined, app)), null);
+});
+
+test("Codex wide and narrow captures preserve complete option wording and selection-independent shortcuts", () => {
+  for (const screen of [CODEX_WIDE, CODEX_NARROW]) {
+    const original = parseAsk(screen, undefined, "codex");
+    assert.equal(original.options[1].text, "Yes, and don't ask again for commands that start with `/usr/bin/printf approval-probe` (p)");
+    for (const selected of [1, 2, 3]) {
+      const moved = screen.replace(/^› (?=[1-3]\. )/m, "  ").replace(new RegExp(`^  ${selected}\\.`, "m"), `› ${selected}.`);
+      const ask = parseAsk(moved, undefined, "codex");
+      assert.equal(ask.id, original.id);
+      assert.deepEqual(pickAnswers(ask), pickAnswers(original));
+    }
+  }
+});
+
+test("Codex requires the complete captured local command dialog and all option meanings", () => {
+  for (const screen of [CODEX_WIDE, CODEX_NARROW]) {
+    for (const changed of [
+      screen.replace("Would you like to run the following command?", "Proceed?"),
+      screen.replace("Environment: local", "Environment: remote"),
+      screen.replace(/  Reason:[\s\S]*?\n\n/, ""),
+      screen.replace(/  \$ [\s\S]*?\n\n/, ""),
+      screen.replace("Yes, proceed (y)", "Yes, always (y)"),
+      screen.replace("Yes, proceed (y)", "Yes, proceed (enter)"),
+      screen.replace("don't ask again", "always approve"),
+      screen.replace("(esc)", "(n)"),
+      screen.replace("Press enter to confirm or esc to cancel", ""),
+      screen + "unrecognised footer\n",
+      screen.replace("  3. No", "› 3. No"),
+      screen.replace("  3. No", "  4. No"),
+      screen.slice(screen.indexOf("  Environment:")),
+      screen.slice(0, screen.indexOf("  3. No")),
+    ]) assert.equal(pickAnswers(parseAsk(changed, undefined, "codex")), null, changed);
+  }
+});
+
+test("Codex request identity guards operation, context, whitespace and the unexposed persistent option", () => {
+  const original = parseAsk(CODEX_WIDE, undefined, "codex");
+  for (const screen of [
+    CODEX_WIDE.replace("  $ /usr/bin/printf approval-probe", "  $ /usr/bin/printf other-probe"),
+    CODEX_WIDE.replace("  $ /usr/bin/printf approval-probe", "  $ /usr/bin/printf  approval-probe"),
+    CODEX_WIDE.replace("  $ /usr/bin/printf approval-probe", "  $ /usr/bin/printf approval-probe\u00a0"),
+    CODEX_WIDE.replace("Reason: May I run", "Reason: Should I run"),
+    CODEX_WIDE.replace("start with `/usr/bin/printf approval-probe`", "start with `/usr/bin/printf`"),
+    CODEX_WIDE.replace("  Reason:", "   Reason:"),
+  ]) assert.notEqual(parseAsk(screen, undefined, "codex").id, original.id);
+});
+
 // Complete hc read --lines 0 capture, Claude Code 2.1.319 at 200 columns (issue #3).
 const TRUST = readFileSync(new URL("./fixtures/workspace-trust.txt", import.meta.url), "utf8");
 const TRUST_NARROW = readFileSync(new URL("./fixtures/workspace-trust-narrow.txt", import.meta.url), "utf8");

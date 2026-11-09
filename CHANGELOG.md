@@ -4,6 +4,12 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+- Verified Codex CLI 0.167.0 local command approvals can be answered from cards:
+  Yes sends `y` for one-time approval; No sends `esc` to cancel the request and
+  interrupt the turn. Full-screen and reported-agent checks precede each send.
+  The persistent choice and the tested unreported pi 0.85.1 confirmation remain
+  available only in the terminal; versioned native evidence documents the scope.
+
 ## [1.3.0] - 2026-11-08
 
 - Blocked cards use their rendered height when sizing the board. Long workspace

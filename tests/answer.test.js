@@ -105,6 +105,187 @@ beforeEach(() => {
   herdr.terminals = [{ address: "t1", report: { kind: "permission" } }];
 });
 
+const CODEX = readFileSync(new URL("./fixtures/codex-0.167.0/command-wide.txt", import.meta.url), "utf8");
+const CODEX_NARROW = readFileSync(new URL("./fixtures/codex-0.167.0/command-narrow.txt", import.meta.url), "utf8");
+const CODEX_SNAPSHOT = JSON.parse(readFileSync(new URL("./fixtures/codex-0.167.0/app-snapshot.json", import.meta.url), "utf8"));
+function reportedCodex(seq = 1) {
+  const a = { ...blocked(seq), app: "codex" };
+  herdr.agents = [a];
+  const terminal = CODEX_SNAPSHOT.terminals[0];
+  herdr.terminals = [{ ...terminal, address: a.address, report: { ...terminal.report } }];
+  return a;
+}
+test("Codex one-time approval sends only y once after validating the captured request", async () => {
+  const b = board(), a = reportedCodex();
+  await readFor(b, a, CODEX);
+  const controls = draw(b, a);
+  assert.ok(controls.yes);
+  assert.equal(controls.more, undefined, "the unverified persistent option has no card control");
+  await controls.yes();
+  await controls.no();
+  assert.deepEqual(keys(), []);
+  await settle(reads().at(-1), CODEX);
+  await settleKeys();
+  assert.deepEqual(keys(), [["t1", "y"]]);
+});
+
+for (const [width, capture] of [["wide", CODEX], ["narrow", CODEX_NARROW]]) {
+  for (const selected of [1, 2, 3]) for (const answer of ["yes", "no"]) {
+    test(`Codex ${answer} uses its verified shortcut from selection ${selected} in the ${width} capture`, async () => {
+      const b = board(), a = reportedCodex();
+      const moved = capture.replace(/^› (?=[1-3]\. )/m, "  ").replace(new RegExp(`^  ${selected}\\.`, "m"), `› ${selected}.`);
+      await readFor(b, a, moved);
+      await draw(b, a)[answer]();
+      await settle(reads().at(-1), capture);
+      await settleKeys();
+      assert.deepEqual(keys(), [["t1", answer === "yes" ? "y" : "esc"]]);
+    });
+  }
+}
+
+for (const phase of ["before click", "during read"]) {
+  for (const change of ["agent", "kind", "report app", "report state", "reported", "screen", "terminal state", "terminal status", "terminal gone", "status", "seq"]) {
+    test(`Codex sends nothing if ${change} changes ${phase}`, async () => {
+      const b = board(), a = reportedCodex();
+      await readFor(b, a, CODEX);
+      const click = draw(b, a).yes;
+      const changeSource = () => {
+        const t = herdr.terminals[0];
+        if (change === "agent") herdr.agents = [{ ...a, app: "claude-code" }];
+        if (change === "kind") t.report.kind = "question";
+        if (change === "report app") t.report.app = "pi";
+        if (change === "report state") t.report.state = "working";
+        if (change === "reported") t.reported = false;
+        if (change === "screen") t.screen = "lossy";
+        if (change === "terminal state") t.state = "finished";
+        if (change === "terminal status") t.status = "working";
+        if (change === "terminal gone") herdr.terminals = [];
+        if (change === "status") herdr.agents = [{ ...a, status: "working" }];
+        if (change === "seq") herdr.agents = [{ ...a, seq: 2 }];
+      };
+      if (phase === "before click") changeSource();
+      await click();
+      if (phase === "during read") changeSource();
+      if (reads().length === 2) await settle(reads().at(-1), CODEX);
+      await settleKeys();
+      assert.deepEqual(keys(), []);
+    });
+  }
+}
+
+for (const change of ["command", "reason", "spaces", "persistent option", "footer", "read failure"]) {
+  test(`Codex sends nothing after a fresh ${change} mismatch`, async () => {
+    const b = board(), a = reportedCodex();
+    await readFor(b, a, CODEX);
+    await draw(b, a).no();
+    let fresh = CODEX;
+    if (change === "command") fresh = fresh.replace("  $ /usr/bin/printf approval-probe", "  $ /usr/bin/printf changed");
+    if (change === "reason") fresh = fresh.replace("Reason: May I run", "Reason: Should I run");
+    if (change === "spaces") fresh = fresh.replace("  $ /usr/bin/printf approval-probe", "  $ /usr/bin/printf  approval-probe");
+    if (change === "persistent option") fresh = fresh.replace("start with `/usr/bin/printf approval-probe`", "start with `/usr/bin/printf` ");
+    if (change === "footer") fresh = fresh.replace("Press enter to confirm or esc to cancel", "Press enter");
+    if (change === "read failure") { reads().at(-1).resolve({ code: 1 }); await flush(); }
+    else await settle(reads().at(-1), fresh);
+    await settleKeys();
+    assert.deepEqual(keys(), []);
+    assert.equal(b.asks.t1, undefined);
+  });
+}
+
+test("Codex answers stay latched across old handlers, hidden cards and late reads until a new request", async () => {
+  const b = board(), a = reportedCodex();
+  await readFor(b, a, CODEX);
+  const old = draw(b, a);
+  await old.yes(); await old.no(); await old.yes();
+  b.fetchAsks([], cx); b.fetchAsks([a], cx);
+  await settle(reads().at(-1), CODEX);
+  await settleKeys();
+  b.fetchAsks([], cx); b.fetchAsks([a], cx);
+  await draw(b, a).yes(); await old.no();
+  assert.deepEqual(keys(), [["t1", "y"]]);
+  assert.equal(reads().length, 2);
+  const next = reportedCodex(2);
+  await readFor(b, next, CODEX);
+  await old.yes();
+  await draw(b, next).no();
+  await settle(reads().at(-1), CODEX);
+  await settleKeys();
+  assert.deepEqual(keys(), [["t1", "y"], ["t1", "esc"]]);
+});
+
+test("a late Codex validation cannot replace a newer cached request", async () => {
+  const b = board(), a = reportedCodex();
+  await readFor(b, a, CODEX);
+  await draw(b, a).yes();
+  const late = reads().at(-1);
+  const next = reportedCodex(2);
+  await readFor(b, next, CODEX);
+  const current = b.asks.t1;
+  await settle(late, CODEX);
+  assert.deepEqual(keys(), []);
+  assert.equal(b.asks.t1, current);
+  assert.ok(draw(b, next).yes);
+});
+
+test("Codex redraws share one bounded retry chain and expose no partial answers", async () => {
+  const b = board(), a = reportedCodex();
+  await readFor(b, a, "Running…");
+  b.fetchAsks([a], cx); b.fetchAsks([a], cx);
+  assert.equal(reads().length, 1);
+  assert.equal(draw(b, a).yes, null);
+  assert.equal(waits.at(-1).ms, 500);
+  await wake(); await settle(reads().at(-1), CODEX.replace("Press enter to confirm or esc to cancel", ""));
+  assert.equal(waits.at(-1).ms, 1500);
+  await wake(); await settle(reads().at(-1), CODEX);
+  assert.equal(reads().length, 3);
+  assert.ok(draw(b, a).yes);
+  assert.deepEqual(keys(), []);
+});
+
+test("reported Codex lookalikes and unsupported agents retain only the fallback controls", async () => {
+  const trust = readFileSync(new URL("./fixtures/workspace-trust.txt", import.meta.url), "utf8");
+  const question = readFileSync(new URL("./fixtures/codex-0.167.0/question.txt", import.meta.url), "utf8");
+  const pi = readFileSync(new URL("./fixtures/pi-0.85.1/pi-confirm-wide.txt", import.meta.url), "utf8");
+  for (const [app, kind, capture] of [
+    ["codex", "permission", screen("touch /tmp/a")],
+    ["codex", "permission", trust],
+    ["codex", "permission", "───\nChoose a color?\n 1. Yes\n 2. No"],
+    ["codex", "question", CODEX],
+    ["codex", "question", question],
+    ["pi", "permission", CODEX],
+    ["pi", "question", pi],
+    ["claude-code", "permission", CODEX],
+    ["unknown", "permission", CODEX],
+  ]) {
+    herdr.calls.length = 0; waits.length = 0;
+    const b = board(), a = reportedCodex();
+    a.app = app; herdr.terminals[0].report = { app, kind, state: "blocked" };
+    await readFor(b, a, capture);
+    const controls = draw(b, a);
+    assert.equal(controls.yes, null);
+    assert.equal(controls.no, null);
+    assert.equal(controls.more, undefined);
+    assert.ok(elements.has("answer-t1"));
+    assert.ok(elements.has("peek-b-t1"));
+    assert.deepEqual(keys(), []);
+  }
+});
+
+test("Codex tooltips name the actual shortcut and cancellation effect in both languages", async () => {
+  for (const language of ["en", "pt"]) {
+    herdr.calls.length = 0;
+    const b = board(), a = reportedCodex();
+    herdr.shared["herdboard.lang"] = language;
+    await readFor(b, a, CODEX);
+    b.render(cx); draw(b, a);
+    const yes = elements.get("yes-t1").props.tooltip[0], no = elements.get("no-t1").props.tooltip[0];
+    assert.match(yes, language === "en" ? /Sends y/ : /Envia y/);
+    assert.match(no, language === "en" ? /Cancels the request and interrupts the turn \(Esc\)/ : /Cancela o pedido e interrompe o turno \(Esc\)/);
+    assert.ok(yes.includes("Yes, proceed (y)"));
+    assert.ok(no.includes("No, and tell Codex what to do differently (esc)"));
+  }
+});
+
 test("More stays open across a full board render while startup discovery runs", async () => {
   const b = board(); herdr.agents = [blocked(1)];
   b.render(cx); await settle(reads().at(-1), screen("touch /tmp/a")); b.render(cx);

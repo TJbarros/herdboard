@@ -1,0 +1,105 @@
+{
+  "agents": [
+    {
+      "address": "t4",
+      "pane": "pcf2ab04209e9bf11abaabc28baebb326",
+      "space": "sp5dec156d5f97b00a3c09ab12e1e7d949",
+      "space_name": "Issue 4 native verification",
+      "tab": "tbc52231c99a801961bf15bdba62ba6a5c",
+      "tab_index": 3,
+      "tab_name": "3",
+      "status": "blocked",
+      "app": "codex",
+      "program": {
+        "key": "codex",
+        "name": "Codex",
+        "icon": "icons/codex.svg",
+        "tint": false,
+        "tile": "#1c1d21",
+        "color": "#ffffff",
+        "shell": false,
+        "agent": true
+      },
+      "title": "[ . ] Action Required | Run approval-dialog capture test | workspace",
+      "seq": 4,
+      "pinned": false,
+      "focused": false
+    }
+  ],
+  "terminals": [
+    {
+      "address": "t4",
+      "argv": [
+        "codex",
+        "--no-daemon",
+        "--no-alt-screen",
+        "--ask-for-approval",
+        "on-request",
+        "--sandbox",
+        "read-only",
+        "-c",
+        "approvals_reviewer=\"user\""
+      ],
+      "cols": 149,
+      "created_ms": 1794191055954,
+      "cwd": "/tmp/herdboard-issue4-native-w1swbhyz/workspace",
+      "die_with_parent": false,
+      "exit_code": null,
+      "finished_ms": null,
+      "foreground": {
+        "argv": [
+          "codex",
+          "--no-daemon",
+          "--no-alt-screen",
+          "--ask-for-approval",
+          "on-request",
+          "--sandbox",
+          "read-only",
+          "-c",
+          "approvals_reviewer=\"user\""
+        ],
+        "cwd": "/tmp/herdboard-issue4-native-w1swbhyz/workspace",
+        "name": "codex",
+        "pid": 34984
+      },
+      "identity": "ghostty",
+      "keep": true,
+      "labels": {
+        "herdr.space": "sp5dec156d5f97b00a3c09ab12e1e7d949",
+        "where": "Issue 4 native verification / 3"
+      },
+      "name": "codex-approval",
+      "notify": false,
+      "parent": null,
+      "pid": 34984,
+      "reason": null,
+      "reported": true,
+      "rm": false,
+      "rows": 29,
+      "screen": "exact",
+      "signal": null,
+      "state": "live",
+      "records": {},
+      "status_ms": 1794191318017,
+      "template": null,
+      "title": "[ . ] Action Required | Run approval-dialog capture test | workspace",
+      "turn": 14,
+      "status": "blocked",
+      "program": {
+        "key": "codex",
+        "name": "Codex",
+        "icon": "icons/codex.svg",
+        "tint": false,
+        "tile": "#1c1d21",
+        "color": "#ffffff",
+        "shell": false,
+        "agent": true
+      },
+      "report": {
+        "app": "codex",
+        "kind": "permission",
+        "state": "blocked"
+      }
+    }
+  ]
+}

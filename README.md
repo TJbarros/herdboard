@@ -75,7 +75,8 @@ project folder you pick.
 ## Features
 
 - **Needs you, answered from the board**: the question, *Open and answer*, *Peek*,
-  and *Yes* / *No* for a Claude Code permission dialog or its recognised workspace-trust screen.
+  and *Yes* / *No* for Claude Code permissions, its recognised workspace-trust screen,
+  and the [verified Codex local command dialog](docs/guide.md#answer-an-agent-that-needs-you).
 - **Cards that say what's going on**: task title, space · tab · branch, time in status.
 - **"stuck?"** on an agent working for more than 30 minutes.
 - **Peek, Pin and Put away** when you hover a card.

@@ -58,6 +58,24 @@ status ou o pedido do agente mudar, então um segundo clique não digita nada. M
 só aparece quando há outras opções além de Sim / Não. Para outros pedidos sem um par
 Yes / No simples, use **Abrir e responder**.
 
+**Aprovação verificada de comando do Codex.** O diálogo completo de comando local
+capturado com Codex CLI 0.167.0 no Linux também recebe **Sim** / **Não**, quando o
+Codex reporta um pedido de permissão bloqueado. **Sim** envia `y` e aprova esse
+comando uma vez. **Não** envia `esc`, cancela o pedido e interrompe o turno; digite
+a próxima instrução no terminal. Nenhum acrescenta Enter, e ambos funcionam a partir
+das três seleções capturadas. Os tooltips mostram a opção original e o efeito de cancelar.
+A opção persistente “don't ask again” não tem atalho no card nem entrada em **Mais…**;
+use **Abrir e responder** para ela. Outros diálogos do Codex, perguntas, ambientes
+remotos e telas incompletas mantêm **Abrir e responder** / **Espiar**. Se um
+redimensionamento mudar as quebras do pedido, o clique atualiza o card sem enviar
+teclas; confira o pedido novamente.
+
+A extensão com `ui.confirm()` testada no pi 0.85.1 não reportou um agente bloqueado
+ao Herdr e continua sem suporte. Telas iniciais/de confiança de novos agentes também
+ficam sem suporte. Veja as [configurações, capturas brutas e resultados observados](issue-4-verification.md)
+para a cobertura exata. O Herdboard não muda políticas de aprovação nem instala
+extensões de permissão.
+
 **Confiança na pasta ao iniciar.** A tela reconhecida do Claude Code com o título
 "Accessing workspace:" também ganha um card, antes mesmo do primeiro status do
 agente, inclusive em terminais estreitos onde a explicação, o caminho da pasta,
@@ -148,10 +166,11 @@ Layout** lista todos.
 - O que roda além do desenho: o quadro executa `hc read <terminal> --lines 0` (a
   linha de comando do próprio Herdr) a cada bloqueio, para ler a pergunta do agente;
   se essa leitura não a encontrar (a pergunta ainda não está na tela ou, num pedido
-  de permissão do Claude Code, falta o Sim / Não), lê até mais duas vezes, 0,5 s
+  de permissão elegível do Claude/Codex, falta o Sim / Não verificado), lê até mais duas vezes, 0,5 s
   depois e, de novo, 1,5 s depois disso, só enquanto o agente continuar bloqueado.
-  Lê de novo quando você clica em Sim / Não ou escolhe uma opção de Mais…, e então executa `hc keys <terminal>
-  <dígito>`; a busca executa `hc machine ls`, como a busca original do Herdr; o menu de
+  Lê de novo quando você clica em Sim / Não ou escolhe uma opção de Mais… e envia as
+  teclas verificadas daquele diálogo (`hc keys <terminal> <dígito>` para permissões
+  do Claude, `y` ou `esc` para Codex); a busca executa `hc machine ls`, como a busca original do Herdr; o menu de
   nova aba pergunta ao Herdr quais agentes estão instalados. A descoberta inicial
   também lê os terminais Claude elegíveis aproximadamente a cada segundo enquanto
   o quadro está visível; uma resposta inicial consulta `hc get` antes e depois da
