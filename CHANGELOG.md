@@ -4,6 +4,8 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-11-09
+
 - All three mods pass the project's strict typecheck with explicit parser, board,
   worktree and native-data contracts. Versioned ES2023 configurations describe the
   APIs already used at runtime; generated Herdr declarations stay untouched.
@@ -15,6 +17,10 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
   missing status stays explicitly unavailable in English and Portuguese, with no
   inferred activity or age. Discovery follows current ownership and process lifetime,
   preserves filtering and pinning, and yields to reported agents without duplicates.
+
+- Remembered task titles share one fresh terminal-lifecycle lookup per board render,
+  avoiding repeated full native terminal reads for every title. Foreground process,
+  terminal PID and terminal creation changes still invalidate the previous task.
 
 ## [1.5.0] - 2026-11-09
 
