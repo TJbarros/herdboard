@@ -333,7 +333,7 @@ export default class Herdboard extends View {
   below(px) { return this.w > 0 && this.w < px; }
 
   syncActivities() {
-    const consumers = !props()?.role && boardVisible() ? this.groups(agents()).by.working : [];
+    const consumers = !props()?.role && boardVisible() && this.h > 0 ? this.groups(agents()).by.working : [];
     const current = new Map(consumers.map(a => [a.address, { a, key: activityKey(a) }]).filter(([, v]) => v.key));
     for (const [address, entry] of this.activities) if (current.get(address)?.key !== entry.key) this.activities.delete(address);
     for (const [address, { a, key }] of current) if (!this.activities.has(address)) this.activities.set(address, { a, key, text: null });

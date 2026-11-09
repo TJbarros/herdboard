@@ -13,7 +13,12 @@ const timers = [];
 const cx = { spawn: f => f(cx), notify() {}, timer: { every: (ms, f) => timers.push({ ms, f }) } };
 const strings = values => values.flatMap(v => typeof v === "string" ? [v] : strings(v?.data?.children ?? []));
 function render(b) { elements.clear(); b.render(cx); }
-function board() { const b = new Herdboard(); b.init(null, cx); return b; }
+function resize(height, width = 1236) { elements.get("herdboard-root").props.on_size_change[0]({ width, height }, cx); }
+function board(height = 358) {
+  const b = new Herdboard(); b.init(null, cx);
+  if (!herdr.props.role) { render(b); resize(height); }
+  return b;
+}
 const flush = async () => { for (let i = 0; i < 5; i++) await new Promise(r => setImmediate(r)); };
 async function settle(call, stdout = SCREEN, code = 0) { call.settled = true; call.resolve({ stdout, code }); await flush(); }
 function terminal(address = "t1") { return { ...structuredClone(TERMINAL), address }; }
@@ -26,12 +31,22 @@ beforeEach(t => {
   herdr.panes = [{ pane: "p1", terminal: "t1", tab: "tab1" }];
   herdr.calls.length = 0; herdr.runs.length = 0; timers.length = 0;
 });
+test("Working cards wait for a positive native board height before reading", async t => {
+  herdr.terminals = [terminal()];
+  const b = board(0); render(b);
+  advance(t, 10000); render(b);
+  assert.equal(herdr.calls.length, 0, "a present layout node is insufficient before the board has visible height");
+  resize(358); render(b);
+  assert.deepEqual(herdr.calls.map(c => c.args), [["read", "t1", "--lines", "0"]]);
+  await settle(herdr.calls[0]); render(b);
+  assert.ok(strings(elements.get("activity-t1").children).includes("Aguarda 40s e imprime marcador de captura"));
+});
 test("Working cards show a translated neutral activity when no terminal is available, in both layouts", () => {
   const b = board();
   for (const [language, label, fallback] of [["en", "Doing now", "Activity unavailable"], ["pt", "Fazendo agora", "Atividade indisponível"]]) {
     herdr.shared["herdboard.lang"] = language;
     for (const width of [1236, 980, 716]) {
-      b.w = width; render(b);
+      resize(358, width); render(b);
       assert.deepEqual(strings(elements.get("activity-t1")?.children ?? []), [label, fallback]);
       assert.ok(elements.get("agent-t1").props.h[0] >= 86, "the card reserves room for its activity line");
     }
@@ -93,6 +108,7 @@ for (const [name, hide, show] of [
   ["expanded board", () => herdr.layout.hidden = true, () => herdr.layout.hidden = false],
   ["hidden ancestor", () => herdr.layout = { hidden: true, children: [herdr.layout] }, () => herdr.layout.hidden = false],
   ["different layout", () => herdr.layout = { id: "main" }, () => herdr.layout = { id: "herdboard-cards" }],
+  ["zero native board height", () => resize(0), () => resize(358)],
   ["non-Working status", () => herdr.agents[0].status = "done", () => herdr.agents[0].status = "working"],
   ["removed terminal", () => herdr.terminals = [], () => herdr.terminals = [terminal()]],
 ]) test(`${name} stops reads and invalidates late responses before the card returns`, async t => {
@@ -153,18 +169,21 @@ test("the captured Codex launch with an initial task also receives bounded activ
   await settle(herdr.calls[0], readFileSync(new URL("./fixtures/activity/codex-0.167.0/initial-task-wide.txt", import.meta.url), "utf8"));
   render(b); assert.ok(strings(elements.get("activity-t1").children).includes("Working"));
 });
-test("deferred spawns recheck visibility and lifecycle before originating any screen read", async () => {
+for (const [name, hide, show] of [
+  ["layout visibility", () => herdr.layout.hidden = true, () => herdr.layout.hidden = false],
+  ["native board height", () => resize(0), () => resize(358)],
+]) test(`deferred spawns recheck ${name} and lifecycle before originating any screen read`, async () => {
   herdr.terminals = [terminal()];
   const original = cx.spawn, queued = [];
   cx.spawn = f => queued.push(f);
   try {
     const b = board(); render(b);
     assert.equal(herdr.calls.length, 0, "the executor has not dispatched the spawn yet");
-    herdr.layout.hidden = true;
+    hide();
     queued.shift()(cx);
     await flush();
     assert.equal(herdr.calls.length, 0, "hidden cards cannot dispatch a previously scheduled read");
-    herdr.layout.hidden = false;
+    show();
     herdr.terminals[0].turn++;
     render(b);
     assert.equal(queued.length, 1);
