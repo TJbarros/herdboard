@@ -52,7 +52,7 @@ export class WorktreeChanges {
     this.recent = new Map(); // bounded cooldowns survive temporary hiding, for at most one interval
   }
 
-  sync(contexts, launch, notify) {
+  sync(contexts, launch, notify = () => {}) {
     const now = Date.now();
     for (const [key, at] of this.recent) if (now - at >= GIT_POLL_MS) this.recent.delete(key);
     const next = new Map();
@@ -72,6 +72,7 @@ export class WorktreeChanges {
       const root = this.worktrees.get(directory.root);
       if (root) root.cwd = directory.cwd;
     }
+    if (!launch) return; // A dispatch-time demand refresh must not reserve more work.
 
     const due = [];
     for (const [key, root] of this.worktrees) {
@@ -91,12 +92,20 @@ export class WorktreeChanges {
       entry.last = now;
       const revision = this.revision;
       launch(async () => {
+        const cache = kind === "status" ? this.worktrees : this.directories;
+        if (cache.get(key) !== entry) {
+          this.pending.delete(pendingKey);
+          this.recent.delete(pendingKey);
+          notify();
+          return;
+        }
+        entry.last = Date.now();
+        this.recent.set(pendingKey, entry.last);
         let result = null;
         try {
           result = await this.execute("git", kind === "status" ? GIT_STATUS_ARGS : ["rev-parse", "--absolute-git-dir"], { cwd: entry.cwd, on: entry.on });
         } catch (_error) { /* Missing Git, directories and disconnected machines are unavailable. */ }
         finally { this.pending.delete(pendingKey); }
-        const cache = kind === "status" ? this.worktrees : this.directories;
         if (cache.get(key) === entry) {
           if (kind === "status") {
             entry.count = countGitChanges(result);

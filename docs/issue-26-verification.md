@@ -23,7 +23,10 @@ and linked-worktree identities, same-millisecond terminal replacement, stale
 directory/machine responses, no local fallback, successful zero versus failure,
 two physical slots through slow requests, minimum retry intervals across hiding,
 filters/Put away/folded Idle, auxiliary roles, zero-height visibility, compact
-Idle and paired wording. These are simulated runtime checks, not native UI proof.
+Idle and paired wording. Review regressions also cover retained positive height
+under hidden ancestors/removed layouts, dispatch-time demand changes without a
+render, stale cache reservations, delayed-dispatch cooldowns and fresh callback
+contexts. These are simulated runtime checks, not native UI proof.
 
 The agreed public seams were Git-result interpretation with real repositories and
 the real-main.js runtime harness. Red/green slices were recorded before adding the
@@ -31,8 +34,8 @@ helper, the cap guard, card querying, terminal revisions, hidden retry cooldowns
 Git type changes and the positive-height gate. Raw failure/pass logs remain in the
 session's temporary evidence bundle. After integrating machine identification,
 the full `scripts/check.sh` passed all three mod checks and **429 Node tests**;
-the coordinator records the final combined suite
-after integrating the other card changes.
+the [integrated record](agent-card-context-verification.md) documents the final
+combined suite after the other card changes and review corrections.
 
 ## Native execution API
 
@@ -79,7 +82,7 @@ their slots until settlement; no logical timeout creates duplicate work.
 
 ## Native board scope
 
-The coordinator owns the final native local/remote board checks at 1280, 1024 and
-760 px after merging activity and machine presentation. This ticket's native exec
-measurements do not establish card geometry, real-agent fan-out, remote board
-rendering or the final combined UI. Those results must be recorded separately.
+The [final integrated verification](agent-card-context-verification.md) records
+native local/remote board checks in both languages at 1280, 1024 and 760 px, with
+actual board dimensions, tooltips and actions. This ticket's native exec
+measurements remain separate from that UI evidence and from real-agent activity load.
