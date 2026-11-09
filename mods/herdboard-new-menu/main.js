@@ -1,15 +1,33 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
-import { theme, spaces, panes, knownAgents, run, openOverlay, closeOverlay, props, window, keys, shared, setShared } from "herdr";
+import { theme as nativeTheme, spaces, panes, knownAgents, run, openOverlay, closeOverlay, props, window, keys, shared, setShared } from "herdr";
+
+/** @typedef {Pick<import("herdr").Program, "key" | "name" | "tint" | "icon"> & { installed: boolean, run: string[] }} KnownAgent */
+
+// Each mod is an isolated native application; its runtime adapter stays local.
+/** @param {unknown} value @returns {value is Record<string, unknown>} */
+const isRecord = value => value !== null && typeof value === "object" && !Array.isArray(value);
+function theme() {
+  /** @type {Record<string, import("gpui-kit").Color>} */
+  const colors = {};
+  for (const [name, value] of Object.entries(nativeTheme())) {
+    if (!value.startsWith("#")) throw new TypeError(`Herdr theme color ${name} must use a hexadecimal value`);
+    colors[name] = `#${value.slice(1)}`;
+  }
+  return colors;
+}
 
 // The last agents each machine reported, shown at once while knownAgents() checks again.
 const KNOWN = "new-menu.agents";
 
+/** @param {string} name */
 function shortcut(name) {
   const k = keys().find(b => b.section === "global" && b.action === name);
   if (!k?.keys.trim()) return "";
   const mac = window()?.platform === "macos";
+  /** @type {Record<string, string>} */
   const names = mac ? { ctrl: "⌃", alt: "⌥", shift: "⇧", cmd: "⌘", fn: "fn" } : { ctrl: "Ctrl", alt: "Alt", shift: "Shift", cmd: "Super", fn: "Fn" };
+  /** @type {Record<string, string>} */
   const alias = { secondary: mac ? "cmd" : "ctrl", super: "cmd", win: "cmd" };
   return k.keys.trim().split(/\s+/).map(stroke => {
     const parts = stroke.split("-");
@@ -32,6 +50,7 @@ const NEW_TEXT = {
     openWorktree: "Open worktree…", notInstalled: "not installed", failed: "Could not load agents",
     checking: "Checking installed agents…", openIn: "Open in", folderTip: "The new tab starts in this folder" },
 };
+/** @param {import("herdr").SpaceInfo} space */
 function currentFolder(space) {
   const tab = space?.tabs.find(t => t.active);
   const ps = panes().filter(p => p.tab === tab?.id && p.cwd);
@@ -40,6 +59,7 @@ function currentFolder(space) {
 
 // Folders to offer: the active tab's (first, the default), then the other live terminal folders,
 // so a project an agent works in elsewhere is one click away. Home folders are left out.
+/** @param {import("herdr").SpaceInfo} space */
 function folderChoices(space) {
   const first = currentFolder(space);
   const seen = new Set();
@@ -53,37 +73,59 @@ function folderChoices(space) {
 }
 // How deep a folder sits below the user's home (/home/<user> or C:\Users\<user>): 0 = the home
 // itself, -1 = not under a home. Plain string work, no regex, so it reads the same on any OS.
+/** @param {string} f */
 function homeParts(f) {
   const parts = String(f).split("/").join("\\").split("\\").filter(Boolean);
   if (parts[0] === "home" && parts.length >= 2) return { parts, base: 2 };
   if (parts[0]?.length === 2 && parts[0][1] === ":" && parts[1] === "Users" && parts.length >= 3) return { parts, base: 3 };
   return null;
 }
+/** @param {string} f */
 function homeDepth(f) {
   const h = homeParts(f);
   return h ? h.parts.length - h.base : -1;
 }
+/** @param {string} f */
 const shortPath = (f) => {
   const h = homeParts(f);
   return h ? ["~", ...h.parts.slice(h.base)].join("/") : f;
 };
 
+/** @param {unknown} value @returns {value is KnownAgent} */
+function isKnownAgent(value) {
+  return isRecord(value) && typeof value.key === "string" && typeof value.name === "string"
+    && typeof value.tint === "boolean" && (value.icon === null || typeof value.icon === "string")
+    && typeof value.installed === "boolean" && Array.isArray(value.run) && value.run.every(v => typeof v === "string");
+}
+function cachedAgents() {
+  const stored = shared(KNOWN);
+  /** @type {Record<string, KnownAgent[]>} */
+  const result = {};
+  if (isRecord(stored)) for (const [machine, value] of Object.entries(stored)) {
+    if (Array.isArray(value)) result[machine] = value.filter(isKnownAgent);
+  }
+  return result;
+}
+
 export default class NewMenu extends View {
+  /** @param {unknown} _props @param {import("gpui-kit").AsyncContext} cx */
   init(_props, cx) {
     const machine = spaces().find(s => s.active)?.machine;
     const where = machine ?? "";
-    this.agents = shared(KNOWN)?.[where] ?? [];
+    this.agents = cachedAgents()[where] ?? [];
     this.handle = cx.focus_handle();
     this.handle.focus();
     cx.spawn(async cx => {
       try {
         this.agents = await knownAgents({ on: machine });
-        setShared(KNOWN, { ...shared(KNOWN), [where]: this.agents });
+        setShared(KNOWN, { ...cachedAgents(), [where]: this.agents });
       }
       catch { this.failed = true; }
       cx.notify();
     });
   }
+  /** @param {string} id @param {import("gpui-kit").Element} icon @param {string} name
+   * @param {() => unknown} action @param {string} [hint] @param {boolean} [enabled] */
   row(id, icon, name, action, hint = "", enabled = true) {
     const t = theme();
     return h_flex().id(id).h(31).px(9).gap(10).rounded(7).items_center().flex_none()

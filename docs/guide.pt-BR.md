@@ -20,6 +20,30 @@ Precisa de um projeto novo? **⋯ › Novo espaço** cria um espaço na pasta da
 ativa; **+ › Novo espaço** cria na pasta escolhida em **Abrir em**. Os dois ficam na
 mesma máquina do espaço ativo.
 
+### Sessões do Cursor CLI
+
+Execute `agent` em um terminal do seu espaço no Herdr. O Herdboard reconhece o
+processo atual da instalação verificada do Cursor, inclusive quando o terminal
+começou como um shell. Não é necessário configurar hook, wrapper ou `programs.json`.
+As formas verificadas são `agent` e `agent --yolo`; a segunda é opcional e mantém
+o comportamento de aprovação do próprio Cursor. Outras opções, subcomandos,
+prompts iniciais e layouts de executáveis do Windows ficam fora deste contrato.
+
+Sem um status reportado utilizável, o card **Cursor CLI** aparece em
+**Status indisponível**, com cor neutra, sem tempo de status nem tarefa deduzida
+da tela. Clique no card para abrir seu terminal; passe o mouse para **Espiar**,
+**Fixar** e **Guardar**. Todos / Este espaço e abas guardadas funcionam como nos
+outros cards. A coluna adicional só aparece quando necessária; janelas estreitas
+usam o card identificado na lista existente. A contagem dos espaços inclui essas
+sessões. Os atalhos nativos de próximo/anterior agente ainda exigem status
+reportado no Herdr 0.1.14.
+
+Um agente reportado atual substitui o card de descoberta. Se o report desaparecer,
+o card volta a indicar status indisponível; encerrar ou substituir o processo do
+Cursor remove o card. A descoberta não lê transcrições nem oferece texto de
+atividade, respostas a aprovações ou identidade de conversas dentro do processo.
+Veja as [versões verificadas, testes nativos e limites](issue-29-verification.pt-BR.md).
+
 ### Responder um agente que precisa de você
 
 Quando um agente para e pergunta algo, o card dele vai para **Precisa de você** e a

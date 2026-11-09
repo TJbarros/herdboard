@@ -1,0 +1,44 @@
+{
+  "address": "t5",
+  "argv": [
+    "env",
+    "AGENT_CLI_CREDENTIAL_STORE=file",
+    "agent",
+    "--yolo"
+  ],
+  "cols": 200,
+  "created_ms": 1794239116724,
+  "cwd": "/workspace/cursor",
+  "die_with_parent": false,
+  "exit_code": null,
+  "finished_ms": null,
+  "foreground": {
+    "argv": [
+      "/home/tester/.local/bin/agent",
+      "/home/tester/.local/share/cursor-agent/versions/2026.11.05-86047df/index.js",
+      "--yolo"
+    ],
+    "cwd": "/workspace/cursor",
+    "name": "MainThread",
+    "pid": 73091
+  },
+  "identity": "ghostty",
+  "keep": false,
+  "labels": {},
+  "name": "cursor-yolo",
+  "notify": true,
+  "parent": null,
+  "pid": 73091,
+  "reason": null,
+  "reported": false,
+  "rm": false,
+  "rows": 120,
+  "screen": "exact",
+  "signal": null,
+  "state": "live",
+  "status": null,
+  "status_ms": null,
+  "template": null,
+  "title": "",
+  "turn": 0
+}

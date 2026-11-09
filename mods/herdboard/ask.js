@@ -1,11 +1,29 @@
 // What a blocked agent is asking, read from its screen. Pure: no herdr or gpui-kit imports,
 // so it runs under `node --test` too (tests/ask.test.js).
 
+/**
+ * @typedef {{ text: string, n: number, shortcut?: string, index?: never }} NumberedOption
+ * @typedef {{ text: string, index: number, n?: never, shortcut?: never }} CursorOption
+ * @typedef {NumberedOption | CursorOption} AskOption
+ * @typedef {{ text: string, question: string, id: string }} AskText
+ * @typedef {AskText & { mode: "numbered" | "unsupported", options: NumberedOption[],
+ *   dialog?: never, folder?: never, selectedIndex?: never }} NumberedAsk
+ * @typedef {AskText & { mode: "shortcut", dialog: "codex-command", options: NumberedOption[],
+ *   folder?: never, selectedIndex?: never }} ShortcutAsk
+ * @typedef {AskText & { mode: "cursor", dialog: "workspace-trust", folder: string,
+ *   selectedIndex: number, options: CursorOption[] }} CursorAsk
+ * @typedef {NumberedAsk | ShortcutAsk | CursorAsk} ParsedAsk
+ * @typedef {{ yes: AskOption, no: AskOption }} AnswerPair
+ */
+
 const FRAME = /[│┃║╭╮╰╯┌┐└┘]/g;
+/** @param {string} l */
 const clean = (l) => l.replace(FRAME, " ").replace(/\s+/g, " ").trim();
 // Horizontal glyphs only, listed one by one: a range of the Box Drawing block would also take
 // vertical glyphs and corners (╎ ┆ ├ ┼ …) that FRAME keeps.
+/** @param {string} l */
 const isRule = (l) => /^[─━┄┅┈┉╌╍═╴╶╸╺╼╾\-_▔▁\s]+$/.test(l);
+/** @param {string} l */
 const isQuestion = (l) => /\?\s*$/.test(l) || /\?\s+\(/.test(l);
 const OPTION = /^(\s*(?:[❯>]\s*)?(\d+)\.\s+)(\S.*)$/;
 
@@ -18,6 +36,7 @@ const OPTION = /^(\s*(?:[❯>]\s*)?(\d+)\.\s+)(\S.*)$/;
 //   is in doubt (see requestId).
 // A known cwd disambiguates whitespace lost at workspace-path wraps or the final path row.
 // Explicit app context selects the verified Codex format or preserves an unsupported snippet.
+/** @param {unknown} screen @param {string} [cwd] @param {string} [app] @returns {ParsedAsk} */
 export function parseAsk(screen, cwd = undefined, app = "claude-code") {
   const raw = String(screen ?? "").split(/\r?\n/);
   if (app === "codex") {
@@ -47,6 +66,7 @@ export function parseAsk(screen, cwd = undefined, app = "claude-code") {
 // Captured Codex 0.167.0 local command approval, with its complete context, three options
 // and footer. Only y (one-time approval) and esc (cancel request and interrupt turn) have
 // verified plans. The persistent prefix option stays in the guarded identity, without a plan.
+/** @param {string[]} raw @returns {ShortcutAsk | null} */
 function codexCommand(raw) {
   const heading = "  Would you like to run the following command?";
   const starts = raw.flatMap((line, i) => line === heading ? [i] : []);
@@ -82,6 +102,7 @@ function codexCommand(raw) {
 }
 
 // The row after a complete known label, even when it wraps; -1 for missing or altered text.
+/** @param {string[]} lines @param {number} start @param {string} label */
 function afterWrappedText(lines, start, label) {
   if (start < 0) return -1;
   let text = lines[start] ?? "", next = start + 1;
@@ -92,6 +113,7 @@ function afterWrappedText(lines, start, label) {
 // The captured Claude Code 2.1.319 startup dialog, not an arbitrary Yes/No menu. Require the
 // complete dialog, including its explanation and confirmation footer, below any earlier output.
 // Its raw identity keeps the cursor: unlike a digit shortcut, movement changes what Enter confirms.
+/** @param {string[]} raw @param {string} cwd @returns {CursorAsk | null} */
 function workspaceTrust(raw, cwd) {
   const start = raw.findLastIndex(l => /^─{3,}\s*$/.test(l));
   const end = raw.findLastIndex(l => l.trim());
@@ -113,7 +135,9 @@ function workspaceTrust(raw, cwd) {
   if (proseEnd < questionStart + 2 || guideEnd < 0) return null;
   // Options can occupy more than two physical rows. Consume each complete known label before
   // reading the footer; normalise recognition only, preserving the cursor and raw id below.
-  const labels = ["No, exit", "Yes, I trust this folder"], options = [];
+  const labels = ["No, exit", "Yes, I trust this folder"];
+  /** @type {CursorOption[]} */
+  const options = [];
   let next = guideEnd, selectedIndex = -1;
   for (let index = 0; index < 2; index++) {
     let text = lines[next++] ?? "";
@@ -137,6 +161,7 @@ function workspaceTrust(raw, cwd) {
 // in order against the known cwd, permitting missing spaces only at wraps, never inside a line.
 // The final row can also lose trailing whitespace; recover it from the known cwd only.
 // Without a cwd, retain the historical concatenation for callers that only inspect the screen.
+/** @param {string[]} chunks @param {string} cwd */
 function workspaceFolder(chunks, cwd) {
   if (cwd === undefined) return chunks.join("");
   let offset = 0;
@@ -151,7 +176,9 @@ function workspaceFolder(chunks, cwd) {
 // The numbered options after the question ("❯ 1. Yes", "4. No"), in order 1, 2, 3…, and the
 // last line they occupy. An immediately following line at the option's text column continues
 // its text. Keep the columns until then: clean() would lose the indentation.
+/** @param {string[]} lines @param {number} q */
 function optionsAfter(lines, q) {
+  /** @type {NumberedOption[]} */
   const options = [];
   const optionLines = new Set();
   let end = q;
@@ -188,7 +215,10 @@ function optionsAfter(lines, q) {
 // Claude Code frames the command between two dashed lines ("╌"), so a forged rule inside the
 // command would have a dashed line above it. Any doubt (no rule, a dashed line above the rule,
 // other than 0 or 2 dashed lines below it): no id, and the card offers no Yes / No.
+/** @param {string[]} raw @param {string[]} all @param {number} q @param {number} end
+ * @param {Set<number>} optionLines */
 function requestId(raw, all, q, end, optionLines) {
+  /** @param {string} l */
   const dashed = (l) => /^╌{3,}$/.test(l);
   const rule = raw.findLastIndex((l, i) => i < q && /^(?:[─━═]{3,}|╭─+╮)\s*$/.test(l));
   if (rule < 0 || all.slice(0, rule).some(dashed)) return "";
@@ -201,21 +231,24 @@ function requestId(raw, all, q, end, optionLines) {
 
 // The semantic Yes / No pair of each recognised format. Legacy option arrays require exact
 // Yes/No labels and one-key digits. A recognised shortcut dialog exposes only verified plans.
+/** @param {ParsedAsk | NumberedOption[]} ask @returns {AnswerPair | null} */
 export function pickAnswers(ask) {
+  const parsed = Array.isArray(ask) ? null : ask;
   const options = Array.isArray(ask) ? ask : ask?.options;
-  if (ask?.mode === "unsupported") return null;
-  if (ask?.mode === "shortcut") {
-    if (ask.dialog !== "codex-command" || !ask.id) return null;
+  if (parsed?.mode === "unsupported") return null;
+  if (parsed?.mode === "shortcut") {
+    if (parsed.dialog !== "codex-command" || !parsed.id) return null;
     const yes = options?.find(o => o.n === 1 && o.shortcut === "y");
     const no = options?.find(o => o.n === 3 && o.shortcut === "esc");
     return yes && no ? { yes, no } : null;
   }
-  if (ask?.mode === "cursor") {
-    if (ask.dialog !== "workspace-trust" || !ask.id || ![0, 1].includes(ask.selectedIndex) || options?.length !== 2) return null;
+  if (parsed?.mode === "cursor") {
+    if (parsed.dialog !== "workspace-trust" || !parsed.id || ![0, 1].includes(parsed.selectedIndex) || options?.length !== 2) return null;
     const yes = options.find(o => o.text === "Yes, I trust this folder");
     const no = options.find(o => o.text === "No, exit");
     return yes && no ? { yes, no } : null;
   }
+  /** @param {string} label */
   const only = (label) => {
     const found = (options ?? []).filter(o => o.text === label);
     return found.length === 1 && found[0].n >= 1 && found[0].n <= 9 ? found[0] : null;

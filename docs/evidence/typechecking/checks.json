@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-09",
+  "typescript": "5.9.3",
+  "typecheckedMods": [
+    "herdboard",
+    "herdboard-new-menu",
+    "herdboard-picker"
+  ],
+  "nativeModErrors": [],
+  "nodeTests": {
+    "passed": 509,
+    "failed": 0
+  },
+  "realCompilerNegativeCase": {
+    "call": "div().text_color(\"red\")",
+    "requiredDiagnostic": "TS2345",
+    "result": "failed as expected"
+  },
+  "isolatedNativeNavigation": "native-navigation.json",
+  "cleanCheckout": {
+    "tree": "cb8b94bf70a265ffd911c1f53041cb24e6568671",
+    "initialGeneratedDeclarations": 0,
+    "localJsconfigs": 0,
+    "nativeDeclarationsGenerated": 3,
+    "completeGateExit": 0,
+    "nodeTestsPassed": 509
+  }
+}

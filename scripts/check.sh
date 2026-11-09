@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # Runs every local check before a commit: `herdr-app check` on each mod in the
-# repository (every mods/*/ with a mod.json), then `node --test` from the repo root.
+# repository (every mods/*/ with a mod.json), strict typechecking, then `node --test`.
 #
 #   scripts/check.sh                   # from any directory
 #
@@ -43,6 +43,8 @@ for mod in "$ROOT"/mods/*/; do
   mod=${mod%/}
   step "herdr-app check mods/${mod##*/}" herdr-app check "$mod"
 done
+
+step "TypeScript" sh "$ROOT/scripts/typecheck.sh"
 
 step "node --test" run_tests
 

@@ -1,0 +1,63 @@
+{
+  "recordedAt": "2026-11-09T17:04:49.160446+00:00",
+  "runtimeCommit": "6be0d5cbbf509e965831ba601b9cc7aacab16b82",
+  "mainGitBlob": "ef158dbcff2a76d5c6864c567cec0a0bb8551302",
+  "completeGate": {
+    "command": "sh scripts/check.sh",
+    "nativeModsPassed": 3,
+    "typecheckedModsPassed": 3,
+    "nodeTestsPassed": 512,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "cleanArchive": {
+    "commit": "6be0d5cbbf509e965831ba601b9cc7aacab16b82",
+    "initialGeneratedDeclarations": 0,
+    "initialLocalJsconfigs": 0,
+    "generatedDeclarations": 3,
+    "localJsconfigs": 0,
+    "developmentCompiler": "same pinned node_modules as the working checkout",
+    "completeGateExit": 0,
+    "nodeTestsPassed": 512
+  },
+  "missingCardRegression": {
+    "baseline": "5310991aa91db6f5d979ce4ef4a30f4abfdeecd6",
+    "command": "node --test --test-name-pattern='the captured interactive agent session has one identifiable card without a status report' tests/cursor-runtime.test.js",
+    "baselineExit": 1,
+    "symptom": "the running Cursor session must reach the board",
+    "currentFocusedSuitePassed": 35
+  },
+  "titleSnapshotRegression": {
+    "baseline": "37c1129debbedb6c5ce246eb2b60d13c308b01f0",
+    "command": "node --test --test-name-pattern='reported and retained titles add bounded' tests/cursor-runtime.test.js",
+    "baselineExit": 1,
+    "displayedCards": 12,
+    "cases": [
+      "neutral",
+      "current title",
+      "retained title"
+    ],
+    "beforeNativeReads": [
+      15,
+      27,
+      39
+    ],
+    "afterNativeReads": [
+      16,
+      16,
+      16
+    ],
+    "measurement": "native adapter calls through the actual board; includes unchanged per-card worktree label reads, does not measure native UI latency",
+    "replacementTests": [
+      "foreground PID",
+      "terminal PID",
+      "terminal creation time"
+    ]
+  },
+  "nativeEvidence": "native-results.json",
+  "nativeLimits": [
+    "Qualified transport used hc --via to a genuinely separate owned local core; no distinct network host was tested.",
+    "Installed Cursor emitted no usable OSC status; real Cursor report handoff was not exercised.",
+    "Only Linux and the recorded installed versions were tested."
+  ]
+}

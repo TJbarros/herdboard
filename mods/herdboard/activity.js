@@ -1,5 +1,6 @@
 // Captured live progress formats only; transcript messages and tool output are not activity.
 // Evidence and configuration: docs/issue-25-verification.md.
+/** @param {unknown} screen @param {string} app */
 export function extractActivity(screen, app) {
   if (typeof screen !== "string") return null;
   const lines = screen.replace(/\r/g, "").split("\n").map(s => s.trim());

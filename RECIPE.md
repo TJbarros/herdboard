@@ -3,7 +3,9 @@
 A kanban board for your coding agents in Herdr. See which one needs you, and what it
 is asking, at a glance: every agent of every space in four columns (Needs you,
 Working, Done, Idle), above the live terminals of the active tab. Follows your Herdr
-theme; English and Portuguese.
+theme; English and Portuguese. Verified interactive Cursor CLI processes without
+a status report have a neutral Status unavailable column when needed (a labeled
+card in the narrow list); their state and task are never inferred from the screen.
 
 ![Herdboard](preview.png)
 
@@ -48,13 +50,30 @@ column, top to bottom:
 | working | Working ("stuck?" chip past 30 min) | theme `working` |
 | done | Done | theme `done` |
 | idle | Idle (compact rows, foldable) | theme `idle` |
+| unknown | Status unavailable (only while discovered Cursor sessions need it) | theme `muted` |
 
 - Cards: click focuses the agent (`agent.focus`); hover shows Peek
   (`terminal.peek`), Pin / Unpin (`terminal.pin`, pinned first in the column) and
   Put away (`tab.settle`; settled tabs leave the board).
+- Cursor discovery: `cursor.js` joins live foreground terminal facts to exactly
+  one current pane/tab/space. The captured Unix installer layout uses an `agent`
+  or `cursor-agent` launcher, optional `--use-system-ca`, and an absolute
+  `cursor-agent/versions/<version>/index.js` entry point, with no CLI arguments
+  except optional `--yolo`. Require live/exact terminal state and positive
+  terminal creation/PIDs. Generic program names, titles and `reported` alone
+  are insufficient. Resolve this synchronously on every reactive render and for
+  worktree consumers: no cache, screen polling, extra timer or synthetic report.
+  Reported agents take precedence by full address. Fallback cards always say
+  Cursor CLI and have no status clock, urgency, activity or answer controls.
+  Pin state uses the native `herdr.pinned` label. Header copies discover the same
+  set independently; only workspace-trust sources can force a blocked space.
+  See [issue #29 evidence](docs/issue-29-verification.md) for supported forms and limits.
 - Task title: the terminal title without spinner glyphs (program names and bare
   addresses like `t2` don't count); the last one seen is kept in shared
   `herdboard.titles` and shown as "Last: …" when the agent has none.
+  Where terminal identity is available, creation time and terminal/foreground
+  PIDs bind that title to its process. A replacement cannot inherit an old task.
+  Cursor fallback cards neither read nor store a task title.
 - Machine: join the full `AgentInfo.space` to `SpaceInfo.id`; only an existing
   space with `machine === null` establishes local ownership. Detect remote presence
   from all live spaces before applying All / This space. Missing, invalid or

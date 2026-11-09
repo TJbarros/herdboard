@@ -1,8 +1,17 @@
 // Explicit flags override user settings that hide untracked files or disable renames.
+/**
+ * @typedef {import("herdr").ExecResult} ExecResult
+ * @typedef {{ address: string, cwd: string, on: string | null, directory: string, key: string }} WorktreeContext
+ * @typedef {WorktreeContext & { revision: number }} Consumer
+ * @typedef {{ cwd: string, on: string | null, last: number, root: string | null }} Directory
+ * @typedef {{ cwd: string, on: string | null, last: number, count: number | null, revision: number }} Worktree
+ * @typedef {{ key: string, entry: Directory, kind: "discover" } | { key: string, entry: Worktree, kind: "status" }} Query
+ */
 export const GIT_STATUS_ARGS = ["--no-optional-locks", "status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignored=no", "--renames"];
 
 // Native exec silently caps output at 8 MiB. Check bytes, including stderr, even if the
 // truncated prefix happens to end at a valid record boundary. No TextEncoder is needed.
+/** @param {string} text */
 function outputBytes(text) {
   let bytes = 0;
   for (const char of text) {
@@ -11,6 +20,7 @@ function outputBytes(text) {
   }
   return bytes;
 }
+/** @param {ExecResult | null} result @returns {result is ExecResult} */
 function completeOutput(result) {
   return result?.code === 0 && typeof result.stdout === "string"
     && outputBytes(result.stdout) + outputBytes(result.stderr ?? "") < 8 * 1024 * 1024;
@@ -18,6 +28,7 @@ function completeOutput(result) {
 
 // A porcelain record is one pending file, including a file changed in both index and worktree.
 // NUL separators preserve tabs/newlines in filenames; rename/copy records have a second path.
+/** @param {ExecResult | null} result */
 export function countGitChanges(result) {
   if (!completeOutput(result)) return null;
   if (!result.stdout) return 0;
@@ -42,19 +53,28 @@ const RECENT_LIMIT = 128;
 // settlement, so hiding/re-showing a card never releases capacity or duplicates that work.
 // There is no retry queue: each sync chooses the oldest eligible command from current demand.
 export class WorktreeChanges {
+  /** @param {typeof import("herdr").exec} execute */
   constructor(execute) {
     this.execute = execute;
+    /** @type {Map<string, Directory>} */
     this.directories = new Map();
+    /** @type {Map<string, Worktree>} */
     this.worktrees = new Map();
+    /** @type {Map<string, Consumer>} */
     this.consumers = new Map();
+    /** @type {Set<string>} */
     this.pending = new Set();
     this.revision = 0;
+    /** @type {Map<string, number>} */
     this.recent = new Map(); // bounded cooldowns survive temporary hiding, for at most one interval
   }
 
+  /** @param {WorktreeContext[]} contexts @param {(task: () => Promise<void>) => unknown} [launch]
+   * @param {() => void} [notify] */
   sync(contexts, launch, notify = () => {}) {
     const now = Date.now();
     for (const [key, at] of this.recent) if (now - at >= GIT_POLL_MS) this.recent.delete(key);
+    /** @type {Map<string, Consumer>} */
     const next = new Map();
     for (const context of contexts) {
       const old = this.consumers.get(context.address);
@@ -74,6 +94,7 @@ export class WorktreeChanges {
     }
     if (!launch) return; // A dispatch-time demand refresh must not reserve more work.
 
+    /** @type {Query[]} */
     const due = [];
     for (const [key, root] of this.worktrees) {
       if (now - root.last >= GIT_POLL_MS && !this.pending.has(`status:${key}`)) due.push({ key, entry: root, kind: "status" });
@@ -101,6 +122,7 @@ export class WorktreeChanges {
         }
         entry.last = Date.now();
         this.recent.set(pendingKey, entry.last);
+        /** @type {ExecResult | null} */
         let result = null;
         try {
           result = await this.execute("git", kind === "status" ? GIT_STATUS_ARGS : ["rev-parse", "--absolute-git-dir"], { cwd: entry.cwd, on: entry.on });
@@ -121,6 +143,7 @@ export class WorktreeChanges {
     }
   }
 
+  /** @param {WorktreeContext | null} context */
   value(context) {
     if (!context) return null;
     const consumer = this.consumers.get(context.address);

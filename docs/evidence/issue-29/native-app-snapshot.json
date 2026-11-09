@@ -1,0 +1,332 @@
+{
+  "agents": [],
+  "terminals": [
+    {
+      "address": "t1",
+      "argv": [
+        "agent"
+      ],
+      "cols": 200,
+      "created_ms": 1794238058341,
+      "cwd": "/workspace/cursor",
+      "die_with_parent": false,
+      "exit_code": null,
+      "finished_ms": null,
+      "foreground": {
+        "argv": [
+          "/home/tester/.local/bin/agent",
+          "--use-system-ca",
+          "/home/tester/.local/share/cursor-agent/versions/2026.11.05-86047df/index.js"
+        ],
+        "cwd": "/workspace/cursor",
+        "name": "MainThread",
+        "pid": 42530
+      },
+      "identity": "ghostty",
+      "keep": false,
+      "labels": {},
+      "name": "cursor-plain",
+      "notify": true,
+      "parent": null,
+      "pid": 42530,
+      "reason": null,
+      "reported": false,
+      "rm": false,
+      "rows": 120,
+      "screen": "exact",
+      "signal": null,
+      "state": "live",
+      "turn": 0,
+      "status_ms": null,
+      "template": null,
+      "title": "",
+      "status": null,
+      "program": {
+        "key": "agent",
+        "name": "Agent",
+        "icon": "icons/agent.svg",
+        "tint": true,
+        "tile": "#1c1d21",
+        "color": "#d6d8db",
+        "shell": false,
+        "agent": false
+      },
+      "report": null
+    },
+    {
+      "address": "t3",
+      "argv": [
+        "/bin/bash"
+      ],
+      "cols": 148,
+      "created_ms": 1794238466390,
+      "cwd": "/workspace/cursor",
+      "die_with_parent": false,
+      "exit_code": null,
+      "finished_ms": null,
+      "identity": "ghostty",
+      "keep": true,
+      "labels": {
+        "herdr.seen": "0",
+        "herdr.space": "sp7345b70bdd3bcd32b35bb74e08abecc5",
+        "herdr.tab": "tb3ffac28817d3191b2315ed574eadad5e",
+        "where": "Cursor check / Other terminal"
+      },
+      "name": null,
+      "notify": true,
+      "parent": null,
+      "pid": 54199,
+      "reason": null,
+      "reported": false,
+      "rm": false,
+      "rows": 35,
+      "screen": "exact",
+      "signal": null,
+      "state": "live",
+      "foreground": {
+        "argv": [
+          "/bin/bash"
+        ],
+        "cwd": "/workspace/cursor",
+        "name": "bash",
+        "pid": 54199
+      },
+      "status_ms": null,
+      "template": null,
+      "title": "tester@host: /workspace/cursor",
+      "turn": 0,
+      "status": null,
+      "program": {
+        "key": "shell",
+        "name": "bash",
+        "icon": "icons/shell.svg",
+        "tint": true,
+        "tile": "#16241a",
+        "color": "#4ec95f",
+        "shell": true,
+        "agent": false
+      },
+      "report": null
+    },
+    {
+      "address": "t4",
+      "argv": [
+        "/bin/bash",
+        "-ic",
+        "\"$@\"; exec \"$0\" -i",
+        "/bin/bash",
+        "env",
+        "XDG_CONFIG_HOME=/home/tester/.config",
+        "agent"
+      ],
+      "cols": 148,
+      "created_ms": 1794239001331,
+      "cwd": "/workspace/cursor",
+      "die_with_parent": false,
+      "exit_code": null,
+      "finished_ms": null,
+      "identity": "ghostty",
+      "keep": true,
+      "labels": {
+        "herdr.seen": "0",
+        "herdr.space": "sp7345b70bdd3bcd32b35bb74e08abecc5",
+        "herdr.tab": "tb055f258dc76973e08a7aba9db05b7c4f",
+        "where": "Cursor check / Cursor CLI"
+      },
+      "name": null,
+      "notify": true,
+      "parent": null,
+      "pid": 68291,
+      "reason": null,
+      "reported": false,
+      "rm": false,
+      "rows": 35,
+      "screen": "exact",
+      "signal": null,
+      "state": "live",
+      "foreground": {
+        "argv": [
+          "/home/tester/.local/bin/agent",
+          "--use-system-ca",
+          "/home/tester/.local/share/cursor-agent/versions/2026.11.05-86047df/index.js"
+        ],
+        "cwd": "/workspace/cursor",
+        "name": "MainThread",
+        "pid": 69744
+      },
+      "status_ms": null,
+      "template": null,
+      "title": "Cursor Agent",
+      "turn": 0,
+      "status": null,
+      "program": {
+        "key": "agent",
+        "name": "Agent",
+        "icon": "icons/agent.svg",
+        "tint": true,
+        "tile": "#1c1d21",
+        "color": "#d6d8db",
+        "shell": false,
+        "agent": false
+      },
+      "report": null
+    },
+    {
+      "address": "t5",
+      "argv": [
+        "env",
+        "AGENT_CLI_CREDENTIAL_STORE=file",
+        "agent",
+        "--yolo"
+      ],
+      "cols": 200,
+      "created_ms": 1794239116724,
+      "cwd": "/workspace/cursor",
+      "die_with_parent": false,
+      "exit_code": null,
+      "finished_ms": null,
+      "identity": "ghostty",
+      "keep": false,
+      "labels": {},
+      "name": "cursor-yolo",
+      "notify": true,
+      "parent": null,
+      "pid": 73091,
+      "reason": null,
+      "reported": false,
+      "rm": false,
+      "rows": 120,
+      "screen": "exact",
+      "signal": null,
+      "state": "live",
+      "foreground": {
+        "argv": [
+          "/home/tester/.local/bin/agent",
+          "/home/tester/.local/share/cursor-agent/versions/2026.11.05-86047df/index.js",
+          "--yolo"
+        ],
+        "cwd": "/workspace/cursor",
+        "name": "MainThread",
+        "pid": 73091
+      },
+      "status_ms": null,
+      "template": null,
+      "title": "",
+      "turn": 0,
+      "status": null,
+      "program": {
+        "key": "agent",
+        "name": "Agent",
+        "icon": "icons/agent.svg",
+        "tint": true,
+        "tile": "#1c1d21",
+        "color": "#d6d8db",
+        "shell": false,
+        "agent": false
+      },
+      "report": null
+    }
+  ],
+  "spaces": [
+    {
+      "id": "sp7345b70bdd3bcd32b35bb74e08abecc5",
+      "index": 1,
+      "name": "Cursor check",
+      "named": true,
+      "folder": "/workspace/cursor",
+      "machine": null,
+      "branch": null,
+      "active": true,
+      "status": null,
+      "tabs": [
+        {
+          "id": "tb3ffac28817d3191b2315ed574eadad5e",
+          "index": 1,
+          "name": "Other terminal",
+          "named": true,
+          "active": false,
+          "status": null,
+          "panes": 1,
+          "zoomed": false,
+          "settled": false,
+          "settled_at": null,
+          "changed_at": null,
+          "working_since": null
+        },
+        {
+          "id": "tb055f258dc76973e08a7aba9db05b7c4f",
+          "index": 2,
+          "name": "Cursor CLI",
+          "named": true,
+          "active": true,
+          "status": null,
+          "panes": 1,
+          "zoomed": false,
+          "settled": false,
+          "settled_at": null,
+          "changed_at": null,
+          "working_since": null
+        }
+      ]
+    }
+  ],
+  "panes": [
+    {
+      "pane": "pef73adff50b314637db885486df6b169",
+      "terminal": "t3",
+      "tab": "tb3ffac28817d3191b2315ed574eadad5e",
+      "title": "tester@host: /workspace/cursor",
+      "cwd": "/workspace/cursor",
+      "branch": null,
+      "status": null,
+      "app": null,
+      "program": {
+        "key": "shell",
+        "name": "bash",
+        "icon": "icons/shell.svg",
+        "tint": true,
+        "tile": "#16241a",
+        "color": "#4ec95f",
+        "shell": true,
+        "agent": false
+      },
+      "focused": false,
+      "zoomed": false,
+      "movable": false
+    },
+    {
+      "pane": "pd423a635ea82f4859eaf00dda2fa2c4c",
+      "terminal": "t4",
+      "tab": "tb055f258dc76973e08a7aba9db05b7c4f",
+      "title": "Cursor Agent",
+      "cwd": "/workspace/cursor",
+      "branch": null,
+      "status": null,
+      "app": null,
+      "program": {
+        "key": "agent",
+        "name": "Agent",
+        "icon": "icons/agent.svg",
+        "tint": true,
+        "tile": "#1c1d21",
+        "color": "#d6d8db",
+        "shell": false,
+        "agent": false
+      },
+      "focused": true,
+      "zoomed": false,
+      "movable": false
+    }
+  ],
+  "focused": {
+    "space": "sp7345b70bdd3bcd32b35bb74e08abecc5",
+    "tab": "tb055f258dc76973e08a7aba9db05b7c4f",
+    "terminal": "t4",
+    "shown": null,
+    "pane": "pd423a635ea82f4859eaf00dda2fa2c4c",
+    "agent": null,
+    "cwd": "/workspace/cursor"
+  },
+  "language": "en",
+  "filter": null
+}
