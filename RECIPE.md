@@ -72,10 +72,10 @@ column, top to bottom:
   Unsupported/ambiguous screens, including the tested unreported pi, use the
   translated unavailable state. Original activity is transient, never stored in
   `herdboard.titles`. See `docs/issue-25-verification.md` for native evidence.
-  Only the cards instance polls eligible Working consumers: visible layout and
-  ancestors, active filter, tabs not put away. One-second timer checks enforce a
-  minimum 5000ms cooldown after completion, two physical reads globally and one
-  per address, even after replacement. There is no saved queue; dispatch and
+  Only the cards instance polls eligible Working consumers: positive native height,
+  visible layout and ancestors, active filter, tabs not put away. One-second timer
+  checks enforce a minimum 5000ms cooldown after completion, two physical reads
+  globally and one per address, even after replacement. There is no saved queue; dispatch and
   completion revalidate current consumers. Late results from an old terminal,
   foreground, turn, report sequence or association are dropped. `seq` is a
   conservative invalidation signal, separate from core `turn`. Cached text expires

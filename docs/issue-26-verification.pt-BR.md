@@ -79,6 +79,49 @@ incluindo descoberta. Não são garantias de latência para qualquer repositóri
 máquina remota. Consultas mantêm a vaga até terminar fisicamente; timeout lógico
 não cria duplicação.
 
+## Carga do quadro nativo com agentes reais
+
+Um segundo app/core isolado mediu o commit `1586738` pelo quadro real de `main.js`,
+com quatro processos locais reais de Codex CLI 0.167.0 por cenário. Os reports
+nativos estavam idle; o Herdr os apresentou como Concluído. Nenhum prompt de tarefa
+foi submetido e nenhum agente, estado ou report foi fabricado. As demais versões
+correspondem ao registro integrado: herdr-app 0.1.14, hc 0.1.19, Node 24.22.1,
+Git 2.43.0.
+
+Cada janela começou depois de os quatro agentes estarem reportados e associados às
+fixtures. Recarregar a cópia instrumentada reiniciou os caches e incluiu a descoberta.
+Somente `exec` recebeu um wrapper para contar cada tentativa e conclusão física;
+snapshots no temporizador existente de um segundo registraram consumidores reais
+e rótulos renderizados. O observador acrescenta notificações/renders e custo de
+medição; não muda o agendador nem o intervalo. [Tempos brutos, reports e hashes](evidence/issue-26/native-board-load.json)
+e o [diff representativo da instrumentação](evidence/issue-26/native-board-load-instrumentation.diff)
+estão sanitizados. Identificadores completos dos terminais e configuração local
+permanecem privados.
+
+| Carga nativa real | Duração | Comandos (descoberta + status) | Taxa | Latência mín. / mediana / máx. | Pico exec | Menor intervalo de status |
+| --- | --- | --- | --- | --- | --- | --- |
+| 4 agentes, um worktree de 20 arquivos | 24,254 s | 4 (1 + 3) | 0,1649/s | 61 / 66 / 94 ms | 1 | 10017 ms |
+| 4 agentes, quatro worktrees de 20 arquivos | 24,182 s | 16 (4 + 12) | 0,6616/s | 50 / 64,5 / 78 ms | 2 | 10049 ms |
+| 4 agentes, um worktree de 10.000 arquivos | 24,244 s | 4 (1 + 3) | 0,1650/s | 60 / 83,5 / 92 ms | 1 | 10016 ms |
+
+O quadro mediu **1233 × 358 px** em janela de 1280 px, com Todos selecionado e
+Ocioso aberto. Cada worktree tinha exatamente um arquivo rastreado modificado;
+os quatro rótulos de cards de cada cenário renderizaram esse total esperado.
+O recálculo independente de todas as tentativas confirmou taxas, intervalos e
+picos físicos. Essas amostras pelo quadro completo sustentam o intervalo de dez
+segundos e o teto de dois comandos, junto das amostras maiores com consumidores
+sintéticos acima. Medem quatro processos locais idle, separadamente da carga
+de atividade em Trabalhando e do transporte remoto nativo.
+
+Depois da medição, os módulos exatos de produção foram restaurados com hashes
+iguais, o check do mod passou e o app nativo informou zero erros. A configuração
+principal do Codex não mudou. Essa rodada não repete a matriz anterior de layout
+nativo PT/EN nem fundamenta desempenho remoto. A captura privada final continha o
+modal de boas-vindas do app; o estado dos overlays não foi registrado em cada janela
+de medição. Os snapshots de runtime fundamentam o comportamento das consultas e os
+valores dos rótulos renderizados, sem comprovar inspeção visual desobstruída de
+todos os cards nessa rodada de carga.
+
 ## Limite da validação visual nativa
 
 A [verificação integrada final](agent-card-context-verification.pt-BR.md) registra

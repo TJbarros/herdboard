@@ -85,8 +85,8 @@ os três pontos, com testes falhando antes das mudanças no runtime. Os novos ca
 incluem despacho sem render intermediário, consumidores removidos ou alterados,
 reservas canceladas, vagas físicas e intervalo contado do despacho efetivo.
 
-`scripts/check.sh` passou nos três mods e em **471 testes**, sem falhas, skips ou
-cancelamentos. O conteúdo de runtime/testes da integração final é idêntico ao dessa
+Em `63b729d`, `scripts/check.sh` passou nos três mods e em **471 testes**, sem falhas, skips ou
+cancelamentos. O conteúdo de runtime/testes daquela integração é idêntico ao dessa
 verificação completa. Os 78 testes focados de atividade/Git/máquina e o check do mod
 passaram novamente após o merge. As duas reproduções independentes de visibilidade
 agora tentam zero comandos Git, contra um na implementação revisada.
@@ -96,3 +96,42 @@ correspondem à integração, o total esperado do worktree descartável continuo
 visível e o app não informou erros de mod. A alteração final não inclui mídia nova
 nem identificadores da conexão real. A evidência nativa acima permanece distinta
 dos testes de runtime controlado.
+
+## Refinamento da PR #28
+
+Uma nova revisão de spec reproduziu uma leitura de atividade antes de o quadro
+receber altura nativa positiva: a reprodução original tentou uma leitura com
+altura zero, enquanto o Git corretamente não tentou nenhuma. O commit `1586738`
+exige altura positiva ao selecionar consumidores de atividade, inclusive antes
+do despacho adiado e após a conclusão.
+
+A regressão primeiro falhou com uma leitura indevida. Agora passa com zero,
+usando o callback real `on_size_change`. Os casos adicionais cobrem perda de
+altura, respostas tardias, despacho sem outro render, intervalo e retomada.
+A nova revisão independente passou nos **81** testes focados de atividade/Git/máquina;
+`scripts/check.sh` passou nos três mods e em **474 testes**, sem falhas, skips ou
+cancelamentos. As revisões de padrões e de spec do runtime não encontraram outros
+problemas acionáveis em `1586738`.
+
+A matriz nativa anterior registra o renderizador antes dessa correção de
+elegibilidade; a correção não altera o layout dos cards. Medições nativas adicionais
+pelo quadro real corrigido são registradas separadamente abaixo.
+
+### Medições nativas adicionais do Git
+
+A nova revisão também exigiu medições pelo quadro nativo completo, além das
+amostras anteriores do agendador com consumidores sintéticos. Quatro processos
+locais reais de Codex foram medidos por `main.js` em três janelas de 24 segundos:
+um worktree compartilhado, quatro worktrees separados e um de 10.000 arquivos.
+Os quatro consumidores receberam o total esperado de um arquivo em cada cenário.
+Os picos físicos foram 1 / 2 / 1; os menores intervalos entre status foram
+10017 / 10049 / 10016 ms.
+
+[O registro de Git](issue-26-verification.pt-BR.md#carga-do-quadro-nativo-com-agentes-reais)
+contém taxas, latências, dimensões, carga, hashes, tentativas brutas e detalhes do
+observador. Os módulos de produção foram restaurados sem instrumentação,
+passaram no check do mod e não apresentaram erros nativos. A captura privada
+final continha o modal de boas-vindas; essa rodada de carga fundamenta a execução
+das consultas e os rótulos observados no runtime, enquanto a matriz nativa
+anterior fundamenta o layout PT/EN desobstruído. App/core/display do teste foram
+encerrados e a configuração do usuário foi preservada.

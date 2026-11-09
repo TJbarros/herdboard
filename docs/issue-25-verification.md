@@ -61,9 +61,10 @@ Full native observer snapshots are private and are not versioned.
 
 ## Polling and lifecycle
 
-Only the cards instance polls shown Working consumers, respecting filters, Put away,
-hidden board ancestors and expanded/different layouts. Activity reads use the full
-terminal address, including a remote qualifier. Missing terminal metadata and
+Only the cards instance polls shown Working consumers, requiring positive native
+board height and respecting filters, Put away, hidden board ancestors and
+expanded/different layouts. Activity reads use the full terminal address, including
+a remote qualifier. Missing terminal metadata and
 unsupported launches do not originate reads. Header, menu, pane and rail originate
 none. Existing startup and blocked-question reads retain their separate budgets.
 

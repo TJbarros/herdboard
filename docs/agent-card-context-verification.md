@@ -81,8 +81,8 @@ before the runtime changes. New cases include dispatch without an intermediate
 render, removed/changed consumers, canceled reservations, physical slots and the
 cooldown measured from actual dispatch.
 
-`scripts/check.sh` passed all three mods and **471 tests**, with zero failures,
-skips or cancellations. The final integration has identical runtime/test content to
+At `63b729d`, `scripts/check.sh` passed all three mods and **471 tests**, with zero failures,
+skips or cancellations. That integration has identical runtime/test content to
 that full check. The 78 focused activity/Git/machine tests and the mod check passed
 again after the merge. Both independent visibility reproductions now attempt zero
 Git commands, where the reviewed implementation attempted one.
@@ -92,3 +92,40 @@ Their hashes match the integration, the expected disposable count remained visib
 and the app reported no mod errors. No new media or real connection identifiers
 were included in the final change. Native evidence above remains distinct from the
 controlled runtime tests.
+
+## PR #28 refinement
+
+A fresh Spec review reproduced an activity read before the board received positive
+native height: the original reproduction attempted one read at height zero, while
+Git correctly attempted none. Commit `1586738` requires positive height when selecting
+activity consumers, including before deferred dispatch and after completion.
+
+The regression first failed with one unexpected read. It now passes with zero,
+using the real `on_size_change` callback. Additional cases cover loss of height,
+late results, deferred dispatch without another render, cooldown and recovery.
+The independent rereview passed all **81** focused activity/Git/machine tests;
+`scripts/check.sh` passed all three mods and **474 tests**, without failures,
+skips or cancellations. Standards and runtime Spec reviews found no remaining
+actionable issues in `1586738`.
+
+The earlier native matrix records the renderer before this eligibility correction;
+the correction does not change the card layout. Supplemental native measurements
+through the corrected real board are recorded separately below.
+
+### Supplemental native Git measurements
+
+The rereview also required full-board native measurements beyond the earlier
+synthetic-consumer scheduler samples. Four genuine local Codex processes were
+measured through `main.js` in three 24-second windows: one shared worktree,
+four separate worktrees and a 10,000-file worktree. All four consumers received
+the expected one-file total in each scenario. Physical peaks were 1 / 2 / 1;
+minimum repeated status intervals were 10017 / 10049 / 10016 ms.
+
+[The Git record](issue-26-verification.md#native-board-load-with-genuine-agents)
+contains rates, latencies, dimensions, workload, source hashes, raw attempted
+commands and observer details. Production modules were restored without
+instrumentation, passed the mod check and reported no native errors. The final
+private frame contained the onboarding overlay; this load run establishes query
+execution and runtime-observed labels, while the earlier native matrix establishes
+unobstructed PT/EN layout. The test app/core/display were closed and the user's
+configuration was preserved.

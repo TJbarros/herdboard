@@ -63,9 +63,10 @@ estão versionados.
 
 ## Consultas e ciclo de vida
 
-Somente a instância dos cards consulta consumidores Trabalhando visíveis, respeitando
-filtros, Guardar, ancestrais ocultos e layouts expandidos/diferentes. As leituras usam
-o endereço completo do terminal, incluindo qualificador remoto. Metadados ausentes e
+Somente a instância dos cards consulta consumidores Trabalhando visíveis, exigindo
+altura nativa positiva do quadro e respeitando filtros, Guardar, ancestrais ocultos
+e layouts expandidos/diferentes. As leituras usam o endereço completo do terminal,
+incluindo qualificador remoto. Metadados ausentes e
 lançamentos incompatíveis não originam leituras. Cabeçalho, menu, pane e rail não
 originam nenhuma. As leituras existentes de inicialização e perguntas bloqueadas
 conservam seus limites separados.

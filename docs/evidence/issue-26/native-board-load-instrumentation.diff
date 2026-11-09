@@ -1,0 +1,80 @@
+--- production-main.js
++++ observed-main.js
+@@ -304,7 +304,28 @@
+     this.hovered = null; // address of the card under the pointer (shows its actions)
+     this.w = 0;          // this copy's size, from on_size_change; 0 until the first layout (treated as wide)
+     this.h = 0;
+-    this.gitChanges = new WorktreeChanges(exec);
++    this.nativeLoad = { epoch: Date.now(), attempts: [], active: 0, peak: 0 };
++    this.nativeNames = new Map();
++    this.nativeLabels = new Map();
++    this.gitChanges = new WorktreeChanges(async (command, args, options) => {
++      const data = this.nativeLoad;
++      const attempt = { kind: args[0] === "rev-parse" ? "discovery" : "status",
++        cwd: options.cwd.split("/").at(-1), local: options.on === null,
++        startMs: Date.now() - data.epoch };
++      data.attempts.push(attempt);
++      data.active++;
++      data.peak = Math.max(data.peak, data.active);
++      try {
++        const result = await exec(command, args, options);
++        attempt.code = result.code;
++        return result;
++      } catch (error) { attempt.code = "rejected"; throw error; }
++      finally {
++        attempt.endMs = Date.now() - data.epoch;
++        attempt.durationMs = attempt.endMs - attempt.startMs;
++        data.active--;
++      }
++    });
+     // Ages tick every 30 s, only on the cards copy, when there's something to age and the board shows.
+     if (!props()?.role) cx.timer.every(30000, (cx) => {
+       const live = new Set([...agents(), ...startupCandidates()].map(a => a.address));
+@@ -318,6 +339,7 @@
+       if (!isExpanded() && startupCandidates().length) cx.notify();
+       this.fetchActivities(cx);
+       this.refreshGit(cx);
++      this.snapshotNativeLoad();
+     });
+   }
+ 
+@@ -331,6 +353,25 @@
+     });
+   }
+   below(px) { return this.w > 0 && this.w < px; }
++
++  snapshotNativeLoad() {
++    const data = this.nativeLoad;
++    const snapshot = { elapsedMs: Date.now() - data.epoch, width: this.w, height: this.h,
++      filter: shared(FILTER_KEY) ?? "all", idleOpen: shared(IDLE_KEY) !== false,
++      agentCount: agents().length, active: data.active, peak: data.peak,
++      attempts: data.attempts.map(a => ({ ...a })),
++      consumers: agents().map(a => {
++        if (!this.nativeNames.has(a.address)) this.nativeNames.set(a.address, `agent-${this.nativeNames.size + 1}`);
++        const terminal = terminals().find(t => t.address === a.address);
++        const context = this.gitContext(a);
++        return { agent: this.nativeNames.get(a.address), app: a.app, status: a.status,
++          live: terminal?.state === "live", reported: terminal?.reported === true,
++          reportApp: terminal?.report?.app, reportState: terminal?.report?.state,
++          cwd: context?.cwd.split("/").at(-1), local: context?.on === null,
++          value: this.gitChanges.value(context), renderedLabel: this.nativeLabels.get(a.address) };
++      }) };
++    setShared("herdboard.nativeLoad", snapshot);
++  }
+ 
+   syncActivities() {
+     const consumers = !props()?.role && boardVisible() && this.h > 0 ? this.groups(agents()).by.working : [];
+@@ -418,6 +459,7 @@
+ 
+   gitLabel(a) {
+     const value = this.gitChanges.value(this.gitContext(a));
++    this.nativeLabels.set(a.address, value === null ? L.worktreeUnavailable : L.worktree(value));
+     return div().id(`git-${a.address}`).min_w(0).text_size(10).text_color(C.dim).truncate()
+       .tooltip(L.worktreeTip).child(value === null ? L.worktreeUnavailable : L.worktree(value));
+   }
+@@ -990,3 +1032,5 @@
+     return this.board(list, cx);
+   }
+ }
++
++// Disposable native measurement scenario: shared.

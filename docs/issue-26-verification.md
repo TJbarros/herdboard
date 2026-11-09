@@ -80,6 +80,45 @@ distinct-worktree fan-out and includes discovery. Both are limits, not latency
 guarantees for arbitrary repositories or remote machines. Physical requests retain
 their slots until settlement; no logical timeout creates duplicate work.
 
+## Native board load with genuine agents
+
+A second isolated app/core measured commit `1586738` through the real `main.js`
+board, with four genuine local Codex CLI 0.167.0 processes per scenario. Their
+native reports were idle; Herdr presented them as Done. No task prompts were
+submitted and no agent, state or report was fabricated. Other versions match
+the integrated record: herdr-app 0.1.14, hc 0.1.19, Node 24.22.1, Git 2.43.0.
+
+Each window began after all four agents were reported and associated with the
+fixtures. Reloading the instrumented copy reset caches and included discovery.
+Only `exec` was wrapped to count every attempt and its physical settlement;
+snapshots on the existing one-second timer recorded real consumers and rendered
+labels. The observer adds notifications/renders and measurement overhead; it does
+not change the scheduler or interval. [Raw timings, reports and source hashes](evidence/issue-26/native-board-load.json)
+and the [representative instrumentation diff](evidence/issue-26/native-board-load-instrumentation.diff)
+are sanitized. Full terminal identities and local configuration remain private.
+
+| Genuine native workload | Duration | Commands (discovery + status) | Rate | Latency min / median / max | Peak exec | Minimum status interval |
+| --- | --- | --- | --- | --- | --- | --- |
+| 4 agents, one 20-file worktree | 24.254 s | 4 (1 + 3) | 0.1649/s | 61 / 66 / 94 ms | 1 | 10017 ms |
+| 4 agents, four 20-file worktrees | 24.182 s | 16 (4 + 12) | 0.6616/s | 50 / 64.5 / 78 ms | 2 | 10049 ms |
+| 4 agents, one 10,000-file worktree | 24.244 s | 4 (1 + 3) | 0.1650/s | 60 / 83.5 / 92 ms | 1 | 10016 ms |
+
+The board measured **1233 × 358 px** in a 1280 px window, with All selected and
+Idle open. Every worktree had exactly one modified tracked file; all four card
+labels in each scenario rendered that expected total. Independent recalculation
+from all recorded attempts confirmed the rates, intervals and physical peaks.
+These full-board samples support the ten-second interval and two-command ceiling
+alongside the larger synthetic-consumer samples above. They measure four local
+idle processes, separately from Working-activity load and native remote transport.
+
+After measurement, the exact production modules were restored with matching
+hashes, the mod check passed and the native app reported zero errors. The primary
+Codex configuration was unchanged. This load run does not repeat the earlier
+PT/EN native layout matrix or establish remote performance. The final private frame
+contained the app's onboarding overlay; overlay state was not logged during each
+timed window. Runtime snapshots establish query behavior and rendered label values,
+not an unobstructed visual inspection of every card in this load run.
+
 ## Native board scope
 
 The [final integrated verification](agent-card-context-verification.md) records

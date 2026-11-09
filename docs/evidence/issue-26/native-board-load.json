@@ -1,0 +1,653 @@
+{
+  "sourceCommit": "15867380ee122b62f04a1032ff2a5df8d6705ed4",
+  "nativeAgentsPerScenario": 4,
+  "agentSource": "Genuine live Codex CLI idle reports in native Herdboard; no fabricated agents, states or reports.",
+  "modelPromptsSubmitted": 0,
+  "measurementMethod": "Each window began after all four genuine native agents were present. Reloading the observed main.js reset caches and included initial discovery. The exec wrapper counted every attempted discovery/status and observed settlement. A snapshot on the existing one-second timer adds shared-state notifications/renders but changes no scheduler code or interval.",
+  "instrumentationLimits": "Native latency samples include the observer overhead. Four genuine local idle agents were used, not 40 simultaneously Working agents or a remote load. The previous native UI matrix remains separate; this run did not repeat its visual inspection.",
+  "versions": {
+    "herdrApp": "herdr-app 0.1.14",
+    "hc": "hc 0.1.19",
+    "codex": "codex-cli 0.167.0",
+    "node": "v24.22.1",
+    "git": "git version 2.43.0"
+  },
+  "workloads": [
+    {
+      "scenario": "shared",
+      "trackedFilesPerWorktree": 20,
+      "distinctWorktrees": 1,
+      "durationMs": 24254,
+      "attempts": 4,
+      "discoveries": 1,
+      "statuses": 3,
+      "ratePerSecond": 0.1649,
+      "latencyMinMs": 61,
+      "latencyMedianMs": 66.0,
+      "latencyMaxMs": 94,
+      "minimumStatusIntervalMs": 10017,
+      "peakPhysicalExec": 1,
+      "width": 1233,
+      "height": 358,
+      "filter": "all",
+      "idleOpen": true,
+      "allFourRenderedExpectedCount": 1
+    },
+    {
+      "scenario": "distinct",
+      "trackedFilesPerWorktree": 20,
+      "distinctWorktrees": 4,
+      "durationMs": 24182,
+      "attempts": 16,
+      "discoveries": 4,
+      "statuses": 12,
+      "ratePerSecond": 0.6616,
+      "latencyMinMs": 50,
+      "latencyMedianMs": 64.5,
+      "latencyMaxMs": 78,
+      "minimumStatusIntervalMs": 10049,
+      "peakPhysicalExec": 2,
+      "width": 1233,
+      "height": 358,
+      "filter": "all",
+      "idleOpen": true,
+      "allFourRenderedExpectedCount": 1
+    },
+    {
+      "scenario": "large",
+      "trackedFilesPerWorktree": 10000,
+      "distinctWorktrees": 1,
+      "durationMs": 24244,
+      "attempts": 4,
+      "discoveries": 1,
+      "statuses": 3,
+      "ratePerSecond": 0.165,
+      "latencyMinMs": 60,
+      "latencyMedianMs": 83.5,
+      "latencyMaxMs": 92,
+      "minimumStatusIntervalMs": 10016,
+      "peakPhysicalExec": 1,
+      "width": 1233,
+      "height": 358,
+      "filter": "all",
+      "idleOpen": true,
+      "allFourRenderedExpectedCount": 1
+    }
+  ],
+  "observations": [
+    {
+      "scenario": "shared",
+      "elapsedMs": 24254,
+      "width": 1233,
+      "height": 358,
+      "filter": "all",
+      "idleOpen": true,
+      "agentCount": 4,
+      "active": 0,
+      "peak": 1,
+      "attempts": [
+        {
+          "kind": "discovery",
+          "cwd": "shared",
+          "local": true,
+          "startMs": 88,
+          "code": 0,
+          "endMs": 155,
+          "durationMs": 67
+        },
+        {
+          "kind": "status",
+          "cwd": "shared",
+          "local": true,
+          "startMs": 162,
+          "code": 0,
+          "endMs": 227,
+          "durationMs": 65
+        },
+        {
+          "kind": "status",
+          "cwd": "shared",
+          "local": true,
+          "startMs": 10179,
+          "code": 0,
+          "endMs": 10273,
+          "durationMs": 94
+        },
+        {
+          "kind": "status",
+          "cwd": "shared",
+          "local": true,
+          "startMs": 20235,
+          "code": 0,
+          "endMs": 20296,
+          "durationMs": 61
+        }
+      ],
+      "consumers": [
+        {
+          "agent": "agent-1",
+          "app": "codex",
+          "status": "done",
+          "live": true,
+          "reported": true,
+          "reportApp": "codex",
+          "reportState": "idle",
+          "cwd": "shared",
+          "local": true,
+          "value": 1,
+          "renderedLabel": "Worktree: 1 arquivo"
+        },
+        {
+          "agent": "agent-2",
+          "app": "codex",
+          "status": "done",
+          "live": true,
+          "reported": true,
+          "reportApp": "codex",
+          "reportState": "idle",
+          "cwd": "shared",
+          "local": true,
+          "value": 1,
+          "renderedLabel": "Worktree: 1 arquivo"
+        },
+        {
+          "agent": "agent-3",
+          "app": "codex",
+          "status": "done",
+          "live": true,
+          "reported": true,
+          "reportApp": "codex",
+          "reportState": "idle",
+          "cwd": "shared",
+          "local": true,
+          "value": 1,
+          "renderedLabel": "Worktree: 1 arquivo"
+        },
+        {
+          "agent": "agent-4",
+          "app": "codex",
+          "status": "done",
+          "live": true,
+          "reported": true,
+          "reportApp": "codex",
+          "reportState": "idle",
+          "cwd": "shared",
+          "local": true,
+          "value": 1,
+          "renderedLabel": "Worktree: 1 arquivo"
+        }
+      ],
+      "summary": {
+        "durationMs": 24254,
+        "attempts": 4,
+        "discoveries": 1,
+        "statuses": 3,
+        "ratePerSecond": 0.1649,
+        "latencyMinMs": 61,
+        "latencyMedianMs": 66.0,
+        "latencyMaxMs": 94,
+        "minimumStatusIntervalMs": 10017
+      },
+      "queryIntervals": [
+        {
+          "kind": "status",
+          "cwd": "shared",
+          "ms": 10017
+        },
+        {
+          "kind": "status",
+          "cwd": "shared",
+          "ms": 10056
+        }
+      ],
+      "syntheticAgents": false,
+      "modelPromptsSubmitted": 0,
+      "sourceHashes": {
+        "commit": "15867380ee122b62f04a1032ff2a5df8d6705ed4",
+        "scenario": "shared",
+        "productionMain": "e18e75241fb134d9221e14a274c994541891922660e9257929809e280a701575",
+        "instrumentedMain": "2049946e21d7bef1fee7fa68cd762400204120f5d1561ba13d884301ac34c527",
+        "gitChanges": "da18404ae500ca0d6926a21b8d88c9e5d1a5757b899d9dfe8949341915b2c552",
+        "instrumentation": "Only wraps production exec and snapshots existing live consumers on the existing one-second timer; no scheduler changes."
+      }
+    },
+    {
+      "scenario": "distinct",
+      "elapsedMs": 24182,
+      "width": 1233,
+      "height": 358,
+      "filter": "all",
+      "idleOpen": true,
+      "agentCount": 4,
+      "active": 0,
+      "peak": 2,
+      "attempts": [
+        {
+          "kind": "discovery",
+          "cwd": "distinct-1",
+          "local": true,
+          "startMs": 83,
+          "code": 0,
+          "endMs": 143,
+          "durationMs": 60
+        },
+        {
+          "kind": "discovery",
+          "cwd": "distinct-2",
+          "local": true,
+          "startMs": 85,
+          "code": 0,
+          "endMs": 143,
+          "durationMs": 58
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-1",
+          "local": true,
+          "startMs": 162,
+          "code": 0,
+          "endMs": 224,
+          "durationMs": 62
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-2",
+          "local": true,
+          "startMs": 167,
+          "code": 0,
+          "endMs": 224,
+          "durationMs": 57
+        },
+        {
+          "kind": "discovery",
+          "cwd": "distinct-3",
+          "local": true,
+          "startMs": 241,
+          "code": 0,
+          "endMs": 312,
+          "durationMs": 71
+        },
+        {
+          "kind": "discovery",
+          "cwd": "distinct-4",
+          "local": true,
+          "startMs": 243,
+          "code": 0,
+          "endMs": 310,
+          "durationMs": 67
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-4",
+          "local": true,
+          "startMs": 321,
+          "code": 0,
+          "endMs": 395,
+          "durationMs": 74
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-3",
+          "local": true,
+          "startMs": 324,
+          "code": 0,
+          "endMs": 397,
+          "durationMs": 73
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-1",
+          "local": true,
+          "startMs": 11116,
+          "code": 0,
+          "endMs": 11192,
+          "durationMs": 76
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-2",
+          "local": true,
+          "startMs": 11117,
+          "code": 0,
+          "endMs": 11193,
+          "durationMs": 76
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-4",
+          "local": true,
+          "startMs": 11201,
+          "code": 0,
+          "endMs": 11251,
+          "durationMs": 50
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-3",
+          "local": true,
+          "startMs": 11202,
+          "code": 0,
+          "endMs": 11252,
+          "durationMs": 50
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-1",
+          "local": true,
+          "startMs": 21165,
+          "code": 0,
+          "endMs": 21243,
+          "durationMs": 78
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-2",
+          "local": true,
+          "startMs": 21166,
+          "code": 0,
+          "endMs": 21243,
+          "durationMs": 77
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-4",
+          "local": true,
+          "startMs": 21251,
+          "code": 0,
+          "endMs": 21311,
+          "durationMs": 60
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-3",
+          "local": true,
+          "startMs": 21254,
+          "code": 0,
+          "endMs": 21311,
+          "durationMs": 57
+        }
+      ],
+      "consumers": [
+        {
+          "agent": "agent-1",
+          "app": "codex",
+          "status": "done",
+          "live": true,
+          "reported": true,
+          "reportApp": "codex",
+          "reportState": "idle",
+          "cwd": "distinct-1",
+          "local": true,
+          "value": 1,
+          "renderedLabel": "Worktree: 1 arquivo"
+        },
+        {
+          "agent": "agent-2",
+          "app": "codex",
+          "status": "done",
+          "live": true,
+          "reported": true,
+          "reportApp": "codex",
+          "reportState": "idle",
+          "cwd": "distinct-2",
+          "local": true,
+          "value": 1,
+          "renderedLabel": "Worktree: 1 arquivo"
+        },
+        {
+          "agent": "agent-3",
+          "app": "codex",
+          "status": "done",
+          "live": true,
+          "reported": true,
+          "reportApp": "codex",
+          "reportState": "idle",
+          "cwd": "distinct-3",
+          "local": true,
+          "value": 1,
+          "renderedLabel": "Worktree: 1 arquivo"
+        },
+        {
+          "agent": "agent-4",
+          "app": "codex",
+          "status": "done",
+          "live": true,
+          "reported": true,
+          "reportApp": "codex",
+          "reportState": "idle",
+          "cwd": "distinct-4",
+          "local": true,
+          "value": 1,
+          "renderedLabel": "Worktree: 1 arquivo"
+        }
+      ],
+      "summary": {
+        "durationMs": 24182,
+        "attempts": 16,
+        "discoveries": 4,
+        "statuses": 12,
+        "ratePerSecond": 0.6616,
+        "latencyMinMs": 50,
+        "latencyMedianMs": 64.5,
+        "latencyMaxMs": 78,
+        "minimumStatusIntervalMs": 10049
+      },
+      "queryIntervals": [
+        {
+          "kind": "status",
+          "cwd": "distinct-4",
+          "ms": 10880
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-4",
+          "ms": 10050
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-2",
+          "ms": 10950
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-2",
+          "ms": 10049
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-3",
+          "ms": 10878
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-3",
+          "ms": 10052
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-1",
+          "ms": 10954
+        },
+        {
+          "kind": "status",
+          "cwd": "distinct-1",
+          "ms": 10049
+        }
+      ],
+      "syntheticAgents": false,
+      "modelPromptsSubmitted": 0,
+      "sourceHashes": {
+        "commit": "15867380ee122b62f04a1032ff2a5df8d6705ed4",
+        "scenario": "distinct",
+        "productionMain": "e18e75241fb134d9221e14a274c994541891922660e9257929809e280a701575",
+        "instrumentedMain": "e156f77c3de21727169821957f2d32e5abc0d4143704ab9ec7a262d11fd6c344",
+        "gitChanges": "da18404ae500ca0d6926a21b8d88c9e5d1a5757b899d9dfe8949341915b2c552",
+        "instrumentation": "Only wraps production exec and snapshots existing live consumers on the existing one-second timer; no scheduler changes."
+      }
+    },
+    {
+      "scenario": "large",
+      "elapsedMs": 24244,
+      "width": 1233,
+      "height": 358,
+      "filter": "all",
+      "idleOpen": true,
+      "agentCount": 4,
+      "active": 0,
+      "peak": 1,
+      "attempts": [
+        {
+          "kind": "discovery",
+          "cwd": "large",
+          "local": true,
+          "startMs": 106,
+          "code": 0,
+          "endMs": 166,
+          "durationMs": 60
+        },
+        {
+          "kind": "status",
+          "cwd": "large",
+          "local": true,
+          "startMs": 185,
+          "code": 0,
+          "endMs": 277,
+          "durationMs": 92
+        },
+        {
+          "kind": "status",
+          "cwd": "large",
+          "local": true,
+          "startMs": 10201,
+          "code": 0,
+          "endMs": 10279,
+          "durationMs": 78
+        },
+        {
+          "kind": "status",
+          "cwd": "large",
+          "local": true,
+          "startMs": 20222,
+          "code": 0,
+          "endMs": 20311,
+          "durationMs": 89
+        }
+      ],
+      "consumers": [
+        {
+          "agent": "agent-1",
+          "app": "codex",
+          "status": "done",
+          "live": true,
+          "reported": true,
+          "reportApp": "codex",
+          "reportState": "idle",
+          "cwd": "large",
+          "local": true,
+          "value": 1,
+          "renderedLabel": "Worktree: 1 arquivo"
+        },
+        {
+          "agent": "agent-2",
+          "app": "codex",
+          "status": "done",
+          "live": true,
+          "reported": true,
+          "reportApp": "codex",
+          "reportState": "idle",
+          "cwd": "large",
+          "local": true,
+          "value": 1,
+          "renderedLabel": "Worktree: 1 arquivo"
+        },
+        {
+          "agent": "agent-3",
+          "app": "codex",
+          "status": "done",
+          "live": true,
+          "reported": true,
+          "reportApp": "codex",
+          "reportState": "idle",
+          "cwd": "large",
+          "local": true,
+          "value": 1,
+          "renderedLabel": "Worktree: 1 arquivo"
+        },
+        {
+          "agent": "agent-4",
+          "app": "codex",
+          "status": "done",
+          "live": true,
+          "reported": true,
+          "reportApp": "codex",
+          "reportState": "idle",
+          "cwd": "large",
+          "local": true,
+          "value": 1,
+          "renderedLabel": "Worktree: 1 arquivo"
+        }
+      ],
+      "summary": {
+        "durationMs": 24244,
+        "attempts": 4,
+        "discoveries": 1,
+        "statuses": 3,
+        "ratePerSecond": 0.165,
+        "latencyMinMs": 60,
+        "latencyMedianMs": 83.5,
+        "latencyMaxMs": 92,
+        "minimumStatusIntervalMs": 10016
+      },
+      "queryIntervals": [
+        {
+          "kind": "status",
+          "cwd": "large",
+          "ms": 10016
+        },
+        {
+          "kind": "status",
+          "cwd": "large",
+          "ms": 10021
+        }
+      ],
+      "syntheticAgents": false,
+      "modelPromptsSubmitted": 0,
+      "sourceHashes": {
+        "commit": "15867380ee122b62f04a1032ff2a5df8d6705ed4",
+        "scenario": "large",
+        "productionMain": "e18e75241fb134d9221e14a274c994541891922660e9257929809e280a701575",
+        "instrumentedMain": "9970f4b1c58fff33012c88d8270522f3bde01f44ca4bcb0d14ed49c04709fad8",
+        "gitChanges": "da18404ae500ca0d6926a21b8d88c9e5d1a5757b899d9dfe8949341915b2c552",
+        "instrumentation": "Only wraps production exec and snapshots existing live consumers on the existing one-second timer; no scheduler changes."
+      }
+    }
+  ],
+  "finalProductionValidation": {
+    "sourceCommit": "15867380ee122b62f04a1032ff2a5df8d6705ed4",
+    "restoredSourceHashes": {
+      "main.js": "e18e75241fb134d9221e14a274c994541891922660e9257929809e280a701575",
+      "git-changes.js": "da18404ae500ca0d6926a21b8d88c9e5d1a5757b899d9dfe8949341915b2c552",
+      "activity.js": "a46625b12f1327e7a4be6b9a422b6b7f60ed07f5ca0c5aa0bc6babe289780d4f",
+      "ask.js": "4894e15fbd897de8cb738e8b3fdba69d383c5ac1a01b52a40de22a6c97b65d64"
+    },
+    "modCheckExit": 0,
+    "nativeErrors": 0,
+    "layout": "herdboard",
+    "instrumentationRemoved": true,
+    "fourGenuineIdleCoreReports": true,
+    "allCoreTurns": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "modelPromptsSubmitted": 0,
+    "primaryCodexConfigUnchanged": true,
+    "nativeFrameCapturedPrivately": true,
+    "nativeFrameVisualInspectionRepeated": false,
+    "welcomeOverlayInFinalPrivateFrame": true,
+    "unobscuredNativeUiVerified": false,
+    "visualValidationLimits": "The native renderer constructed each expected label. Overlay state was not recorded during the timed windows. The final private frame contains a Herdr Welcome modal covering cards, so this run does not establish unobscured native card visibility; the earlier native UI matrix remains separate."
+  },
+  "visualValidationLimits": "The native renderer constructed each expected label. Overlay state was not recorded during the timed windows. The final private frame contains a Herdr Welcome modal covering cards, so this run does not establish unobscured native card visibility; the earlier native UI matrix remains separate."
+}
