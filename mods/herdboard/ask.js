@@ -17,25 +17,68 @@ const OPTION = /^(\s*(?:[❯>]\s*)?(\d+)\.\s+)(\S.*)$/;
 // - id: the whole request, untruncated, to tell two requests apart; "" when the dialog's shape
 //   is in doubt (see requestId).
 // A known cwd disambiguates whitespace lost at workspace-path wraps or the final path row.
-export function parseAsk(screen, cwd = undefined) {
+// Explicit app context selects the verified Codex format or preserves an unsupported snippet.
+export function parseAsk(screen, cwd = undefined, app = "claude-code") {
   const raw = String(screen ?? "").split(/\r?\n/);
-  const trust = workspaceTrust(raw, cwd);
+  if (app === "codex") {
+    const command = codexCommand(raw);
+    if (command) return command;
+  }
+  const mode = app === "claude-code" ? "numbered" : "unsupported";
+  const trust = app === "claude-code" && workspaceTrust(raw, cwd);
   if (trust) return trust;
   const all = raw.map(clean);
   let q = -1;
   for (let i = all.length - 1; i >= 0; i--) if (isQuestion(all[i])) { q = i; break; }
-  if (q < 0) return { mode: "numbered", text: "", question: "", options: [], id: "" };
+  if (q < 0) return { mode, text: "", question: "", options: [], id: "" };
   const before = all.slice(0, q).filter(l => l && !isRule(l) && !/^[❯>]\s*$/.test(l));
   // Keep the end: the question itself matters more than the lines leading to it.
   const text = [...before.slice(-2), all[q]].join("\n");
   const { options, end, optionLines } = optionsAfter(raw, q);
   return {
-    mode: "numbered",
+    mode,
     text: text.length > 180 ? "…" + text.slice(-179) : text,
     question: all[q],
     options,
-    id: requestId(raw, all, q, end, optionLines),
+    id: app === "claude-code" ? requestId(raw, all, q, end, optionLines) : "",
   };
+}
+
+// Captured Codex 0.167.0 local command approval, with its complete context, three options
+// and footer. Only y (one-time approval) and esc (cancel request and interrupt turn) have
+// verified plans. The persistent prefix option stays in the guarded identity, without a plan.
+function codexCommand(raw) {
+  const heading = "  Would you like to run the following command?";
+  const starts = raw.flatMap((line, i) => line === heading ? [i] : []);
+  if (starts.length !== 1) return null;
+  const end = raw.findLastIndex(line => line !== "");
+  const lines = raw.slice(starts[0], end + 1);
+  const sections = lines.join("\n").split(/\n{2,}/);
+  if (sections.length !== 6 || sections[0] !== heading || sections[1] !== "  Environment: local"
+    || !/^  Reason: \S[^\n]*(?:\n  \S[^\n]*)*$/.test(sections[2])
+    || !/^  \$ \S[^\n]*(?:\n  \S[^\n]*)*$/.test(sections[3])
+    || sections[5] !== "  Press enter to confirm or esc to cancel") return null;
+  /** @type {{ n: number, text: string, shortcut?: string }[]} */
+  const options = [];
+  let cursors = 0;
+  for (const line of sections[4].split("\n")) {
+    const match = /^(› |  )([1-3])\. (\S.*)$/.exec(line);
+    if (match && Number(match[2]) === options.length + 1) {
+      options.push({ n: Number(match[2]), text: match[3] });
+      if (match[1] === "› ") cursors++;
+    } else if (options.length && /^     \S/.test(line)) options.at(-1).text += " " + line.slice(5);
+    else return null;
+  }
+  if (options.length !== 3 || cursors !== 1 || options[0].text !== "Yes, proceed (y)"
+    || !/^Yes, and don't ask again for commands that start with `[^`]+` \(p\)$/.test(options[1].text)
+    || options[2].text !== "No, and tell Codex what to do differently (esc)") return null;
+  options[0].shortcut = "y";
+  options[2].shortcut = "esc";
+  const text = sections.slice(2, 4).map(section => section.split("\n").map(line => line.trim()).join(" ")).join("\n");
+  return { mode: "shortcut", dialog: "codex-command", question: heading.trim(),
+    text: text.length > 180 ? "…" + text.slice(-179) : text, options,
+    // Both captured shortcuts work from every selection. Everything else remains byte exact.
+    id: lines.map(line => line.replace(/^› (?=[1-3]\. )/, "  ")).join("\n") };
 }
 
 // The row after a complete known label, even when it wraps; -1 for missing or altered text.
@@ -156,10 +199,17 @@ function requestId(raw, all, q, end, optionLines) {
     .join("\n");
 }
 
-// The options a Yes / No button answers: the ones whose text is exactly "Yes" and "No".
-// Null unless both are there, once each, with a one-key digit (hc keys presses one key).
+// The semantic Yes / No pair of each recognised format. Legacy option arrays require exact
+// Yes/No labels and one-key digits. A recognised shortcut dialog exposes only verified plans.
 export function pickAnswers(ask) {
   const options = Array.isArray(ask) ? ask : ask?.options;
+  if (ask?.mode === "unsupported") return null;
+  if (ask?.mode === "shortcut") {
+    if (ask.dialog !== "codex-command" || !ask.id) return null;
+    const yes = options?.find(o => o.n === 1 && o.shortcut === "y");
+    const no = options?.find(o => o.n === 3 && o.shortcut === "esc");
+    return yes && no ? { yes, no } : null;
+  }
   if (ask?.mode === "cursor") {
     if (ask.dialog !== "workspace-trust" || !ask.id || ![0, 1].includes(ask.selectedIndex) || options?.length !== 2) return null;
     const yes = options.find(o => o.text === "Yes, I trust this folder");

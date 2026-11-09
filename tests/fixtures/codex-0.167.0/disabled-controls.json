@@ -1,0 +1,314 @@
+[
+  {
+    "language": "en",
+    "window_width": 760,
+    "window_height": 1000,
+    "capture_fps": 60,
+    "frame": 40,
+    "screenshot": "docs/images/issue-4-codex-disabled-en-760.png",
+    "observed_state": "both answer controls faded while the native permission card remains blocked",
+    "keys": [
+      "y"
+    ],
+    "before": {
+      "screen": "\n✔ You approved codex to run /usr/bin/printf approval-probe this time\n\n• Ran /usr/bin/printf approval-probe\n  └ approval-probe\n\n• It ran successfully and printed approval-probe.\n\n  Worked for 38s • 23:48\n\n\n› Repeat the identical harmless approval probe once, with the same escalated\n  exec_command and justification. No other actions. Wait for a human answer; if\n  declined, do not retry. State whether it ran and stop.\n\n\n• I’ll repeat the approval probe once and wait for your answer.\n\n• Running /usr/bin/printf approval-probe\n\n\n  Would you like to run the following command?\n\n  Environment: local\n\n  Reason: May I run this harmless printf for the Herdboard approval capture?\n\n  $ /usr/bin/printf approval-probe\n\n\n› 1. Yes, proceed (y)\n  2. Yes, and don't ask again for commands that start with `/usr/bin/printf\n     approval-probe` (p)\n  3. No, and tell Codex what to do differently (esc)\n\n  Press enter to confirm or esc to cancel\n",
+      "hc_get": {
+        "address": "t4",
+        "argv": [
+          "codex",
+          "--no-daemon",
+          "--no-alt-screen",
+          "--ask-for-approval",
+          "on-request",
+          "--sandbox",
+          "read-only",
+          "-c",
+          "approvals_reviewer=\"user\""
+        ],
+        "cols": 82,
+        "created_ms": 1794191055954,
+        "cwd": "/tmp/herdboard-issue4-native-w1swbhyz/workspace",
+        "die_with_parent": false,
+        "exit_code": null,
+        "finished_ms": null,
+        "foreground": {
+          "argv": [
+            "codex",
+            "--no-daemon",
+            "--no-alt-screen",
+            "--ask-for-approval",
+            "on-request",
+            "--sandbox",
+            "read-only",
+            "-c",
+            "approvals_reviewer=\"user\""
+          ],
+          "cwd": "/tmp/herdboard-issue4-native-w1swbhyz/workspace",
+          "name": "codex",
+          "pid": 34984
+        },
+        "identity": "ghostty",
+        "keep": true,
+        "labels": {
+          "herdr.seen": "21",
+          "herdr.space": "sp5dec156d5f97b00a3c09ab12e1e7d949",
+          "where": "Issue 4 native verification / 3"
+        },
+        "name": "codex-approval",
+        "notify": false,
+        "parent": null,
+        "pid": 34984,
+        "reason": null,
+        "reported": true,
+        "rm": false,
+        "rows": 36,
+        "screen": "exact",
+        "signal": null,
+        "state": "live",
+        "status": {
+          "app": "codex",
+          "kind": "permission",
+          "state": "blocked"
+        },
+        "status_ms": 1794192632374,
+        "template": null,
+        "title": "[ . ] Action Required | Run approval-dialog capture test | workspace",
+        "turn": 22
+      }
+    }
+  },
+  {
+    "language": "pt",
+    "window_width": 760,
+    "window_height": 1000,
+    "capture_fps": 60,
+    "frame": 36,
+    "screenshot": "docs/images/issue-4-codex-disabled-pt-760.png",
+    "observed_state": "both answer controls faded while the native permission card remains blocked",
+    "keys": [
+      "y"
+    ],
+    "before": {
+      "screen": "\n• Ran /usr/bin/printf approval-probe\n  └ approval-probe\n\n• It ran successfully and printed approval-probe.\n\n  Worked for 8s • 23:50\n\n\n› Repeat the identical harmless approval probe once, with the same escalated\n  exec_command and justification. No other actions. Wait for a human answer; if\n  declined, do not retry. State whether it ran and stop.\n\n\n\n\n• Running /usr/bin/printf approval-probe\n\n\n  Would you like to run the following command?\n\n  Environment: local\n\n  Reason: May I run this harmless printf for the Herdboard approval capture?\n\n  $ /usr/bin/printf approval-probe\n\n\n› 1. Yes, proceed (y)\n  2. Yes, and don't ask again for commands that start with `/usr/bin/printf\n     approval-probe` (p)\n  3. No, and tell Codex what to do differently (esc)\n\n  Press enter to confirm or esc to cancel\n",
+      "hc_get": {
+        "address": "t4",
+        "argv": [
+          "codex",
+          "--no-daemon",
+          "--no-alt-screen",
+          "--ask-for-approval",
+          "on-request",
+          "--sandbox",
+          "read-only",
+          "-c",
+          "approvals_reviewer=\"user\""
+        ],
+        "cols": 82,
+        "created_ms": 1794191055954,
+        "cwd": "/tmp/herdboard-issue4-native-w1swbhyz/workspace",
+        "die_with_parent": false,
+        "exit_code": null,
+        "finished_ms": null,
+        "foreground": {
+          "argv": [
+            "codex",
+            "--no-daemon",
+            "--no-alt-screen",
+            "--ask-for-approval",
+            "on-request",
+            "--sandbox",
+            "read-only",
+            "-c",
+            "approvals_reviewer=\"user\""
+          ],
+          "cwd": "/tmp/herdboard-issue4-native-w1swbhyz/workspace",
+          "name": "codex",
+          "pid": 34984
+        },
+        "identity": "ghostty",
+        "keep": true,
+        "labels": {
+          "herdr.seen": "24",
+          "herdr.space": "sp5dec156d5f97b00a3c09ab12e1e7d949",
+          "where": "Issue 4 native verification / 3"
+        },
+        "name": "codex-approval",
+        "notify": false,
+        "parent": null,
+        "pid": 34984,
+        "reason": null,
+        "reported": true,
+        "rm": false,
+        "rows": 36,
+        "screen": "exact",
+        "signal": null,
+        "state": "live",
+        "status": {
+          "app": "codex",
+          "kind": "permission",
+          "state": "blocked"
+        },
+        "status_ms": 1794192642199,
+        "template": null,
+        "title": "[ . ] Action Required | Run approval-dialog capture test | workspace",
+        "turn": 24
+      }
+    }
+  },
+  {
+    "language": "pt",
+    "window_width": 1280,
+    "window_height": 1000,
+    "capture_fps": 60,
+    "frame": 34,
+    "screenshot": "docs/images/issue-4-codex-disabled-pt-1280.png",
+    "observed_state": "both answer controls faded while the native permission card remains blocked",
+    "keys": [
+      "y"
+    ],
+    "before": {
+      "screen": "\n• It ran successfully and printed approval-probe.\n\n  Worked for 8s • 23:50\n\n\n› Repeat the identical harmless approval probe once, with the same escalated exec_command and justification. No other actions. Wait for a human\n  answer; if declined, do not retry. State whether it ran and stop.\n\n\n\n\n• Running /usr/bin/printf approval-probe\n\n\n  Would you like to run the following command?\n\n  Environment: local\n\n  Reason: May I run this harmless printf for the Herdboard approval capture?\n\n  $ /usr/bin/printf approval-probe\n\n\n› 1. Yes, proceed (y)\n  2. Yes, and don't ask again for commands that start with `/usr/bin/printf approval-probe` (p)\n  3. No, and tell Codex what to do differently (esc)\n\n  Press enter to confirm or esc to cancel\n",
+      "hc_get": {
+        "address": "t4",
+        "argv": [
+          "codex",
+          "--no-daemon",
+          "--no-alt-screen",
+          "--ask-for-approval",
+          "on-request",
+          "--sandbox",
+          "read-only",
+          "-c",
+          "approvals_reviewer=\"user\""
+        ],
+        "cols": 149,
+        "created_ms": 1794191055954,
+        "cwd": "/tmp/herdboard-issue4-native-w1swbhyz/workspace",
+        "die_with_parent": false,
+        "exit_code": null,
+        "finished_ms": null,
+        "foreground": {
+          "argv": [
+            "codex",
+            "--no-daemon",
+            "--no-alt-screen",
+            "--ask-for-approval",
+            "on-request",
+            "--sandbox",
+            "read-only",
+            "-c",
+            "approvals_reviewer=\"user\""
+          ],
+          "cwd": "/tmp/herdboard-issue4-native-w1swbhyz/workspace",
+          "name": "codex",
+          "pid": 34984
+        },
+        "identity": "ghostty",
+        "keep": true,
+        "labels": {
+          "herdr.seen": "26",
+          "herdr.space": "sp5dec156d5f97b00a3c09ab12e1e7d949",
+          "where": "Issue 4 native verification / 3"
+        },
+        "name": "codex-approval",
+        "notify": false,
+        "parent": null,
+        "pid": 34984,
+        "reason": null,
+        "reported": true,
+        "rm": false,
+        "rows": 36,
+        "screen": "exact",
+        "signal": null,
+        "state": "live",
+        "status": {
+          "app": "codex",
+          "kind": "permission",
+          "state": "blocked"
+        },
+        "status_ms": 1794192650550,
+        "template": null,
+        "title": "[ . ] Action Required | Run approval-dialog capture test | workspace",
+        "turn": 26
+      }
+    }
+  },
+  {
+    "language": "en",
+    "window_width": 1280,
+    "window_height": 1000,
+    "capture_fps": 60,
+    "frame": 40,
+    "screenshot": "docs/images/issue-4-codex-disabled-en-1280.png",
+    "observed_state": "both answer controls faded while the native permission card remains blocked",
+    "keys": [
+      "y"
+    ],
+    "before": {
+      "screen": "\n• I’ll repeat the approval probe once and wait for your answer.\n\n✔ You approved codex to run /usr/bin/printf approval-probe this time\n\n• Ran /usr/bin/printf approval-probe\n  └ approval-probe\n\n• It ran successfully and printed approval-probe.\n\n  Worked for 6s • 23:50\n\n\n› Repeat the identical harmless approval probe once, with the same escalated exec_command and justification. No other actions. Wait for a human\n  answer; if declined, do not retry. State whether it ran and stop.\n\n\n• I’ll repeat the approval probe once and wait for your answer.\n\n• Running /usr/bin/printf approval-probe\n\n\n  Would you like to run the following command?\n\n  Environment: local\n\n  Reason: May I run this harmless printf for the Herdboard approval capture?\n\n  $ /usr/bin/printf approval-probe\n\n\n› 1. Yes, proceed (y)\n  2. Yes, and don't ask again for commands that start with `/usr/bin/printf approval-probe` (p)\n  3. No, and tell Codex what to do differently (esc)\n\n  Press enter to confirm or esc to cancel\n",
+      "hc_get": {
+        "address": "t4",
+        "argv": [
+          "codex",
+          "--no-daemon",
+          "--no-alt-screen",
+          "--ask-for-approval",
+          "on-request",
+          "--sandbox",
+          "read-only",
+          "-c",
+          "approvals_reviewer=\"user\""
+        ],
+        "cols": 149,
+        "created_ms": 1794191055954,
+        "cwd": "/tmp/herdboard-issue4-native-w1swbhyz/workspace",
+        "die_with_parent": false,
+        "exit_code": null,
+        "finished_ms": null,
+        "foreground": {
+          "argv": [
+            "codex",
+            "--no-daemon",
+            "--no-alt-screen",
+            "--ask-for-approval",
+            "on-request",
+            "--sandbox",
+            "read-only",
+            "-c",
+            "approvals_reviewer=\"user\""
+          ],
+          "cwd": "/tmp/herdboard-issue4-native-w1swbhyz/workspace",
+          "name": "codex",
+          "pid": 34984
+        },
+        "identity": "ghostty",
+        "keep": true,
+        "labels": {
+          "herdr.seen": "27",
+          "herdr.space": "sp5dec156d5f97b00a3c09ab12e1e7d949",
+          "where": "Issue 4 native verification / 3"
+        },
+        "name": "codex-approval",
+        "notify": false,
+        "parent": null,
+        "pid": 34984,
+        "reason": null,
+        "reported": true,
+        "rm": false,
+        "rows": 36,
+        "screen": "exact",
+        "signal": null,
+        "state": "live",
+        "status": {
+          "app": "codex",
+          "kind": "permission",
+          "state": "blocked"
+        },
+        "status_ms": 1794192659318,
+        "template": null,
+        "title": "[ ! ] Action Required | Run approval-dialog capture test | workspace",
+        "turn": 28
+      }
+    }
+  }
+]

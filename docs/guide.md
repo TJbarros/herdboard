@@ -55,6 +55,25 @@ controls stay faded until the agent's status or request changes, so a second cli
 types nothing. More… appears only when Yes / No has other options to offer. For
 other dialogs without a plain Yes / No pair, use **Open and answer**.
 
+**Verified Codex command approval.** The complete local command dialog captured
+with Codex CLI 0.167.0 on Linux also gets **Yes** / **No**, when Codex reports a
+blocked permission request. **Yes** sends `y`, approving this command once.
+**No** sends `esc`, canceling the request and interrupting the turn; type your
+next instruction in the terminal. Neither adds Enter, and both work from every
+captured selection. Tooltips show the original option and the cancellation effect.
+Direct answers require the launch configuration recorded in the verification
+notes; other launch settings retain the terminal fallback.
+The persistent “don't ask again” choice has no card shortcut or **More…** entry;
+use **Open and answer** for it. Other Codex dialogs, questions, remote environments
+and incomplete screens keep **Open and answer** / **Peek**. If a resize changes the
+request's wrapping, a click refreshes the card without sending keys; review it again.
+
+The tested pi 0.85.1 `ui.confirm()` extension did not report a blocked agent to
+Herdr, so it remains unsupported. New-agent startup/trust screens are unsupported.
+See the [configurations, raw captures and observed outcomes](issue-4-verification.md)
+for the exact verified coverage. Herdboard does not change approval policies or
+install permission extensions.
+
 **Workspace trust at startup.** The recognised Claude Code screen headed
 "Accessing workspace:" also gets a card, even before Claude reports an agent status.
 This includes narrow terminals where the explanation, folder path, options or
@@ -139,14 +158,17 @@ them all.
 
 - What runs besides drawing: the board runs `hc read <terminal> --lines 0`
   (Herdr's own CLI) each time an agent gets blocked, to read its question; if that
-  read misses it (no question on screen yet or, for a Claude Code permission
-  dialog, no Yes / No), it reads up to two more times, 0.5 s later and then another
+  read misses it (no question on screen yet or, for an eligible Claude/Codex permission
+  dialog, no verified Yes / No), it reads up to two more times, 0.5 s later and then another
   1.5 s later, only while the agent stays blocked. It reads again when you click
-  Yes / No or choose a More… option, and then runs `hc keys <terminal> <digit>`; the search
+  Yes / No or choose a More… option, and then sends that dialog's verified keys
+  (`hc keys <terminal> <digit>` for Claude permissions, `y` or `esc` for Codex); the search
   runs `hc machine ls`, as Herdr's own search does; the new-tab menu asks Herdr which
   agents are installed. Startup discovery additionally reads eligible Claude terminals
   about once a second while the board shows; a startup answer checks `hc get` before
   and after its fresh screen read, then sends the arrows and Enter together.
+  Codex answers also check `hc get` on both sides of that read to confirm the same
+  process, working directory, launch configuration and blocked permission report.
   No mod downloads anything from the internet or reads your files.
 - The Peek window and Herdr's sidebar are Herdr's own and stay in English.
 - Herdr can't change a space's registered folder after it's made; Herdboard always

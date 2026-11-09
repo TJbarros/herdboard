@@ -1,0 +1,30 @@
+
+ pi v0.85.1
+ escape interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash · ctrl+o more
+ Press ctrl+o to show full startup help and loaded resources.
+
+ Pi can explain its own features and look up its docs. Ask it how to use or extend Pi.
+
+[Extensions]
+  probe.js
+
+
+ Warning: fd not found. Offline mode enabled, skipping download.
+
+ Warning: No models available. Use /login to log into a provider via OAuth or API key. See:
+   /mnt/c/Users/userx/AppData/Roaming/npm/node_modules/@earendil-works/pi-coding-agent/docs/providers.md
+   /mnt/c/Users/userx/AppData/Roaming/npm/node_modules/@earendil-works/pi-coding-agent/docs/models.md
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+ Herdboard capture probe
+ Create capture-marker.txt in this disposable workspace?
+
+ → Yes
+   No
+
+ ↑↓ navigate  enter select  escape/ctrl+c cancel
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/tmp/herdboard-issue4-native-w1swbhyz/workspace
+0.0%/0 (auto)                                                                                                    unknown

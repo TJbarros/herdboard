@@ -1,0 +1,32 @@
+  probe.js
+
+
+ Warning: fd not found. Offline mode enabled,
+ skipping download.
+
+ Warning: No models available. Use /login to
+ log into a provider via OAuth or API key. See:
+
+ /mnt/c/Users/userx/AppData/Roaming/npm/node_mo
+ dules/@earendil-works/pi-coding-agent/docs/pro
+ viders.md
+
+ /mnt/c/Users/userx/AppData/Roaming/npm/node_mo
+ dules/@earendil-works/pi-coding-agent/docs/mod
+ els.md
+
+────────────────────────────────────────────────
+
+ Herdboard capture probe
+ Create capture-marker.txt in this disposable
+ workspace?
+
+ → Yes
+   No
+
+ ↑↓ navigate  enter select  escape/ctrl+c
+ cancel
+
+────────────────────────────────────────────────
+/tmp/herdboard-issue4-native-w1swbhyz/workspace
+0.0%/0 (auto)                            unknown

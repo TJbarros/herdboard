@@ -24,6 +24,15 @@ Screenshots help; leave out project names or anything private.
 6. Docs change with the code, in English and Portuguese, and only state what you
    checked in the code or tried in the app.
 
+New direct-answer formats need a versioned evidence bundle before enabling them:
+raw wide/narrow `hc read --lines 0` captures, paired `hc get --json`, the app's
+`agents()` / `terminals()` snapshot, versions, effective settings and independently
+observed results for each exposed key plan. Record persistent approval and
+cancellation effects separately. See [issue #4 verification](docs/issue-4-verification.md).
+Fixtures and the real `main.js` harness cover recognition, exact keys and races;
+native PT/EN narrow/wide checks cover controls and outcomes. Unsupported dialogs
+keep the fallback; never invent reports or infer another agent's keys.
+
 ## Português (Brasil)
 
 ### Relatar um problema ou sugerir uma ideia
@@ -47,3 +56,12 @@ que você esperava. Prints ajudam; deixe de fora nomes de projetos ou dados priv
    (`TEXT.pt` e `TEXT.en`).
 6. A documentação muda junto com o código, em inglês e em português, e só afirma o
    que você conferiu no código ou testou no app.
+
+Novos formatos de resposta direta precisam de evidências versionadas antes de serem
+habilitados: capturas brutas largas/estreitas de `hc read --lines 0`, `hc get --json`
+pareado, snapshot de `agents()` / `terminals()` do app, versões, configuração efetiva
+e resultado observado de cada sequência exposta. Registre os efeitos de aprovação
+persistente e cancelamento separadamente. Veja a [verificação da issue #4](docs/issue-4-verification.md).
+Fixtures e o harness real de `main.js` cobrem reconhecimento, teclas exatas e corridas;
+o teste nativo em PT/EN nas duas larguras cobre os controles e resultados. Diálogos
+sem suporte mantêm o fallback; não invente reports nem deduza teclas de outro agente.

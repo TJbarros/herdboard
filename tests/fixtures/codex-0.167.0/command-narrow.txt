@@ -1,0 +1,40 @@
+  printf approval-probe
+
+• Ran /usr/bin/printf approval-probe
+  └ (no output)
+
+■ Conversation interrupted - use /feedback if
+something went wrong
+
+
+› Repeat the identical harmless approval probe
+  once, with the same escalated exec_command
+  and justification. No other actions. Wait for
+  a human answer; if declined, do not retry.
+  State whether it ran and stop.
+
+
+• I’ll repeat the approval probe once and wait
+  for your answer.
+
+• Running /usr/bin/printf approval-probe
+
+
+  Would you like to run the following command?
+
+  Environment: local
+
+  Reason: May I run this harmless printf for
+  the Herdboard approval capture?
+
+  $ /usr/bin/printf approval-probe
+
+
+› 1. Yes, proceed (y)
+  2. Yes, and don't ask again for commands that
+     start with `/usr/bin/printf approval-probe`
+     (p)
+  3. No, and tell Codex what to do differently
+     (esc)
+
+  Press enter to confirm or esc to cancel

@@ -61,6 +61,8 @@ const TEXT = {
     noAsk: "Abra o terminal para ver o que o agente pede.",
     yes: "Sim", no: "Não", moreOptions: "Mais…", answerTip: (n, text) => `Responde no terminal com a opção ${n}: "${text}"`,
     cursorAnswerTip: text => `Confirma no terminal: "${text}"`,
+    shortcutAnswerTip: (key, text) => `Envia ${key} no terminal: "${text}"`,
+    cancelAnswerTip: text => `Cancela o pedido e interrompe o turno (Esc): "${text}"`,
     fold: "recolher", unfold: "mostrar", lastTask: "Última:", hereShort: "Este",
   },
   en: {
@@ -83,6 +85,8 @@ const TEXT = {
     noAsk: "Open the terminal to see what the agent is asking.",
     yes: "Yes", no: "No", moreOptions: "More…", answerTip: (n, text) => `Answers in the terminal with option ${n}: "${text}"`,
     cursorAnswerTip: text => `Confirms in the terminal: "${text}"`,
+    shortcutAnswerTip: (key, text) => `Sends ${key} in the terminal: "${text}"`,
+    cancelAnswerTip: text => `Cancels the request and interrupts the turn (Esc): "${text}"`,
     fold: "fold", unfold: "show", lastTask: "Last:", hereShort: "Here",
   },
 };
@@ -130,15 +134,38 @@ function taskTitle(a) {
 
 // ---- What a blocked agent is asking (parsed in ./ask.js) ------------------------------------
 
-// Numbered permissions require Claude Code's own permission report. Startup trust uses the
-// separate foreground-process source below; screen text alone never makes a terminal eligible.
+// Numbered permissions require Claude's permission report; Codex shortcuts require its complete
+// blocked report. Startup trust uses the separate foreground-process source below.
 function mayAnswer(a) {
   if (a.source?.kind === "workspace-trust") return startupCandidates().some(x => spell(x) === spell(a));
+  const terminal = terminals().find(t => t.address === a.address);
+  if (a.app === "codex") return codexContext(a) !== null;
   if (a.app !== "claude-code") return false;
-  return terminals().find(t => t.address === a.address)?.report?.kind === "permission";
+  return terminal?.report?.kind === "permission";
 }
-// Reported requests use address#seq; startup requests use their explicit process lifecycle.
-const spell = (a) => a.source?.key ?? `${a.address}#${a.seq}`;
+// The only foreground launch configuration with captured shortcut outcomes (Codex 0.167.0).
+// These arguments identify the supported configuration, not the installed binary's version.
+const CODEX_APPROVAL_ARGV = ["codex", "--no-daemon", "--no-alt-screen", "--ask-for-approval",
+  "on-request", "--sandbox", "read-only", "-c", 'approvals_reviewer="user"'];
+// Bind Codex reads and answers to the process observed when the request was first read.
+function codexContext(a, t = terminals().find(t => t.address === a.address)) {
+  const f = t?.foreground;
+  // Core `get` has a status object; app snapshots split it into status and report.
+  const report = typeof t?.status === "object" ? t.status : t?.report;
+  const status = typeof t?.status === "string" ? t.status : report?.state;
+  const positive = n => Number.isSafeInteger(n) && n > 0;
+  const text = s => typeof s === "string" && s.trim().length > 0;
+  const argv = args => Array.isArray(args) && args.length > 0 && args.every(text);
+  if (t?.address !== a.address || t?.state !== "live" || t.screen !== "exact" || t.reported !== true || status !== "blocked"
+    || report?.app !== "codex" || report.state !== "blocked" || report.kind !== "permission"
+    || !positive(t.created_ms) || !positive(t.pid) || !positive(f?.pid)
+    || !text(t.cwd) || !text(f?.cwd) || f?.name !== "codex" || !argv(t.argv)
+    || JSON.stringify(f?.argv) !== JSON.stringify(CODEX_APPROVAL_ARGV)) return null;
+  return JSON.stringify([a.app, a.program?.key, t?.created_ms, t?.pid, t?.cwd, t?.argv,
+    f?.pid, f?.cwd, f?.name, f?.argv]);
+}
+// Codex also binds its stable process context; startup has its own explicit lifecycle.
+const spell = (a, terminal) => a.source?.key ?? `${a.address}#${a.seq}${a.app === "codex" ? `#codex:${codexContext(a, terminal)}` : ""}`;
 
 // A separate, explicitly identified startup source. These are terminal facts, never forged
 // OSC reports. Only a live Claude foreground process, before its first report, is eligible.
@@ -174,6 +201,8 @@ const stillOn = (address, key) => {
 };
 function answersFor(a, ask) {
   if (!ask?.id || !mayAnswer(a)) return null;
+  if (a.app === "codex") return !a.source && ask.mode === "shortcut" && ask.dialog === "codex-command" ? pickAnswers(ask) : null;
+  if (ask.mode === "shortcut") return null;
   if (ask.mode === "cursor") {
     if (a.source?.kind !== "workspace-trust" || ask.dialog !== "workspace-trust" || ask.folder !== a.source.folder) return null;
   } else if (a.source) return null;
@@ -182,7 +211,7 @@ function answersFor(a, ask) {
 // The visible screen (no scrolling), parsed; null when it can't be read.
 async function readAsk(a) {
   const r = await hc(["read", a.address, "--lines", "0"]);
-  return r?.code ? null : parseAsk(r?.stdout, a.source?.folder);
+  return r?.code ? null : parseAsk(r?.stdout, a.source?.folder, a.app);
 }
 // A read misses when it shows no question, or, where the card offers Yes / No (mayAnswer), no
 // buttons: no id (the dialog's shape is in doubt, as a read during a redraw gives) or no exact
@@ -211,7 +240,9 @@ async function readAskWithRetry(address, key, cx) {
 }
 // The Yes / No pair a card shows: live, or faded after one was sent.
 const shownChoices = (ask) => ask?.choices ?? ask?.sent ?? null;
-const answerTip = (ask, option) => ask.mode === "cursor" ? L.cursorAnswerTip(option.text) : L.answerTip(option.n, option.text);
+const answerTip = (ask, option) => ask.mode === "cursor" ? L.cursorAnswerTip(option.text)
+  : option.shortcut === "esc" ? L.cancelAnswerTip(option.text)
+  : option.shortcut ? L.shortcutAnswerTip(option.shortcut, option.text) : L.answerTip(option.n, option.text);
 
 // ---- The mod --------------------------------------------------------------------------------
 
@@ -361,7 +392,7 @@ export default class Herdboard extends View {
           .child(div().flex_1().min_w(0).truncate().child(o.text)))));
   }
 
-  // Answer the clicked choice with a digit shortcut or a cursor plan, in one hc keys call.
+  // Answer the clicked choice with its verified shortcut or cursor plan, in one hc keys call.
   // `a` and `ask` are what the clicked card was drawn from: the click answers that request and
   // nothing else, so it does nothing once the board holds a newer read for the agent.
   // hc keys presses keys blindly, so first confirm the agent is still blocked on the same
@@ -374,20 +405,25 @@ export default class Herdboard extends View {
     const pick = ask.choices && ask.options.includes(option) ? option : null;
     if (!pick || !ask.id) return;
     const cursor = ask.mode === "cursor";
-    if (!cursor && !(pick.n >= 1 && pick.n <= 9)) return;
+    const shortcut = ask.mode === "shortcut";
+    if (shortcut && ![ask.choices.yes, ask.choices.no].includes(pick)) return;
+    if (!cursor && !shortcut && !(pick.n >= 1 && pick.n <= 9)) return;
     const delta = cursor ? pick.index - ask.selectedIndex : 0;
-    const plan = cursor ? [...Array(Math.abs(delta)).fill(delta > 0 ? "down" : "up"), "enter"] : [String(pick.n)];
+    const plan = cursor ? [...Array(Math.abs(delta)).fill(delta > 0 ? "down" : "up"), "enter"]
+      : shortcut ? [pick.shortcut] : [String(pick.n)];
     ask.sent = ask.choices;
     ask.choices = null;
     if (this.moreOpen === ask.key) this.moreOpen = null;
     cx.notify();
     const stillBlocked = () => { const now = stillOn(a.address, ask.key); return this.asks[a.address] === ask && !!now && !!answersFor(now, ask); };
-    // App snapshots arrive asynchronously. For the pre-report source, re-read the core's
-    // process/lifecycle facts on both sides of the screen read as well as checking the snapshot.
+    // App snapshots arrive asynchronously. Re-read Codex and pre-report process/lifecycle
+    // facts from the core on both sides of the screen read as well as checking the snapshot.
     const sameSource = async () => {
-      if (!a.source) return true;
+      if (!a.source && a.app !== "codex") return true;
       const r = await hc(["get", a.address, "--json"]);
-      return r?.code === 0 && startupKey(JSON.parse(r.stdout)) === ask.key && stillBlocked();
+      if (r?.code !== 0) return false;
+      const terminal = JSON.parse(r.stdout);
+      return (a.source ? startupKey(terminal) : spell(a, terminal)) === ask.key && stillBlocked();
     };
     cx.spawn(async (cx) => {
       let typed = false;

@@ -72,7 +72,7 @@ column, top to bottom:
   Yes / No pair) is read again after `RETRY_MS` = 500 ms, then 1500 ms: at most 2
   more reads, `cx.sleep` in the same task, only while the spell lasts (checked
   before and after each wait). Only the last read of the spell is kept.
-- Yes / No: the same read also collects the numbered options below the question
+- Claude Yes / No: the same read also collects the numbered options below the question
   (`❯ 1. Yes` … `4. No`, numbered 1, 2, 3… in order). Immediately following lines
   aligned to an option's text column join its text with one space; blank lines and
   the "Esc to cancel" footer never join. Buttons
@@ -91,7 +91,27 @@ column, top to bottom:
   (This space filter, put-away tab), so an answered request stays answered.
   `tests/answer.test.js` drives this path in the real `main.js`, with the Herdr
   runtime stood in by `tests/runtime/`.
-- More… (*Mais…*): only beside Yes / No, only when other options have one-key
+- Codex command approval: `parseAsk(screen, cwd, app)` dispatches the captured
+  Codex CLI 0.167.0 local command shape only for `app: codex`. Require the complete
+  heading, local environment, reason, command, all three known option meanings,
+  one cursor and the complete confirmation footer. Wrapped reason/command/option
+  lines are supported in the captured format; ambiguous or incomplete shapes fall
+  back. Eligibility requires a live, reported terminal with `screen: exact`, `status: blocked`, and
+  `report: {app: codex, state: blocked, kind: permission}`. Never reuse Claude's
+  numbered or startup parser for this integration. Require the complete captured
+  foreground argument vector and a Codex foreground process. The request key
+  binds terminal creation, terminal/foreground PIDs, both working directories and
+  argument vectors; a source change invalidates cached reads and old handlers.
+  Before and after the fresh screen read, `hc get` also verifies the source and
+  blocked permission report independently of the app snapshot. The id guards the raw dialog
+  through its footer, including the unexposed persistent option; only the cursor
+  on option rows is blanked. Native captures verified `y` (one-time approval) and
+  `esc` (cancel request and interrupt turn) from all three selections, without
+  Enter. The existing cache, request, eligibility, fresh-read and sent-latch
+  guards apply to both shortcuts. No persistent shortcut or More… entry is enabled.
+  Other Codex shapes and the tested unreported pi 0.85.1 confirmation remain
+  unsupported. Evidence and exact limits: `docs/issue-4-verification.md`.
+- More… (*Mais…*): only beside Claude Yes / No, only when other options have one-key
   digits (1–9). Lists those options in screen order, excluding the Yes / No pair;
   the agent's own text is truncated in a row with its full text in a tooltip.
   A controlled `gpui-base` `Popover`, anchored `bottom_left`, holds its open state
@@ -181,8 +201,9 @@ column, top to bottom:
   `closeOverlay`, `notify`, `setAgentOrder`, `knownAgents`.
 - **Programs run**: `hc read <t> --lines 0` (board, blocked agents; again on a Yes /
   No click or More… choice; also startup discovery), `hc get <t> --json` (startup
-  source validation), `hc keys <t> <digit>` (numbered permission answers),
-  `hc keys <t> <arrows...> enter` (recognised cursor answers) and
+  and Codex source validation), `hc keys <t> <digit>` (numbered permission answers),
+  `hc keys <t> <arrows...> enter` (recognised cursor answers), `hc keys <t> y|esc`
+  (verified Codex one-time approval / cancellation) and
   `hc machine ls` (picker, as Herdr's own); `knownAgents()` (new-tab menu). **Art**:
   `logo.svg`, `maximize.svg`, `minimize.svg`, `preview.svg`.
 - **Keys** (`keys.json`, section `layout:herdboard`): Ctrl+Shift+T new-tab menu,

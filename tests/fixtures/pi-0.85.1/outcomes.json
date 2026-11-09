@@ -1,0 +1,117 @@
+[
+  {
+    "keys": [
+      "down",
+      "enter"
+    ],
+    "outcome": "marker absent",
+    "after": {
+      "screen": "\n pi v0.85.1\n escape interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash · ctrl+o more\n Press ctrl+o to show full startup help and loaded resources.\n\n Pi can explain its own features and look up its docs. Ask it how to use or extend Pi.\n\n[Extensions]\n  probe.js\n\n\n Warning: fd not found. Offline mode enabled, skipping download.\n\n Warning: No models available. Use /login to log into a provider via OAuth or API key. See:\n   /mnt/c/Users/userx/AppData/Roaming/npm/node_modules/@earendil-works/pi-coding-agent/docs/providers.md\n   /mnt/c/Users/userx/AppData/Roaming/npm/node_modules/@earendil-works/pi-coding-agent/docs/models.md\n\n Probe declined; marker absent\n\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n/tmp/herdboard-issue4-native-w1swbhyz/workspace\n0.0%/0 (auto)                                                                                                    unknown\n",
+      "hc_get": {
+        "address": "t1",
+        "argv": [
+          "pi",
+          "--offline",
+          "--no-extensions",
+          "--no-skills",
+          "--no-context-files",
+          "--no-prompt-templates",
+          "--no-session",
+          "--no-tools",
+          "-e",
+          "/tmp/herdboard-issue4-native-w1swbhyz/probe.js"
+        ],
+        "cols": 120,
+        "created_ms": 1794190962230,
+        "cwd": "/tmp/herdboard-issue4-native-w1swbhyz/workspace",
+        "die_with_parent": false,
+        "exit_code": null,
+        "finished_ms": null,
+        "foreground": {
+          "argv": [
+            "pi"
+          ],
+          "cwd": "/tmp/herdboard-issue4-native-w1swbhyz/workspace",
+          "name": "pi",
+          "pid": 32400
+        },
+        "identity": "ghostty",
+        "keep": false,
+        "labels": {},
+        "name": "pi-probe",
+        "notify": false,
+        "parent": null,
+        "pid": 32400,
+        "reason": null,
+        "reported": false,
+        "rm": false,
+        "rows": 40,
+        "screen": "exact",
+        "signal": null,
+        "state": "live",
+        "status": null,
+        "status_ms": null,
+        "template": null,
+        "title": "π - workspace",
+        "turn": 0
+      }
+    }
+  },
+  {
+    "keys": [
+      "enter"
+    ],
+    "outcome": "marker contains approved newline",
+    "after": {
+      "screen": " / commands · ! bash · ctrl+o more\n Press ctrl+o to show full startup help and\n loaded resources.\n\n Pi can explain its own features and look up\n its docs. Ask it how to use or extend Pi.\n\n[Extensions]\n  probe.js\n\n\n Warning: fd not found. Offline mode enabled,\n skipping download.\n\n Warning: No models available. Use /login to\n log into a provider via OAuth or API key. See:\n\n /mnt/c/Users/userx/AppData/Roaming/npm/node_mo\n dules/@earendil-works/pi-coding-agent/docs/pro\n viders.md\n\n /mnt/c/Users/userx/AppData/Roaming/npm/node_mo\n dules/@earendil-works/pi-coding-agent/docs/mod\n els.md\n\n Probe approved; marker created\n\n────────────────────────────────────────────────\n\n────────────────────────────────────────────────\n/tmp/herdboard-issue4-native-w1swbhyz/workspace\n0.0%/0 (auto)                            unknown\n",
+      "hc_get": {
+        "address": "t3",
+        "argv": [
+          "pi",
+          "--offline",
+          "--no-extensions",
+          "--no-skills",
+          "--no-context-files",
+          "--no-prompt-templates",
+          "--no-session",
+          "--no-tools",
+          "-e",
+          "/tmp/herdboard-issue4-native-w1swbhyz/probe.js"
+        ],
+        "cols": 48,
+        "created_ms": 1794191017903,
+        "cwd": "/tmp/herdboard-issue4-native-w1swbhyz/workspace",
+        "die_with_parent": false,
+        "exit_code": null,
+        "finished_ms": null,
+        "foreground": {
+          "argv": [
+            "pi"
+          ],
+          "cwd": "/tmp/herdboard-issue4-native-w1swbhyz/workspace",
+          "name": "pi",
+          "pid": 34567
+        },
+        "identity": "ghostty",
+        "keep": false,
+        "labels": {},
+        "name": "pi-narrow",
+        "notify": false,
+        "parent": null,
+        "pid": 34567,
+        "reason": null,
+        "reported": false,
+        "rm": false,
+        "rows": 32,
+        "screen": "exact",
+        "signal": null,
+        "state": "live",
+        "status": null,
+        "status_ms": null,
+        "template": null,
+        "title": "π - workspace",
+        "turn": 0
+      }
+    }
+  }
+]
