@@ -1,0 +1,91 @@
+{
+  "kind": "native Herdr API snapshot; real local agents only",
+  "herdrAppVersion": "0.1.14",
+  "hcVersion": "0.1.19",
+  "nodeVersion": "24.22.1",
+  "observedAtEpochMs": 1794203390876,
+  "agents": [
+    {
+      "address": "t1",
+      "space": "sp931fb66276e2e00329ae431590980d1c",
+      "tab": "tbd6a374a970fc2479975ee45105eb5115",
+      "pane": "p441e54e0ed7bec86f5eeef6255b6bd6b",
+      "app": "claude-code",
+      "status": "idle"
+    },
+    {
+      "address": "t2",
+      "space": "sp931fb66276e2e00329ae431590980d1c",
+      "tab": "tbfadbf3c34cf44c54ed9089f302c9a923",
+      "pane": "pe57a4c9c91b0fcd54f976c77121478e6",
+      "app": "codex",
+      "status": "done"
+    }
+  ],
+  "spaces": [
+    {
+      "id": "sp931fb66276e2e00329ae431590980d1c",
+      "name": "Activity capture",
+      "machine": null,
+      "active": true,
+      "tabs": [
+        {
+          "id": "tbd6a374a970fc2479975ee45105eb5115"
+        },
+        {
+          "id": "tbfadbf3c34cf44c54ed9089f302c9a923"
+        },
+        {
+          "id": "tb3e966ab9a1ba9c16d5b3b35c4b6ebbdf"
+        }
+      ]
+    }
+  ],
+  "panes": [
+    {
+      "pane": "p441e54e0ed7bec86f5eeef6255b6bd6b",
+      "terminal": "t1",
+      "tab": "tbd6a374a970fc2479975ee45105eb5115"
+    },
+    {
+      "pane": "pe57a4c9c91b0fcd54f976c77121478e6",
+      "terminal": "t2",
+      "tab": "tbfadbf3c34cf44c54ed9089f302c9a923"
+    },
+    {
+      "pane": "p858c0265e52176c6156005619172bfe9",
+      "terminal": "t3",
+      "tab": "tb3e966ab9a1ba9c16d5b3b35c4b6ebbdf"
+    }
+  ],
+  "terminals": [
+    {
+      "address": "t1",
+      "state": "live",
+      "reported": true,
+      "status": "done"
+    },
+    {
+      "address": "t2",
+      "state": "live",
+      "reported": true,
+      "status": "done"
+    },
+    {
+      "address": "t3",
+      "state": "live",
+      "reported": false,
+      "status": null
+    }
+  ],
+  "machines": [
+    {
+      "name": null,
+      "layout": "ready"
+    }
+  ],
+  "limits": [
+    "This initial scratch-local snapshot establishes no real remote association or mixed-machine native behavior.",
+    "Private native remote outcomes are recorded separately without publishing real remote connection data. Simulated tests are identified separately."
+  ]
+}
