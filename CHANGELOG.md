@@ -17,14 +17,22 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
   and a Portuguese 700×640 window showed the controls, the rail handoff, and
   maximize/restore. Close quit that window. An X11 window on the same machine
   drew no Herdboard window buttons.
-  Checked again with herdr-app 0.1.15 on an isolated Wayland compositor, in
-  Portuguese: the header showed the three controls; while the window filled
-  the work area the middle control used the restore glyph and a tooltip
-  beginning "Restaurar a ja"; clicking it left a margin at the right edge.
-  Clicking minimize removed the window from the desktop and left the process
-  running. A drag on the header did not move the window in that compositor,
-  so a button press that does not drag is still not recorded. Windows, macOS,
-  and that pointer check were not exercised.
+  Checked again with herdr-app 0.1.15 on an isolated Wayland compositor.
+  In Portuguese, the header showed the three controls. The minimize tooltip
+  read "Minimizar a janela". While the window filled the work area, the
+  middle control used the restore glyph and a tooltip beginning
+  "Restaurar a ja"; clicking it left a margin at the right edge. Clicking
+  minimize removed the window and left the process running. Expand hid the
+  header and left Restaurar with the same three window controls on the tab
+  rail; Restaurar put the header and those controls back. Close quit the
+  process and removed the window. With the pointer button held, dragging
+  the header moved the window by the same amount as the pointer. Dragging
+  from the minimize button did not. That pair was repeated in English,
+  including after the window was resized to about 711px wide. In
+  Portuguese a double-click on minimize minimized the window instead of
+  maximizing it. A right press on the button and on the header did not
+  open a window menu in this compositor, so that menu was not observed.
+  Windows and macOS were not run.
 
 ## [1.5.1] - 2026-11-09
 
