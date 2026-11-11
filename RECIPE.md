@@ -255,8 +255,10 @@ column, top to bottom:
   The maximize glyph and tooltip follow `window().maximized`; `fullscreen` does
   not select the restore glyph. `window.maximize` is the maximize-or-restore
   command. Left and right presses on these buttons call `stop_propagation`.
-  `buttons` false draws none, including macOS and a Linux window that is not
-  using client-side decorations. The buttons stay below the 760px rail breakpoint.
+  `buttons` false draws none. The harness covers Linux, Windows, and
+  macOS-shaped facts. Herdr leaves `buttons` false for macOS traffic lights
+  and for a Linux window that is not using client-side decorations. Native
+  macOS was not run. The buttons stay below the 760px rail breakpoint.
   `space-strip` and `tab-strip` remain the flexible scrolling regions.
 - Below 1100px buttons become icons; below 800px the board is one list, most
   urgent first, each card labelled with its status; below 760px pills drop counts

@@ -4,17 +4,27 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
-- Herdboard draws minimize, maximize/restore and close on its own bars when Herdr
-  reports that the system is not drawing window buttons. The same three controls
-  move to the tab rail while the header is hidden, and return to the header when
-  it is shown. Maximize shows a restore glyph and tooltip while the window is
-  maximized and still runs the maximize command. Expand / Restore is unchanged.
-  macOS traffic lights and Linux server-side decorations get no second set.
-  Checked on Linux with herdr-app 0.1.14: an English 1200×760 Wayland window and
-  a Portuguese 700×640 window showed the controls, the rail handoff, and
+- Herdboard draws minimize, maximize/restore and close on its own bars when
+  `window().buttons` is true. The same three controls move to the tab rail
+  while the header is hidden, and return to the header when it is shown.
+  Maximize shows a restore glyph and tooltip while the window is maximized
+  and still runs the maximize command. Expand / Restore is unchanged.
+  When `window().buttons` is false, Herdboard draws none. Render tests cover
+  that gate for Linux, Windows, and macOS-shaped facts. Herdr leaves `buttons`
+  false for macOS traffic lights and for Linux server-side decorations; those
+  two cases were not run as native macOS or Windows sessions.
+  Checked on Linux with herdr-app 0.1.14: an English 1200×760 Wayland window
+  and a Portuguese 700×640 window showed the controls, the rail handoff, and
   maximize/restore. Close quit that window. An X11 window on the same machine
-  drew no Herdboard window buttons. Windows, macOS, and a pointer press on the
-  buttons were not exercised.
+  drew no Herdboard window buttons.
+  Checked again with herdr-app 0.1.15 on an isolated Wayland compositor, in
+  Portuguese: the header showed the three controls; while the window filled
+  the work area the middle control used the restore glyph and a tooltip
+  beginning "Restaurar a ja"; clicking it left a margin at the right edge.
+  Clicking minimize removed the window from the desktop and left the process
+  running. A drag on the header did not move the window in that compositor,
+  so a button press that does not drag is still not recorded. Windows, macOS,
+  and that pointer check were not exercised.
 
 ## [1.5.1] - 2026-11-09
 
