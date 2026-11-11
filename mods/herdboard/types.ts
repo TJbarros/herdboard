@@ -60,6 +60,7 @@ export interface BoardText extends Record<BoardStatus, string> {
   more: string; newSpace: string; newTab: string; newTabTip: string; closeTabTip: string;
   defaultLayout: string; defaultLayoutTitle: string; defaultLayoutBody: string;
   expand: string; restore: string; expandTip: string; restoreTip: string; langTip: string;
+  windowMinimizeTip: string; windowMaximizeTip: string; windowRestoreTip: string; windowCloseTip: string;
   answer: string; peek: string; pin: string; unpin: string; settle: string;
   peekTip: string; pinTip: string; settleTip: string; noAsk: string;
   yes: string; no: string; moreOptions: string; answerTip(n: number, text: string): string;

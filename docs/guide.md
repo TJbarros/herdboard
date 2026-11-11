@@ -149,6 +149,18 @@ the rail while expanded.
 
 *Expanded: the tab rail (with **Restore** on the right) and the terminal.*
 
+**Minimize**, **maximize** and **close** sit at the right of the header when Herdr
+is not drawing the system window buttons. While the window is maximized, that
+maximize control shows a restore icon and its tooltip says restore; it is still
+the same control. These buttons act on the Herdr window. **Expand** and
+**Restore** still only hide and show the board. While the header is hidden, this
+one set moves to the right end of the tab rail, and showing the header puts it
+back on the header. Herdboard draws none when `window().buttons` is false.
+Render tests cover that gate for Linux, Windows, and macOS-shaped facts.
+Herdr leaves `buttons` false for the macOS traffic lights and for a Linux
+window whose decorations stay on the server. Native macOS and Windows were
+not run.
+
 ### Reading a card
 
 <img src="images/usage-card.png" width="448" alt="A card: agent icon and task title on top; space, tab, branch and age below; a colored stripe on the left">

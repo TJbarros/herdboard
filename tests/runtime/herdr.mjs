@@ -1,6 +1,10 @@
 // Stand-in for the Herdr runtime. Tests set `herdr.agents` / `herdr.terminals`; every `hc` call
 // waits in `herdr.calls` until the test settles it, so a test decides the order reads finish in.
-export const herdr = { agents: [], terminals: [], spaces: [], panes: [], props: {}, calls: [], execCalls: [], runs: [], shared: {}, layout: {} };
+export const herdr = {
+  agents: [], terminals: [], spaces: [], panes: [], props: {}, calls: [], execCalls: [], runs: [], shared: {}, layout: {},
+  // buttons stays false unless a test asks Herdr to report that the system draws no window buttons.
+  window: { platform: "linux", titlebar: "system", buttons: false, maximized: false, fullscreen: false, active: true },
+};
 export const agents = () => herdr.agents;
 export const terminals = () => { herdr.terminalReads = (herdr.terminalReads ?? 0) + 1; return herdr.terminals; };
 export const hc = (args) => new Promise((resolve, reject) => herdr.calls.push({ args, resolve, reject }));
@@ -13,6 +17,7 @@ export const exec = (command, args, options) => new Promise((resolve, reject) =>
 export const shared = (key) => herdr.shared[key];
 export const setShared = (key, value) => { herdr.shared[key] = value; };
 export const spaces = () => herdr.spaces, panes = () => herdr.panes, props = () => herdr.props, layout = () => herdr.layout;
+export const window = () => herdr.window;
 export const theme = () => ({}), notify = () => {};
 export const setAgentOrder = addresses => { herdr.agentOrder = addresses; };
 export const run = (command, args) => {

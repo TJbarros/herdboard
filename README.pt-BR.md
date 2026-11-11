@@ -91,6 +91,9 @@ e abre novas abas na pasta de projeto que você escolher.
 - **Novas abas na pasta certa**, com escolha de pasta.
 - **Cabeçalho em uma linha** com todos os espaços, filtro Todos / Este espaço e busca.
 - **Expandir** os terminais para a janela toda, e voltar.
+- **Minimizar, maximizar e fechar** quando o Herdr não desenha os botões de janela
+  do sistema. Ficam no cabeçalho e, só enquanto ele está oculto, na barra de abas.
+  Expandir / Restaurar continua escondendo e mostrando o quadro.
 - **Segue o tema do seu Herdr**, claro ou escuro; responsivo; inglês / português.
 
 ![Herdboard](preview.pt-BR.png)

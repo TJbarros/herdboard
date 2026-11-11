@@ -4,6 +4,36 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+- Herdboard draws minimize, maximize/restore and close on its own bars when
+  `window().buttons` is true. The same three controls move to the tab rail
+  while the header is hidden, and return to the header when it is shown.
+  Maximize shows a restore glyph and tooltip while the window is maximized
+  and still runs the maximize command. Expand / Restore is unchanged.
+  When `window().buttons` is false, Herdboard draws none. Render tests cover
+  that gate for Linux, Windows, and macOS-shaped facts. Herdr leaves `buttons`
+  false for macOS traffic lights and for Linux server-side decorations; those
+  two cases were not run as native macOS or Windows sessions.
+  Checked on Linux with herdr-app 0.1.14: an English 1200×760 Wayland window
+  and a Portuguese 700×640 window showed the controls, the rail handoff, and
+  maximize/restore. Close quit that window. An X11 window on the same machine
+  drew no Herdboard window buttons.
+  Checked again with herdr-app 0.1.15 on an isolated Wayland compositor.
+  In Portuguese, the header showed the three controls. The minimize tooltip
+  read "Minimizar a janela". While the window filled the work area, the
+  middle control used the restore glyph and a tooltip beginning
+  "Restaurar a ja"; clicking it left a margin at the right edge. Clicking
+  minimize removed the window and left the process running. Expand hid the
+  header and left Restaurar with the same three window controls on the tab
+  rail; Restaurar put the header and those controls back. Close quit the
+  process and removed the window. With the pointer button held, dragging
+  the header moved the window by the same amount as the pointer. Dragging
+  from the minimize button did not. That pair was repeated in English,
+  including after the window was resized to about 711px wide. In
+  Portuguese a double-click on minimize minimized the window instead of
+  maximizing it. A right press on the button and on the header did not
+  open a window menu in this compositor, so that menu was not observed.
+  Windows and macOS were not run.
+
 ## [1.5.1] - 2026-11-09
 
 - All three mods pass the project's strict typecheck with explicit parser, board,

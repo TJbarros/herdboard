@@ -156,6 +156,18 @@ continuam na barra enquanto está expandido.
 
 *Expandido: a barra de abas (com **Restaurar** à direita) e o terminal.*
 
+**Minimizar**, **maximizar** e **fechar** ficam à direita do cabeçalho quando o
+Herdr não está desenhando os botões de janela do sistema. Com a janela maximizada,
+esse controle de maximizar mostra o ícone de restaurar e a dica diz restaurar; ele
+continua sendo o mesmo controle. Esses botões agem na janela do Herdr. **Expandir**
+e **Restaurar** continuam só escondendo e mostrando o quadro. Com o cabeçalho
+oculto, esse único conjunto vai para a ponta direita da barra de abas, e mostrar
+o cabeçalho devolve os botões para ele. O Herdboard não desenha nenhum quando
+`window().buttons` é falso. Os testes de renderização cobrem esse portão para
+fatos no formato Linux, Windows e macOS. O Herdr deixa `buttons` falso nos
+semáforos do macOS e numa janela Linux cujas decorações ficam no servidor.
+macOS e Windows nativos não foram executados.
+
 ### Como ler um card
 
 <img src="images/usage-card.pt-BR.png" width="448" alt="Um card: ícone do agente e título da tarefa em cima; espaço, aba, branch e tempo embaixo; uma faixa colorida à esquerda">

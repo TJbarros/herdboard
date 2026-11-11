@@ -3,18 +3,26 @@
 export const clicks = new Map();
 export const elements = new Map();
 export const popovers = new Map();
-function element() {
+function element(source) {
   let id = null;
   const data = { children: [], props: {} };
+  if (source !== undefined) data.source = source;
   const el = new Proxy({}, {
     get: (_t, name) => {
       if (name === "then") return undefined;
       if (name === "data") return data;
-      if (name === "id") return (v) => { id = v; elements.set(id, data); return el; };
+      if (name === "id") return (v) => { id = v; data.id = v; elements.set(id, data); return el; };
       if (name === "when") return (cond, f) => (cond ? f(el) ?? el : el);
       if (name === "child") return (v) => { data.children.push(v); return el; };
       if (name === "children") return (vs) => { data.children.push(...vs); return el; };
       if (name === "on_click") return (f) => { data.props.on_click = [f]; if (id) clicks.set(id, f); return el; };
+      // A control can stop more than one button. Keep every registration, and the last one
+      // where existing tests read props.on_mouse_down.
+      if (name === "on_mouse_down") return (...args) => {
+        data.props.on_mouse_down = args;
+        (data.props.on_mouse_downs ??= []).push(args);
+        return el;
+      };
       return (...args) => { data.props[name] = args; return el; };
     },
   });

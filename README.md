@@ -89,6 +89,9 @@ project folder you pick.
 - **New tabs in the right folder**, with a folder picker.
 - **One-line header** with every space, an All / This space filter and search.
 - **Expand** the terminals to the whole window, and back.
+- **Minimize, maximize and close** when Herdr is not drawing the system window
+  buttons. They sit on the header, and on the tab rail only while that header is
+  hidden. Expand / Restore still hides and shows the board.
 - **Follows your Herdr theme**, light or dark; responsive; English / Portuguese.
 
 ![Herdboard](preview.png)

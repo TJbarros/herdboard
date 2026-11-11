@@ -1,6 +1,6 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex, v_flex, Popover } from "gpui-base";
-import { agents, spaces, panes, props, run, setAgentOrder, notify, layout, shared, setShared, hc, exec, openOverlay, closeOverlay } from "herdr";
+import { agents, spaces, panes, props, run, setAgentOrder, notify, layout, shared, setShared, hc, exec, openOverlay, closeOverlay, window } from "herdr";
 import { parseAsk, pickAnswers } from "./ask.js";
 import { extractActivity } from "./activity.js";
 import { WorktreeChanges } from "./git-changes.js";
@@ -110,6 +110,8 @@ const TEXT = {
     defaultLayoutBody: "Espaços, abas e agentes continuam iguais. Para voltar ao Herdboard: Configurações › Look › Layout, ou Ctrl+Shift+L.",
     expand: "Expandir", restore: "Restaurar",
     expandTip: "Expandir os terminais para ocupar a área toda", restoreTip: "Voltar a mostrar o quadro de agentes",
+    windowMinimizeTip: "Minimizar a janela", windowMaximizeTip: "Maximizar a janela",
+    windowRestoreTip: "Restaurar a janela", windowCloseTip: "Fechar a janela",
     langTip: "Idioma do quadro",
     answer: "Abrir e responder", peek: "Espiar", pin: "Fixar", unpin: "Desafixar", settle: "Guardar",
     peekTip: "Ver o terminal por cima, sem trocar de aba", pinTip: "Manter no topo da coluna",
@@ -140,6 +142,8 @@ const TEXT = {
     defaultLayoutBody: "Spaces, tabs and agents stay as they are. To come back to the Herdboard: Settings › Look › Layout, or Ctrl+Shift+L.",
     expand: "Expand", restore: "Restore",
     expandTip: "Expand the terminals to fill the whole area", restoreTip: "Show the agent board again",
+    windowMinimizeTip: "Minimize the window", windowMaximizeTip: "Maximize the window",
+    windowRestoreTip: "Restore the window", windowCloseTip: "Close the window",
     langTip: "Herdboard language",
     answer: "Open and answer", peek: "Peek", pin: "Pin", unpin: "Unpin", settle: "Put away",
     peekTip: "See the terminal on top, without switching tabs", pinTip: "Keep at the top of the column",
@@ -907,7 +911,29 @@ export default class Herdboard extends View {
         .hover(st => st.bg(C.hover).text_color(C.ink))
         .tooltip(L.more)
         .on_click(() => openOverlay({ mod: "herdboard", kind: "popup", width: 240, height: 128, props: { role: "menu" } }))
-        .child("⋯"))));
+        .child("⋯")))
+      .children(this.windowControls("header")));
+  }
+
+  // Herdr's own window, drawn only where the system draws no buttons. One set: the header while
+  // that block is shown, and the tab rail only while the header block is hidden. Expand still
+  // uses isExpanded(), which watches the cards, so this follows the header node itself.
+  /** @param {"header" | "rail"} surface */
+  windowControls(surface) {
+    const facts = window();
+    const headerHidden = findNode(layout(), "herdboard-header")?.hidden === true;
+    const active = surface === "header" ? !headerHidden : headerHidden;
+    if (!facts?.buttons || !active) return [];
+    const maximized = facts.maximized === true;
+    /** @param {string} id @param {string} iconPath @param {string} tip @param {string} command */
+    const button = (id, iconPath, tip, command) => this.iconButton(id, iconPath, tip, () => run(command))
+      .on_mouse_down("right", (_e, cx) => cx.stop_propagation());
+    return [
+      button("window-minimize", "mods/herdboard/window-minimize.svg", L.windowMinimizeTip, "window.minimize"),
+      button("window-maximize", maximized ? "mods/herdboard/window-restore.svg" : "mods/herdboard/window-maximize.svg",
+        maximized ? L.windowRestoreTip : L.windowMaximizeTip, "window.maximize"),
+      button("window-close", "mods/herdboard/window-close.svg", L.windowCloseTip, "window.close"),
+    ];
   }
 
   // The ⋯ menu (a popup copy of this mod).
@@ -980,7 +1006,8 @@ export default class Herdboard extends View {
         .tooltip(on ? L.restoreTip : L.expandTip)
         .on_click(() => toggleExpanded())
         .child(svg(on ? "mods/herdboard/minimize.svg" : "mods/herdboard/maximize.svg").size(13).flex_none())
-        .when(!narrow, el => el.child(on ? L.restore : L.expand))));
+        .when(!narrow, el => el.child(on ? L.restore : L.expand)))
+      .children(this.windowControls("rail")));
   }
 
   // ---- The board ----
