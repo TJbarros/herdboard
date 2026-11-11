@@ -4,6 +4,18 @@ All notable changes to Herdboard. Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+- Herdboard draws minimize, maximize/restore and close on its own bars when Herdr
+  reports that the system is not drawing window buttons. The same three controls
+  move to the tab rail while the header is hidden, and return to the header when
+  it is shown. Maximize shows a restore glyph and tooltip while the window is
+  maximized and still runs the maximize command. Expand / Restore is unchanged.
+  macOS traffic lights and Linux server-side decorations get no second set.
+  Checked on Linux with herdr-app 0.1.14: an English 1200×760 Wayland window and
+  a Portuguese 700×640 window showed the controls, the rail handoff, and
+  maximize/restore. Close quit that window. An X11 window on the same machine
+  drew no Herdboard window buttons. Windows, macOS, and a pointer press on the
+  buttons were not exercised.
+
 ## [1.5.1] - 2026-11-09
 
 - All three mods pass the project's strict typecheck with explicit parser, board,

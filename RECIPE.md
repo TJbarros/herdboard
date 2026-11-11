@@ -246,6 +246,18 @@ column, top to bottom:
   installed agents, New space, worktrees; `tab.new` gets `folder`, `space.new` gets
   `folder` and `machine`.
 - Expand hides `herdboard-header` and `herdboard-cards`; Restore shows them.
+  Those arrows stay `maximize.svg` / `minimize.svg`. They are not the window controls.
+- When `window().buttons` is true, minimize, maximize/restore and close are
+  `flex_none` icon buttons at the right of the header, after the more menu.
+  While the `herdboard-header` node is hidden, that same set is at the right of
+  the tab rail, after Expand / Restore, and the header copy draws none. They run
+  `window.minimize`, `window.maximize` and `window.close` with no arguments.
+  The maximize glyph and tooltip follow `window().maximized`; `fullscreen` does
+  not select the restore glyph. `window.maximize` is the maximize-or-restore
+  command. Left and right presses on these buttons call `stop_propagation`.
+  `buttons` false draws none, including macOS and a Linux window that is not
+  using client-side decorations. The buttons stay below the 760px rail breakpoint.
+  `space-strip` and `tab-strip` remain the flexible scrolling regions.
 - Below 1100px buttons become icons; below 800px the board is one list, most
   urgent first, each card labelled with its status; below 760px pills drop counts
   and the filter reads All | Here.
@@ -265,7 +277,7 @@ column, top to bottom:
   `new-menu`, translated, with the folder choice). Uses the shipped
   `workspace-chrome`, `spaces` and `agents` mods in the sidebar and their icons.
 - **herdr API**: `agents`, `terminals` (an agent's `report`), `spaces`, `panes`,
-  `layout`, `theme`, `shared` / `setShared`, `run`, `hc`, `exec`, `openOverlay` /
+  `layout`, `window`, `theme`, `shared` / `setShared`, `run`, `hc`, `exec`, `openOverlay` /
   `closeOverlay`, `notify`, `setAgentOrder`, `knownAgents`.
 - **Programs run**: `hc read <t> --lines 0` (board, blocked agents; again on a Yes /
   No click or More… choice; also startup discovery and bounded Working activity), `hc get <t> --json` (startup
@@ -275,7 +287,8 @@ column, top to bottom:
   `git --no-optional-locks status --porcelain=v1 -z --untracked-files=all --ignored=no --renames`
   (board, terminal's own machine/worktree; Git inspects working files) and
   `hc machine ls` (picker, as Herdr's own); `knownAgents()` (new-tab menu). **Art**:
-  `logo.svg`, `maximize.svg`, `minimize.svg`, `preview.svg`.
+  `logo.svg`, `maximize.svg`, `minimize.svg`, `preview.svg`, `window-minimize.svg`,
+  `window-maximize.svg`, `window-restore.svg`, `window-close.svg`.
 - **Keys** (`keys.json`, section `layout:herdboard`): Ctrl+Shift+T new-tab menu,
   Ctrl+Shift+K picker.
 
@@ -286,7 +299,9 @@ column, top to bottom:
   asking for sizes the layout refuses.
 - Popups and pane headers are copies of the same mod: only the board copy (no
   `role`) fetches questions, ticks the timer or migrates preferences.
-- Every header control stops `mouse_down`: the header is a window-drag block.
+- Every header control stops left `mouse_down`: the header is a window-drag block.
+  The window buttons also stop the right press, so a right press there does not
+  open the Linux system window menu.
 - Card action buttons stop propagation, or the card's `agent.focus` fires too
   (Yes / No and More… as well, even when faded, and every menu item).
 - `hc keys` presses keys blindly: never send a permission answer digit without the stale
